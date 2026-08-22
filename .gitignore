@@ -1,0 +1,24 @@
+# Entornos virtuales
+env-proj/
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Variables de entorno y credenciales
+.env
+*.pem
+
+# Logs
+*.log
+nohup.out
+
+# Datos versionados con DVC (no con Git)
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep

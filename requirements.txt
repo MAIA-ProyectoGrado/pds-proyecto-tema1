@@ -1,0 +1,5 @@
+arxiv
+pdfplumber
+pandas
+tqdm
+dvc[s3]
