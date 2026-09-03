@@ -44,12 +44,18 @@ REGISTERED_MODEL = "scif-citation-intent"
 
 
 # ----------------------------------------------------------------------------
-def load(data_dir: Path):
+def load(data_dir: Path, max_train: int | None = None):
     d = {}
     for s in ["train", "val", "test"]:
         df = pd.read_csv(data_dir / f"{s}.csv")
         df["citation_context"] = df["citation_context"].astype(str)
         df["rhetorical_section_canon"] = df["rhetorical_section_canon"].fillna("Desconocida")
+        if s == "train" and max_train and len(df) > max_train:
+            # submuestreo estratificado (util para entrenar v2 en CPU de 2 vCPU)
+            df = df.groupby("label", group_keys=False).apply(
+                lambda g: g.sample(n=max(1, round(max_train * len(g) / len(df))),
+                                   random_state=42)
+            ).reset_index(drop=True)
         d[s] = df
     return d
 
@@ -269,13 +275,15 @@ def main():
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--max_len", type=int, default=256)
+    ap.add_argument("--max_train", type=int, default=None,
+                    help="submuestrea train a N filas (estratificado). Para v2 en CPU 2 vCPU: 4000-6000.")
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 
     import mlflow
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "file:./mlruns"))
     mlflow.set_experiment(EXPERIMENT)
-    data = load(Path(args.data_dir))
+    data = load(Path(args.data_dir), max_train=args.max_train)
 
     summary = {}
     if args.stage in ("v1", "all"):

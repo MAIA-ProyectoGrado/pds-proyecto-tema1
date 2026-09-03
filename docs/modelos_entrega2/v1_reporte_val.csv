@@ -1,0 +1,10 @@
+clase,precision,recall,f1,soporte
+Application,0.515,0.556,0.535,277
+Background,0.495,0.782,0.607,271
+Basis,0.4,0.3,0.343,307
+Comparison,0.609,0.37,0.46,303
+Evidence,0.503,0.56,0.53,302
+Further_Reading,0.461,0.61,0.525,313
+Gap,0.652,0.552,0.598,315
+Identification_of_the_Originator,0.475,0.337,0.394,312
+Modification_Improvement,0.455,0.487,0.47,300

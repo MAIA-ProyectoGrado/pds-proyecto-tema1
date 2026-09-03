@@ -69,25 +69,33 @@ aws s3 ls s3://citation-dvcstore-tema1/
 
 ### 2.1 Lanzar la instancia
 
-Elige tipo según cuota de GPU disponible (revisa Service Quotas → "Running On-Demand G and VT instances"):
+> **Restricción confirmada del entorno (AWS Academy Learner Lab, política
+> `Pvoclabs2`):** `ec2:RunInstances` **solo permite tamaños `≤ *.large` (2 vCPU)**;
+> **todas las instancias GPU están denegadas**. No hay fine-tuning en GPU en esta
+> cuenta. `ssm:GetParameters` de alias de AMI también está bloqueado (el script
+> resuelve la AMI con `describe-images`). Se usa el key pair preexistente
+> **`vockey`** (archivo local `llave.pem`) y el perfil **`LabInstanceProfile`**
+> (le da a la EC2 credenciales de S3 propias, independientes de la sesión del lab).
 
-| Escenario | Comando | Costo aprox. |
-|---|---|---|
-| **Recomendado** (hay cuota G ≥ 4 vCPU) | `INSTANCE_TYPE=g5.xlarge ./infra/launch_ec2.sh` | ~USD 1.01/h |
-| GPU más barata | `INSTANCE_TYPE=g4dn.xlarge ./infra/launch_ec2.sh` | ~USD 0.53/h |
-| **Sin cuota de GPU** (fallback CPU) | `INSTANCE_TYPE=c7i.2xlarge USE_GPU_AMI=0 ./infra/launch_ec2.sh` | ~USD 0.36/h |
+| Tipo | vCPU / RAM | USD/h | Nota |
+|---|---|--:|---|
+| **`t3.large`** (por defecto) | 2 / 8 GB | ~0.083 | recomendado: la RAM importa para el fine-tuning CPU |
+| `c5.large` | 2 / 4 GB | ~0.085 | alternativa; riesgo de OOM con SciBERT |
+
+```bash
+./infra/launch_ec2.sh                       # t3.large + vockey + LabInstanceProfile
+```
 
 El script:
-- crea key pair (`infra/scif-entrega2.pem`) y Security Group `scif-mlflow-sg`
-  **abriendo los puertos 22 y 5000 solo a tu IP** (esto ES "habilitar el puerto
-  en las reglas de entrada del Security Group");
+- usa el key pair **`vockey`** y el perfil **`LabInstanceProfile`**;
+- crea el Security Group `scif-mlflow-sg` **abriendo 22 y 5000 solo a tu IP**
+  (esto ES "habilitar el puerto en las reglas de entrada del Security Group");
 - lanza 1 instancia con `shutdown-behavior=stop` y un cron de **auto-stop a las 14 h**;
 - instala MLflow 3.15.2 como servicio systemd (`sqlite` + artefactos locales) en `:5000`;
 - escribe `infra/ec2_instance.env` con `PUBLIC_IP`, `INSTANCE_ID`, `MLFLOW_TRACKING_URI`.
 
-> Con USD 20 y estos precios, incluso usando el techo de 15 h el gasto de cómputo
-> es < USD 16 en g5, < USD 8 en g4dn, < USD 6 en CPU. Mantente en g4dn si quieres
-> el máximo margen. El auto-stop es una red de seguridad, no un plan.
+> A ~USD 0.083/h, el servidor puede quedar encendido las ~15 h por < USD 1.3. El
+> costo real de la Entrega 2 lo domina el tiempo de entrenamiento CPU (ver §4.2).
 
 ### 2.2 Esperar a MLflow y verificar
 
@@ -157,24 +165,33 @@ apuntando a `MLFLOW_TRACKING_URI=http://localhost:5000`.
 
 ### 4.2 Las dos iteraciones (ya configuradas en `scripts/train.py`)
 
-| Versión | Modelo | Config | Rol |
+| Versión | Modelo | Config (CPU 2 vCPU) | Rol |
 |---|---|---|---|
-| **v1 baseline** | TF-IDF (1–2 gramas) + Regresión Logística `class_weight=balanced` | `C=1.0`, `max_features=50k` | referencia; **sobreajusta** (brecha train→val ≈ 0.33 medida localmente) |
-| **v2 (iteración intermedia)** | fine-tuning `allenai/scibert_scivocab_uncased` | 3 épocas, `lr=2e-5`, `batch=16`, `max_len=256`, early-stopping | mejora esperada de F1-macro val; **no optimizar más** — deja hueco para v3 |
+| **v1 baseline** | TF-IDF (1–2 gramas) + Regresión Logística `class_weight=balanced` | `C=1.0`, `max_features=50k` | referencia; **sobreajusta severo** (F1-macro val **0.496**, brecha train→val **0.30**, medido) |
+| **v2 (iteración intermedia)** | fine-tuning `distilbert-base-uncased` (SciBERT si la RAM aguanta) | `--max_train 5000 --epochs 1 --max_len 128 --batch 16` | mejora esperada de F1-macro val; **no optimizar más** — deja hueco para v3 |
 
-> **v2 NO debe ser perfecto.** No hagas búsqueda de hiperparámetros ni ensembles
-> ni más épocas. Si v2 val F1-macro cae en ~0.60–0.72, es suficiente para la
-> entrega; el margen restante se documenta como v3.
+> **Por qué DistilBERT y submuestreo:** el Learner Lab solo da 2 vCPU sin GPU.
+> SciBERT completo (12 600 filas × 3 épocas) tomaría 10–20 h. `distilbert` con
+> `--max_train 5000 --epochs 1 --max_len 128` entrena en **~1.5–3 h** y sigue
+> siendo un v2 legítimo (encoder contextual > TF-IDF). Si sobra tiempo/RAM, subir a
+> `--max_train 9000 --epochs 2` o cambiar a SciBERT.
+>
+> **v2 NO debe ser perfecto.** Nada de búsqueda de hiperparámetros ni ensembles.
+> Si v2 val F1-macro cae en ~0.55–0.68, es suficiente; el resto se documenta como v3.
 
 Comandos (si no usas `remote_setup.sh`):
 
 ```bash
 export MLFLOW_TRACKING_URI=http://localhost:5000
+export SCIF_SKIP_MODEL_LOGGING=0        # 1 solo para pruebas rapidas sin registrar el artefacto
 python scripts/train.py --stage v1 --data_dir data/raw
 python scripts/train.py --stage v2 --data_dir data/raw \
-    --model allenai/scibert_scivocab_uncased --epochs 3 --batch 16 --lr 2e-5 --max_len 256
-# fallback CPU: añade --batch 8 y considera --model distilbert-base-uncased --epochs 2
+    --model distilbert-base-uncased --max_train 5000 --epochs 1 --max_len 128 --batch 16 --lr 3e-5
 ```
+
+Alternativa **sin fine-tuning** (si el CPU no alcanza): embeddings de
+`sentence-transformers/all-MiniLM-L6-v2` (calcular una vez, ~20–40 min) + Regresión
+Logística. Es un v2 defendible y más rápido; queda como plan B documentado.
 
 Cada run registra en MLflow: params, `train/val/test` de accuracy + F1 (macro/micro),
 F1 por clase, matrices de confusión normalizadas, `fit_seconds`, brechas

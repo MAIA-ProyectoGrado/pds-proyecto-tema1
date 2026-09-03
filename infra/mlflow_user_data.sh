@@ -1,5 +1,5 @@
 #!/bin/bash
-# user-data para la EC2 (Ubuntu 22.04 / Deep Learning OSS Nvidia AMI).
+# user-data para la EC2 (Ubuntu 22.04 LTS, t3.large, sin GPU).
 # Deja MLflow escuchando en el puerto 5000 con backend sqlite y artefactos locales.
 set -eux
 
