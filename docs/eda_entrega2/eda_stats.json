@@ -1,0 +1,449 @@
+{
+  "estructura": {
+    "train": {
+      "filas": 12600,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "label",
+        "citing_paper_id",
+        "cited_paper_id",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 186,
+        "etiqueta_rescatada": 0,
+        "label": 0,
+        "citing_paper_id": 0,
+        "cited_paper_id": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "val": {
+      "filas": 2700,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "label",
+        "citing_paper_id",
+        "cited_paper_id",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 37,
+        "etiqueta_rescatada": 0,
+        "label": 0,
+        "citing_paper_id": 0,
+        "cited_paper_id": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "test": {
+      "filas": 2700,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "label",
+        "citing_paper_id",
+        "cited_paper_id",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 42,
+        "etiqueta_rescatada": 0,
+        "label": 0,
+        "citing_paper_id": 0,
+        "cited_paper_id": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "master_18k": {
+      "filas": 18000,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "label",
+        "citing_paper_id",
+        "cited_paper_id",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 265,
+        "etiqueta_rescatada": 0,
+        "label": 0,
+        "citing_paper_id": 0,
+        "cited_paper_id": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    }
+  },
+  "label_vs_etiqueta_rescatada_iguales": true,
+  "variable_objetivo": {
+    "train": {
+      "conteo": {
+        "Background": 1432,
+        "Gap": 1371,
+        "Basis": 1412,
+        "Comparison": 1392,
+        "Application": 1425,
+        "Modification_Improvement": 1377,
+        "Evidence": 1393,
+        "Identification_of_the_Originator": 1387,
+        "Further_Reading": 1411
+      },
+      "proporcion": {
+        "Background": 0.1137,
+        "Gap": 0.1088,
+        "Basis": 0.1121,
+        "Comparison": 0.1105,
+        "Application": 0.1131,
+        "Modification_Improvement": 0.1093,
+        "Evidence": 0.1106,
+        "Identification_of_the_Originator": 0.1101,
+        "Further_Reading": 0.112
+      },
+      "min_clase": 1371,
+      "max_clase": 1432,
+      "ratio_desbalance": 1.044,
+      "entropia_normalizada": 1.0
+    },
+    "val": {
+      "conteo": {
+        "Background": 271,
+        "Gap": 315,
+        "Basis": 307,
+        "Comparison": 303,
+        "Application": 277,
+        "Modification_Improvement": 300,
+        "Evidence": 302,
+        "Identification_of_the_Originator": 312,
+        "Further_Reading": 313
+      },
+      "proporcion": {
+        "Background": 0.1004,
+        "Gap": 0.1167,
+        "Basis": 0.1137,
+        "Comparison": 0.1122,
+        "Application": 0.1026,
+        "Modification_Improvement": 0.1111,
+        "Evidence": 0.1119,
+        "Identification_of_the_Originator": 0.1156,
+        "Further_Reading": 0.1159
+      },
+      "min_clase": 271,
+      "max_clase": 315,
+      "ratio_desbalance": 1.162,
+      "entropia_normalizada": 0.9994
+    },
+    "test": {
+      "conteo": {
+        "Background": 297,
+        "Gap": 314,
+        "Basis": 281,
+        "Comparison": 305,
+        "Application": 298,
+        "Modification_Improvement": 323,
+        "Evidence": 305,
+        "Identification_of_the_Originator": 301,
+        "Further_Reading": 276
+      },
+      "proporcion": {
+        "Background": 0.11,
+        "Gap": 0.1163,
+        "Basis": 0.1041,
+        "Comparison": 0.113,
+        "Application": 0.1104,
+        "Modification_Improvement": 0.1196,
+        "Evidence": 0.113,
+        "Identification_of_the_Originator": 0.1115,
+        "Further_Reading": 0.1022
+      },
+      "min_clase": 276,
+      "max_clase": 323,
+      "ratio_desbalance": 1.17,
+      "entropia_normalizada": 0.9995
+    },
+    "master_18k": {
+      "conteo": {
+        "Background": 2000,
+        "Gap": 2000,
+        "Basis": 2000,
+        "Comparison": 2000,
+        "Application": 2000,
+        "Modification_Improvement": 2000,
+        "Evidence": 2000,
+        "Identification_of_the_Originator": 2000,
+        "Further_Reading": 2000
+      },
+      "proporcion": {
+        "Background": 0.1111,
+        "Gap": 0.1111,
+        "Basis": 0.1111,
+        "Comparison": 0.1111,
+        "Application": 0.1111,
+        "Modification_Improvement": 0.1111,
+        "Evidence": 0.1111,
+        "Identification_of_the_Originator": 0.1111,
+        "Further_Reading": 0.1111
+      },
+      "min_clase": 2000,
+      "max_clase": 2000,
+      "ratio_desbalance": 1.0,
+      "entropia_normalizada": 1.0
+    }
+  },
+  "citation_context": {
+    "train": {
+      "palabras_media": 28.35,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 50.0,
+      "palabras_min": 6,
+      "palabras_max": 246,
+      "pct_con_marcador_de_cita": 50.6,
+      "pct_muy_corto_<=8_palabras": 2.7
+    },
+    "val": {
+      "palabras_media": 28.98,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 51.0,
+      "palabras_min": 6,
+      "palabras_max": 407,
+      "pct_con_marcador_de_cita": 52.6,
+      "pct_muy_corto_<=8_palabras": 3.1
+    },
+    "test": {
+      "palabras_media": 28.09,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 49.0,
+      "palabras_min": 6,
+      "palabras_max": 217,
+      "pct_con_marcador_de_cita": 52.2,
+      "pct_muy_corto_<=8_palabras": 2.9
+    }
+  },
+  "retrieval_top3": {
+    "citing_id_==_cited_id_frac": 1.0,
+    "top1_text_==_citation_context_frac": 0.9481,
+    "top2_textos_distintos": 1162,
+    "top3_textos_distintos": 1121,
+    "n_filas": 12600,
+    "top1_sim_unicos": [
+      0.85,
+      0.92
+    ],
+    "top2_sim_unicos": [
+      0.73,
+      0.74
+    ],
+    "top3_sim_unicos": [
+      0.61
+    ],
+    "top2_valor_mas_comun": "Foundational background and methodology related to Scientific Body.",
+    "top3_valor_mas_comun": "Experimental setup, results and empirical evidence for Scientific Body.",
+    "diagnostico": "citing_paper_id y cited_paper_id son el MISMO identificador; top1 es una copia del citation_context; top2/top3 son plantillas de texto con similitud constante. El componente de 'recomendacion local de citas' NO tiene datos reales en esta version -> se modela solo la clasificacion de funcion de cita y se documenta el retrieval como trabajo futuro (v3)."
+  },
+  "no_leakage": {
+    "papers_train": 12600,
+    "papers_val": 2700,
+    "papers_test": 2700,
+    "overlap_train_val": 0,
+    "overlap_train_test": 0,
+    "overlap_val_test": 0,
+    "contextos_duplicados_train_val": 0
+  },
+  "rhetorical_section": {
+    "train": {
+      "valores_unicos_crudos": 558,
+      "pct_nulos": 1.48,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 8824,
+        "Metodos": 853,
+        "Discusion": 765,
+        "Introduccion": 613,
+        "Otra": 534,
+        "Trabajo relacionado": 313,
+        "Resultados": 260,
+        "Experimentos": 216,
+        "Desconocida": 186,
+        "Conclusion": 36
+      }
+    },
+    "val": {
+      "valores_unicos_crudos": 173,
+      "pct_nulos": 1.37,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 1900,
+        "Metodos": 185,
+        "Discusion": 160,
+        "Introduccion": 143,
+        "Otra": 120,
+        "Resultados": 61,
+        "Trabajo relacionado": 56,
+        "Desconocida": 37,
+        "Experimentos": 27,
+        "Conclusion": 11
+      }
+    },
+    "test": {
+      "valores_unicos_crudos": 197,
+      "pct_nulos": 1.56,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 1910,
+        "Metodos": 163,
+        "Discusion": 154,
+        "Introduccion": 125,
+        "Otra": 108,
+        "Trabajo relacionado": 81,
+        "Resultados": 63,
+        "Experimentos": 49,
+        "Desconocida": 42,
+        "Conclusion": 5
+      }
+    }
+  },
+  "top_terminos_train": [
+    [
+      "based",
+      1173
+    ],
+    [
+      "learning",
+      1092
+    ],
+    [
+      "models",
+      1007
+    ],
+    [
+      "model",
+      963
+    ],
+    [
+      "data",
+      846
+    ],
+    [
+      "methods",
+      796
+    ],
+    [
+      "been",
+      763
+    ],
+    [
+      "training",
+      544
+    ],
+    [
+      "results",
+      506
+    ],
+    [
+      "other",
+      506
+    ],
+    [
+      "policy",
+      506
+    ],
+    [
+      "two",
+      497
+    ],
+    [
+      "studies",
+      489
+    ],
+    [
+      "between",
+      434
+    ],
+    [
+      "performance",
+      433
+    ],
+    [
+      "one",
+      427
+    ],
+    [
+      "while",
+      416
+    ],
+    [
+      "optimization",
+      415
+    ],
+    [
+      "time",
+      411
+    ],
+    [
+      "recent",
+      411
+    ],
+    [
+      "diffusion",
+      404
+    ],
+    [
+      "high",
+      382
+    ],
+    [
+      "large",
+      381
+    ],
+    [
+      "method",
+      380
+    ],
+    [
+      "through",
+      378
+    ]
+  ]
+}

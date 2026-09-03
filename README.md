@@ -1,5 +1,19 @@
 # Recomendación local de citas y clasificación de funciones de cita
 
+## Novedades de la Entrega 2 (rama `feature/entrega2-eda-modelos`)
+
+- **Datos:** se reemplaza el corpus de abstracts por el **dataset enriquecido de
+  intención de cita** con contextos de cita reales y 9 clases balanceadas
+  (`dataset/`, versionado con DVC vía `scripts/prepare_dataset.py`).
+- **EDA:** `scripts/eda_entrega2.py` → `docs/EDA_ENTREGA2.md` (explora la variable
+  objetivo y su balance, y documenta la inconsistencia del Top-3 de *chunks*).
+- **Modelos:** `scripts/train.py` entrena **v1** (TF-IDF + LogReg) y **v2**
+  (SciBERT fine-tune) con **MLflow**; `scripts/analyze_metrics.py` genera
+  `docs/MODELOS_ENTREGA2.md` (comparativa + sobreajuste).
+- **Infra:** `infra/` levanta una EC2 con MLflow (`launch_ec2.sh`, `stop_ec2.sh`).
+- **Handoff:** `PROMPT_AUTONOMO_ENTREGA2.md` (ejecuta partes 2 y 3) y
+  `MEJORAS_ENTREGA2.md` (mapa feedback Entrega 1 → cambios, con página/párrafo).
+
 ## Problema y contexto
 
 La identificación de la función retórica que cumple una cita dentro de un
