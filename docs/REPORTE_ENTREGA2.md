@@ -246,18 +246,35 @@ to"*, *"we use"*, *"following"*, *"see also"*); un encoder sin ajustar no lo cap
 mejor que los n-gramas. El camino para superar el baseline es **ajustar el
 encoder**, no usar sus embeddings tal cual.
 
-**v2b — fine-tuning de `distilbert-base-uncased`** (`--max_train 5000`, 3 épocas,
-`max_len 128`, `lr 3e-5`, **validación cada 78 pasos** + early-stopping;
-registrado en MLflow sobre la EC2):
+**v2b — fine-tuning de `distilbert-base-uncased`** (submuestreo estratificado a
+5 000, `max_len 128`, `lr 3e-5`, `batch 16`, **validación cada 78 pasos** +
+early-stopping; ~55 min en la `t3.large`, registrado en MLflow):
 
 | Modelo | F1-macro train | F1-macro val | F1-macro test | Brecha train→val | Sobreajuste |
 |---|--:|--:|--:|--:|---|
-| v2b — DistilBERT fine-tune | ⟨pendiente EC2⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ |
+| v1 — TF-IDF + LogReg | 0.824 | 0.496 | 0.531 | +0.328 | severo |
+| **v2b — DistilBERT fine-tune** | 0.722 | **0.573** | **0.577** | **+0.149** | **moderado** |
 
-*(v2b se completa con el run en EC2; `scripts/analyze_metrics.py` llena la tabla.
-Curva de aprendizaje paso a paso: `v2_learning_curve.png` en MLflow.)*
+**v2b supera al baseline en +0.077 de F1-macro val** y reduce el sobreajuste a la
+mitad (0.33 → 0.15). La brecha val→test es **−0.003** → generaliza sin fuga.
 
-*Figura 6 — `docs/modelos_entrega2/v2_matriz_confusion_val.png` (v2a).*
+*Curva de aprendizaje paso a paso* (`docs/modelos_entrega2/v2b_learning_curve.png`),
+F1-macro val: 0.23 (paso 78) → 0.52 (234) → **0.573 (468)** → 0.56 (546) → 0.56 (624).
+Mejora sostenida hasta el paso 468 (~1.5 épocas), luego **empieza a bajar**: la
+validación frecuente detecta el inicio del sobreajuste y el early-stopping restaura
+el mejor checkpoint, ahorrando ~1 época de cómputo.
+
+*Figura 6 — `docs/modelos_entrega2/v2b_matriz_confusion_val.png` (v2b).* Mejores
+clases: `Gap` 0.72, `Background` 0.70; peores `Basis` 0.40, `Identification of the
+Originator` 0.47.
+
+**¿Es DistilBERT la mejor arquitectura bajo estas restricciones?** Es la mejor de
+las probadas y una elección sólida, pero no óptima. Candidatos que podrían
+superarla dentro del mismo presupuesto (→ v3): **SciBERT/SPECTER2** (encoder de
+dominio científico, ~1.5–2 h CPU), **fine-tune con datos completos** (12 600 en vez
+de 5 000), **DeBERTa-v3-small**. El cuello de botella real es la **calidad de los
+datos** (49 % sin marcador, etiquetas de juez-LLM, balanceo artificial), no la
+arquitectura: los modelos publicados llegan a ~0.80 F1 sobre datasets *limpios*.
 
 ### 3.5 Curvas de aprendizaje y validación cruzada (v1)
 
@@ -317,13 +334,19 @@ seguir el progreso, no una sola foto al final).
   propósito general sin ajustar no aporta sobre los n-gramas. `Basis` sigue siendo
   la peor clase (F1 0.24), y las confusiones dominantes son
   `Basis`→`Modification/Improvement` y `Comparison`→`Evidence`.
-- **v2b (DistilBERT fine-tune) — hipótesis:** al ajustar los pesos del encoder se
-  espera **superar** el 0.50 del baseline (rango esperado 0.55–0.68) con brecha
-  train→val moderada. Es la primera iteración que puede pasar el techo léxico.
-  **No se optimiza a fondo a propósito** (submuestreo de 5 000, 1–2 épocas, sin
-  búsqueda de hiperparámetros): el margen restante es el objetivo de **v3**
-  (fine-tuning completo con GPU, SciBERT/SPECTER, *class-balanced loss*, más
-  contextos reales, limpiar el ~49 % de contextos sin marcador detectable).
+- **v2b (DistilBERT fine-tune) pasa el techo léxico:** F1-macro val **0.573**
+  (+0.077 vs v1), test 0.577, brecha train→val **0.15 (moderado)** y val≈test.
+  Ajustar los pesos del encoder **sí** aporta sobre los n-gramas — lo que no hacían
+  las embeddings congeladas. La curva paso a paso muestra mejora real hasta ~1.5
+  épocas y luego sobreajuste incipiente, cortado por early-stopping.
+  **No se optimiza a fondo a propósito** (submuestreo de 5 000, 2 épocas, sin
+  búsqueda de hiperparámetros).
+- **v2b es la mejor arquitectura de las probadas, no la óptima.** Bajo las mismas
+  restricciones (2 vCPU, sin GPU), para **v3**: SciBERT/SPECTER2 (dominio
+  científico), fine-tune con datos completos, DeBERTa-v3-small; y sobre todo
+  **mejores datos/etiquetas** — limpiar el ~49 % sin marcador, anotación humana,
+  *class-balanced loss*. El techo publicado para esta tarea con datos limpios es
+  ~0.80 F1; el ~0.57 actual está limitado por los datos, no por el modelo.
 - **Amenaza a la validez externa:** el dataset está balanceado artificialmente
   (2 000/clase); las métricas no reflejan la prevalencia real de cada función de
   cita. La evaluación de producción (v3) debe hacerse con distribución natural.
