@@ -1,0 +1,19 @@
+{
+  "v1": {
+    "enfoque": "TF-IDF + LogReg",
+    "train": 0.7983,
+    "val": 0.4957,
+    "test": 0.528,
+    "gap_train_val": 0.3026,
+    "veredicto": "severo"
+  },
+  "v2": {
+    "enfoque": "all-MiniLM-L6-v2 emb + LogReg",
+    "train": 0.507,
+    "val": 0.4416,
+    "test": 0.4739,
+    "gap_train_val": 0.0654,
+    "veredicto": "bajo"
+  },
+  "delta_val_f1_macro": -0.0541
+}

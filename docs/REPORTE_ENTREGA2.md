@@ -164,7 +164,8 @@ El baseline (v1) es además reproducible sin servidor con
 | Versión | Enfoque | Configuración | Rol |
 |---|---|---|---|
 | **v1 — baseline** | TF-IDF (1–2 gramas) + Regresión Logística (`class_weight=balanced`) | `C=1.0`, `min_df=2`, `max_features=50k`, `sublinear_tf`; entrada = `citation_context + " [SEC] " + rhetorical_section_canon` | referencia interpretable, entrena en **~9 s** en CPU |
-| **v2 — iteración intermedia** | Fine-tuning de `SciBERT` (`allenai/scibert_scivocab_uncased`) | 3 épocas, `lr=2e-5`, `batch=16`, `max_len=256`, early-stopping | mejor F1 esperado; **no optimizada a fondo a propósito** — deja margen para v3 |
+| **v2a** | Embeddings congeladas de `all-MiniLM-L6-v2` + Regresión Logística | encoder sin ajustar, 384-dim | primer intento sin fine-tuning; CPU-friendly |
+| **v2b — iteración intermedia** | Fine-tuning de `distilbert-base-uncased` | `--max_train 5000`, 1–2 épocas, `lr=3e-5`, `max_len=128`, `batch=16` | mejor F1 esperado; **no optimizada a fondo a propósito** — deja margen para v3 |
 
 ### 3.2 v1 — resultados (medidos)
 
@@ -225,17 +226,36 @@ equilibrio razonable para el baseline; **el techo de este enfoque léxico es ≈
 
 ### 3.4 v2 — resultados
 
-| Modelo | F1-macro train | F1-macro val | F1-macro test | Acc val | Acc test |
-|---|--:|--:|--:|--:|--:|
-| v1 — TF-IDF + LogReg | 0.798 | **0.496** | 0.528 | 0.502 | 0.534 |
-| v2 — SciBERT fine-tune | ⟨pendiente EC2⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ |
+Restricción de cómputo: el entorno (AWS Academy Learner Lab) **no permite
+instancias GPU**; la EC2 de experimentos es una `t3.large` de **2 vCPU**. Por eso
+v2 se aborda primero con un enfoque sin fine-tuning y luego con fine-tuning corto.
 
-| Modelo | Brecha train→val (F1) | Brecha val→test (F1) | Veredicto |
-|---|--:|--:|---|
-| v1 | +0.302 | −0.032 | severo |
-| v2 | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ |
+**v2a — sentence-embeddings congelados + Regresión Logística**
+(`all-MiniLM-L6-v2`, 384-dim; codificación ~4 min):
 
-*(v2 se completa tras el entrenamiento en EC2 — `scripts/analyze_metrics.py`.)*
+| Modelo | F1-macro train | F1-macro val | F1-macro test | Brecha train→val | Sobreajuste |
+|---|--:|--:|--:|--:|---|
+| v1 — TF-IDF + LogReg | 0.798 | **0.496** | 0.528 | +0.302 | **severo** |
+| v2a — MiniLM emb + LogReg | 0.507 | 0.442 | 0.474 | **+0.065** | **bajo** |
+
+Hallazgo: las embeddings semánticas **congeladas** de un encoder de propósito
+general **no superan** al TF-IDF en esta tarea (−0.05 de F1-macro val), aunque
+**casi no sobreajustan**. Interpretación: el señal discriminante de la función de
+cita en este dataset es en buena parte **léxico** (frases-guía tipo *"in contrast
+to"*, *"we use"*, *"following"*, *"see also"*); un encoder sin ajustar no lo captura
+mejor que los n-gramas. El camino para superar el baseline es **ajustar el
+encoder**, no usar sus embeddings tal cual.
+
+**v2b — fine-tuning de `distilbert-base-uncased`** (`--max_train 5000`, 1–2 épocas,
+`max_len 128`; ~1.5–3 h en 2 vCPU, registrado en MLflow sobre la EC2):
+
+| Modelo | F1-macro train | F1-macro val | F1-macro test | Brecha train→val | Sobreajuste |
+|---|--:|--:|--:|--:|---|
+| v2b — DistilBERT fine-tune | ⟨pendiente EC2⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ |
+
+*(v2b se completa con el run en EC2; `scripts/analyze_metrics.py` llena la tabla.)*
+
+*Figura 6 — `docs/modelos_entrega2/v2_matriz_confusion_val.png` (v2a).*
 
 ---
 
@@ -253,14 +273,20 @@ equilibrio razonable para el baseline; **el techo de este enfoque léxico es ≈
   (`Basis` F1 0.34, `Identification of the Originator` F1 0.39, `Comparison` recall
   0.37) se confunden con clases más frecuentes léxicamente como `Background` y
   `Application`. `Background` recibe predicciones de más (recall 0.78 / precisión
-  0.50). Esto es coherente con la naturaleza de la tarea: la función de cita
-  depende del *rol argumentativo*, no de palabras clave, y por eso se espera que un
-  encoder contextual (v2) mejore justo en esas clases.
-- **v2 (SciBERT) — hipótesis a verificar:** F1-macro val ≈ 0.60–0.72 y brecha
-  train→val moderada. **No se optimiza a fondo a propósito**: el margen restante es
-  el objetivo explícito de **v3** (early-stopping más agresivo, *weight decay*,
-  *class-balanced loss*, más contextos de cita reales, limpiar el ~49 % de
-  contextos sin marcador detectable).
+  0.50).
+- **v2a (embeddings congeladas) no supera al baseline** (F1-macro val 0.44 vs 0.50)
+  pero **casi no sobreajusta** (brecha 0.07 vs 0.30). Confirma que en este dataset
+  la señal de la función de cita es marcadamente **léxica**: un encoder de
+  propósito general sin ajustar no aporta sobre los n-gramas. `Basis` sigue siendo
+  la peor clase (F1 0.24), y las confusiones dominantes son
+  `Basis`→`Modification/Improvement` y `Comparison`→`Evidence`.
+- **v2b (DistilBERT fine-tune) — hipótesis:** al ajustar los pesos del encoder se
+  espera **superar** el 0.50 del baseline (rango esperado 0.55–0.68) con brecha
+  train→val moderada. Es la primera iteración que puede pasar el techo léxico.
+  **No se optimiza a fondo a propósito** (submuestreo de 5 000, 1–2 épocas, sin
+  búsqueda de hiperparámetros): el margen restante es el objetivo de **v3**
+  (fine-tuning completo con GPU, SciBERT/SPECTER, *class-balanced loss*, más
+  contextos reales, limpiar el ~49 % de contextos sin marcador detectable).
 - **Amenaza a la validez externa:** el dataset está balanceado artificialmente
   (2 000/clase); las métricas no reflejan la prevalencia real de cada función de
   cita. La evaluación de producción (v3) debe hacerse con distribución natural.

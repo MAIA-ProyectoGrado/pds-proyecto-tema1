@@ -172,6 +172,62 @@ def train_v1(data, args, mlflow):
 
 # ----------------------------------------------------------------------------
 def train_v2(data, args, mlflow):
+    """Dispatcher. --v2_method embed_lr (por defecto, CPU-friendly) | finetune."""
+    if args.v2_method == "embed_lr":
+        return train_v2_embed_lr(data, args, mlflow)
+    return train_v2_finetune(data, args, mlflow)
+
+
+def _texts(df):
+    return (df["citation_context"] + " [SEC] " + df["rhetorical_section_canon"]).tolist()
+
+
+def train_v2_embed_lr(data, args, mlflow):
+    """v2 = embeddings de un sentence-encoder (congelado) + Regresion Logistica.
+
+    Representacion semantica (vs. la lexica de v1) sin el costo de un fine-tuning
+    completo -> adecuado para la instancia de 2 vCPU del Learner Lab.
+    """
+    import numpy as np  # noqa: F811
+    from sentence_transformers import SentenceTransformer
+    from sklearn.linear_model import LogisticRegression
+
+    enc = SentenceTransformer(args.st_model, device="cpu")
+    with mlflow.start_run(run_name=f"v2_embed_lr_{args.st_model.split('/')[-1]}") as run:
+        mlflow.set_tags({"stage": "v2", "family": "sentence-embeddings + linear",
+                         "encoder": args.st_model, "encoder_frozen": "true",
+                         "task": "citation-function-classification",
+                         "nota": "iteracion intermedia, no optimizada; fine-tuning -> v3"})
+        mlflow.log_params(dict(v2_method="embed_lr", st_model=args.st_model,
+                               clf="LogisticRegression(C=1.0, class_weight=balanced)",
+                               max_train=args.max_train or len(data["train"])))
+        t = time.time()
+        emb = {s: enc.encode(_texts(data[s]), batch_size=64, show_progress_bar=False,
+                             normalize_embeddings=True) for s in ["train", "val", "test"]}
+        clf = LogisticRegression(max_iter=3000, C=1.0, class_weight="balanced")
+        clf.fit(emb["train"], data["train"]["label"])
+        mlflow.log_metric("fit_seconds", time.time() - t)
+
+        m = {}
+        for s in ["train", "val", "test"]:
+            pred = clf.predict(emb[s])
+            m.update(metric_block(data[s]["label"], pred, s))
+            if s in ("val", "test"):
+                log_confusion(mlflow, data[s]["label"], pred, f"cm_v2_{s}")
+                per_class_f1(mlflow, data[s]["label"], pred, f"v2_{s}")
+        mlflow.log_metrics(m)
+        of = overfitting_summary(mlflow, m)
+        mlflow.log_dict(of, "overfitting_v2.json")
+
+        import mlflow.sklearn
+        _log_model_safe(lambda **kw: mlflow.sklearn.log_model(
+            clf, "model", pip_requirements=["scikit-learn", "sentence-transformers"], **kw))
+        print("v2", json.dumps({k: round(float(v), 4) for k, v in m.items()}, indent=2))
+        print("v2 overfitting:", of)
+        return run.info.run_id, m, of
+
+
+def train_v2_finetune(data, args, mlflow):
     import torch
     from datasets import Dataset
     from sklearn.metrics import accuracy_score, f1_score
@@ -270,8 +326,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", choices=["v1", "v2", "all"], default="all")
     ap.add_argument("--data_dir", default="data/raw")
-    ap.add_argument("--model", default="allenai/scibert_scivocab_uncased")
-    ap.add_argument("--epochs", type=float, default=3.0)
+    ap.add_argument("--v2_method", choices=["embed_lr", "finetune"], default="embed_lr")
+    ap.add_argument("--st_model", default="sentence-transformers/all-MiniLM-L6-v2",
+                    help="sentence-encoder para --v2_method embed_lr")
+    ap.add_argument("--model", default="distilbert-base-uncased",
+                    help="modelo base para --v2_method finetune")
+    ap.add_argument("--epochs", type=float, default=1.0)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--max_len", type=int, default=256)
