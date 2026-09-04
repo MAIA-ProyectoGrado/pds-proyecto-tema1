@@ -187,4 +187,5 @@ añade el dominio como variable a monitorear en v3.
 Modelos entrenados (ver `docs/MODELOS_ENTREGA2.md`):
 
 - **v1 baseline** — TF-IDF (1–2 gramas) + Regresión Logística.
-- **v2 optimizado (iteración intermedia)** — fine-tuning de SciBERT; deja margen deliberado para v3.
+- **v2 (iteración intermedia)** — embeddings de `all-MiniLM-L6-v2` + LogReg (v2a) y
+  fine-tuning de `distilbert-base-uncased` en CPU (v2b); deja margen deliberado para v3.

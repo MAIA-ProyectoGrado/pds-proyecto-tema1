@@ -343,13 +343,17 @@ def main():
     import mlflow
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "file:./mlruns"))
     mlflow.set_experiment(EXPERIMENT)
-    data = load(Path(args.data_dir), max_train=args.max_train)
+    # --max_train solo aplica al fine-tuning de v2 (CPU); v1 y v2a usan train completo
+    data_full = load(Path(args.data_dir))
+    data_v2ft = (load(Path(args.data_dir), max_train=args.max_train)
+                 if args.max_train else data_full)
 
     summary = {}
     if args.stage in ("v1", "all"):
-        rid, m, of = train_v1(data, args, mlflow)
+        rid, m, of = train_v1(data_full, args, mlflow)
         summary["v1"] = {"run_id": rid, "metrics": m, "overfitting": of}
     if args.stage in ("v2", "all"):
+        data = data_v2ft if args.v2_method == "finetune" else data_full
         rid, m, of = train_v2(data, args, mlflow)
         summary["v2"] = {"run_id": rid, "metrics": {k: (None if isinstance(v, float) and np.isnan(v) else v)
                                                     for k, v in m.items()}, "overfitting": of}
