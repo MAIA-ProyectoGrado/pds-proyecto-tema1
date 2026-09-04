@@ -259,6 +259,7 @@ def train_v2_finetune(data, args, mlflow):
         mlflow.set_tags({"stage": "v2", "family": "transformer", "base_model": args.model,
                          "task": "citation-function-classification", "device": device,
                          "nota": "iteracion intermedia, no optimizada; v3 pendiente"})
+        by_steps = args.eval_steps and args.eval_steps > 0
         targs = TrainingArguments(
             output_dir=str(TMP / "v2_out"),
             num_train_epochs=args.epochs,
@@ -267,10 +268,13 @@ def train_v2_finetune(data, args, mlflow):
             learning_rate=args.lr,
             weight_decay=0.01,
             warmup_ratio=0.1,
-            eval_strategy="epoch",
-            save_strategy="epoch",
+            eval_strategy="steps" if by_steps else "epoch",
+            eval_steps=(args.eval_steps if by_steps else None),
+            save_strategy="steps" if by_steps else "epoch",
+            save_steps=(args.eval_steps if by_steps else None),
+            save_total_limit=2,
             logging_strategy="steps",
-            logging_steps=50,
+            logging_steps=(args.eval_steps if by_steps else 50),
             load_best_model_at_end=True,
             metric_for_best_model="f1_macro",
             greater_is_better=True,
@@ -280,7 +284,8 @@ def train_v2_finetune(data, args, mlflow):
         )
         mlflow.log_params(dict(base_model=args.model, epochs=args.epochs, batch=args.batch,
                                lr=args.lr, max_len=args.max_len, weight_decay=0.01,
-                               warmup_ratio=0.1, seed=args.seed))
+                               warmup_ratio=0.1, seed=args.seed,
+                               eval_steps=args.eval_steps, max_train=args.max_train))
         trainer = Trainer(
             model=model, args=targs,
             train_dataset=ds["train"], eval_dataset=ds["val"],
@@ -292,10 +297,33 @@ def train_v2_finetune(data, args, mlflow):
         train_out = trainer.train()
         mlflow.log_metric("fit_seconds", time.time() - t)
 
-        # curva de entrenamiento (loss train vs eval)
+        # curva de aprendizaje: loss de entrenamiento y F1-macro de validacion vs paso
         hist = pd.DataFrame(trainer.state.log_history)
         hist.to_csv(TMP / "v2_log_history.csv", index=False)
         mlflow.log_artifact(str(TMP / "v2_log_history.csv"), "reports")
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt
+            tl = hist.dropna(subset=["loss"])[["step", "loss"]]
+            el = hist.dropna(subset=["eval_f1_macro"])[["step", "eval_f1_macro", "eval_loss"]]
+            for _, r in el.iterrows():
+                mlflow.log_metric("val_f1_macro_curve", float(r["eval_f1_macro"]), step=int(r["step"]))
+                mlflow.log_metric("val_loss_curve", float(r["eval_loss"]), step=int(r["step"]))
+            fig, ax1 = plt.subplots(figsize=(7, 4))
+            ax1.plot(tl["step"], tl["loss"], color="#c44", label="loss train")
+            ax1.plot(el["step"], el["eval_loss"], color="#e99", ls="--", label="loss val")
+            ax1.set_xlabel("paso"); ax1.set_ylabel("loss")
+            ax2 = ax1.twinx()
+            ax2.plot(el["step"], el["eval_f1_macro"], color="#37a", marker="s", label="F1-macro val")
+            ax2.set_ylabel("F1-macro val"); ax2.set_ylim(0, 1)
+            ax1.legend(loc="upper left"); ax2.legend(loc="lower right")
+            ax1.set_title(f"v2b ({args.model.split('/')[-1]}) — curva de aprendizaje")
+            fig.tight_layout()
+            fig.savefig(TMP / "v2_learning_curve.png", dpi=120); plt.close(fig)
+            mlflow.log_artifact(str(TMP / "v2_learning_curve.png"), "figures")
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] no se pudo graficar la curva de aprendizaje: {e}")
 
         m = {}
         for s in ["train", "val", "test"]:
@@ -337,6 +365,9 @@ def main():
     ap.add_argument("--max_len", type=int, default=256)
     ap.add_argument("--max_train", type=int, default=None,
                     help="submuestrea train a N filas (estratificado). Para v2 en CPU 2 vCPU: 4000-6000.")
+    ap.add_argument("--eval_steps", type=int, default=None,
+                    help="v2 finetune: evalua en validacion cada N pasos (curva de aprendizaje). "
+                         "Si se omite, evalua al final de cada epoca.")
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 

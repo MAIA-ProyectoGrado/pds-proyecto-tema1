@@ -1,0 +1,51 @@
+{
+  "learning_curve": [
+    {
+      "n_train": 500,
+      "f1_train": 0.9424,
+      "f1_val": 0.3224
+    },
+    {
+      "n_train": 1000,
+      "f1_train": 0.9026,
+      "f1_val": 0.3715
+    },
+    {
+      "n_train": 2000,
+      "f1_train": 0.8731,
+      "f1_val": 0.4041
+    },
+    {
+      "n_train": 4000,
+      "f1_train": 0.8469,
+      "f1_val": 0.4409
+    },
+    {
+      "n_train": 8000,
+      "f1_train": 0.808,
+      "f1_val": 0.4792
+    },
+    {
+      "n_train": 12600,
+      "f1_train": 0.7983,
+      "f1_val": 0.4957
+    }
+  ],
+  "groupkfold_por_citing_paper_id": {
+    "n_splits": 5,
+    "f1_macro_por_fold": [
+      0.4967,
+      0.5222,
+      0.5107,
+      0.4979,
+      0.5249
+    ],
+    "media": 0.5105,
+    "desv_std": 0.0118,
+    "ic95_aprox": [
+      0.5002,
+      0.5208
+    ]
+  },
+  "conclusion": "La curva muestra si añadir datos ayuda; la brecha train-val que no cierra indica sobreajuste estructural del enfoque lexico. El CV por grupos da la variabilidad real de la metrica de validacion."
+}

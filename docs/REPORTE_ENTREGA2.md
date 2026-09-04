@@ -246,16 +246,53 @@ to"*, *"we use"*, *"following"*, *"see also"*); un encoder sin ajustar no lo cap
 mejor que los n-gramas. El camino para superar el baseline es **ajustar el
 encoder**, no usar sus embeddings tal cual.
 
-**v2b — fine-tuning de `distilbert-base-uncased`** (`--max_train 5000`, 1–2 épocas,
-`max_len 128`; ~1.5–3 h en 2 vCPU, registrado en MLflow sobre la EC2):
+**v2b — fine-tuning de `distilbert-base-uncased`** (`--max_train 5000`, 3 épocas,
+`max_len 128`, `lr 3e-5`, **validación cada 78 pasos** + early-stopping;
+registrado en MLflow sobre la EC2):
 
 | Modelo | F1-macro train | F1-macro val | F1-macro test | Brecha train→val | Sobreajuste |
 |---|--:|--:|--:|--:|---|
 | v2b — DistilBERT fine-tune | ⟨pendiente EC2⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ | ⟨…⟩ |
 
-*(v2b se completa con el run en EC2; `scripts/analyze_metrics.py` llena la tabla.)*
+*(v2b se completa con el run en EC2; `scripts/analyze_metrics.py` llena la tabla.
+Curva de aprendizaje paso a paso: `v2_learning_curve.png` en MLflow.)*
 
 *Figura 6 — `docs/modelos_entrega2/v2_matriz_confusion_val.png` (v2a).*
+
+### 3.5 Curvas de aprendizaje y validación cruzada (v1)
+
+Para responder *¿mejora la validación con más datos?* y *¿qué tan estable es la
+métrica?*, sobre el baseline v1 (barato de reentrenar):
+
+**Curva de aprendizaje por tamaño de entrenamiento** (`scripts/learning_curve_v1.py`):
+
+| n train | F1-macro train | F1-macro val | Brecha |
+|--:|--:|--:|--:|
+| 500 | 0.942 | 0.322 | 0.620 |
+| 1 000 | 0.903 | 0.371 | 0.531 |
+| 2 000 | 0.873 | 0.404 | 0.469 |
+| 4 000 | 0.847 | 0.441 | 0.406 |
+| 8 000 | 0.808 | 0.479 | 0.329 |
+| 12 600 | 0.798 | 0.496 | 0.303 |
+
+*Figura 7 — `docs/modelos_entrega2/v1_learning_curve.png`.* El F1 de validación
+**sube de forma sostenida** (+0.17 de 500 a 12 600) y la brecha **se cierra**
+(0.62 → 0.30) porque el F1 de entrenamiento baja al añadir datos. La pendiente en
+12 600 sigue siendo positiva → **más contextos de cita reales seguirían mejorando
+v1**; el sobreajuste actual es en parte *falta de datos* y en parte límite léxico.
+
+**Validación cruzada 5-fold `GroupKFold` por `citing_paper_id`** (respeta el
+aislamiento por documento):
+
+| Fold | 0 | 1 | 2 | 3 | 4 | Media ± σ |
+|---|--:|--:|--:|--:|--:|--:|
+| F1-macro | 0.497 | 0.522 | 0.511 | 0.498 | 0.525 | **0.510 ± 0.012** |
+
+La métrica es **estable** (σ = 0.012; IC95 ≈ [0.50, 0.52]); el 0.496 del conjunto
+de validación fijo está dentro de ese rango. *No* se hace k-fold sobre los
+transformers: cada fold costaría ~80 min en las 2 vCPU. Para v2b se usa en su
+lugar la **validación cada 78 pasos** durante el entrenamiento (misma idea:
+seguir el progreso, no una sola foto al final).
 
 ---
 
