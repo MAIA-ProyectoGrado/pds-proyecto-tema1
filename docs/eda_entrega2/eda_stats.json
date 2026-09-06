@@ -1,14 +1,17 @@
 {
   "estructura": {
     "train": {
-      "filas": 12600,
+      "filas": 14461,
       "columnas": [
         "citation_context",
         "rhetorical_section",
         "etiqueta_rescatada",
-        "label",
-        "citing_paper_id",
         "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
         "pair_id",
         "top1_cited_chunk",
         "top2_cited_chunk",
@@ -16,11 +19,14 @@
       ],
       "nulos_por_columna": {
         "citation_context": 0,
-        "rhetorical_section": 186,
+        "rhetorical_section": 195,
         "etiqueta_rescatada": 0,
-        "label": 0,
-        "citing_paper_id": 0,
         "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 14334,
+        "predicted_label": 14334,
+        "scores_json": 14334,
+        "label": 0,
         "pair_id": 0,
         "top1_cited_chunk": 0,
         "top2_cited_chunk": 0,
@@ -30,14 +36,17 @@
       "duplicados_citation_context": 0
     },
     "val": {
-      "filas": 2700,
+      "filas": 3098,
       "columnas": [
         "citation_context",
         "rhetorical_section",
         "etiqueta_rescatada",
-        "label",
-        "citing_paper_id",
         "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
         "pair_id",
         "top1_cited_chunk",
         "top2_cited_chunk",
@@ -45,11 +54,14 @@
       ],
       "nulos_por_columna": {
         "citation_context": 0,
-        "rhetorical_section": 37,
+        "rhetorical_section": 56,
         "etiqueta_rescatada": 0,
-        "label": 0,
-        "citing_paper_id": 0,
         "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 3069,
+        "predicted_label": 3069,
+        "scores_json": 3069,
+        "label": 0,
         "pair_id": 0,
         "top1_cited_chunk": 0,
         "top2_cited_chunk": 0,
@@ -59,14 +71,17 @@
       "duplicados_citation_context": 0
     },
     "test": {
-      "filas": 2700,
+      "filas": 3096,
       "columnas": [
         "citation_context",
         "rhetorical_section",
         "etiqueta_rescatada",
-        "label",
-        "citing_paper_id",
         "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
         "pair_id",
         "top1_cited_chunk",
         "top2_cited_chunk",
@@ -74,11 +89,14 @@
       ],
       "nulos_por_columna": {
         "citation_context": 0,
-        "rhetorical_section": 42,
+        "rhetorical_section": 47,
         "etiqueta_rescatada": 0,
-        "label": 0,
-        "citing_paper_id": 0,
         "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 3079,
+        "predicted_label": 3079,
+        "scores_json": 3079,
+        "label": 0,
         "pair_id": 0,
         "top1_cited_chunk": 0,
         "top2_cited_chunk": 0,
@@ -87,15 +105,18 @@
       "duplicados_fila": 0,
       "duplicados_citation_context": 0
     },
-    "master_18k": {
-      "filas": 18000,
+    "master": {
+      "filas": 20655,
       "columnas": [
         "citation_context",
         "rhetorical_section",
         "etiqueta_rescatada",
-        "label",
-        "citing_paper_id",
         "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
         "pair_id",
         "top1_cited_chunk",
         "top2_cited_chunk",
@@ -103,11 +124,14 @@
       ],
       "nulos_por_columna": {
         "citation_context": 0,
-        "rhetorical_section": 265,
+        "rhetorical_section": 298,
         "etiqueta_rescatada": 0,
-        "label": 0,
-        "citing_paper_id": 0,
         "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 20482,
+        "predicted_label": 20482,
+        "scores_json": 20482,
+        "label": 0,
         "pair_id": 0,
         "top1_cited_chunk": 0,
         "top2_cited_chunk": 0,
@@ -121,99 +145,99 @@
   "variable_objetivo": {
     "train": {
       "conteo": {
-        "Background": 1432,
-        "Gap": 1371,
-        "Basis": 1412,
-        "Comparison": 1392,
-        "Application": 1425,
-        "Modification_Improvement": 1377,
-        "Evidence": 1393,
-        "Identification_of_the_Originator": 1387,
-        "Further_Reading": 1411
+        "Background": 1597,
+        "Gap": 1637,
+        "Basis": 1595,
+        "Comparison": 1566,
+        "Application": 1613,
+        "Modification_Improvement": 1607,
+        "Evidence": 1632,
+        "Identification_of_the_Originator": 1597,
+        "Further_Reading": 1617
       },
       "proporcion": {
-        "Background": 0.1137,
-        "Gap": 0.1088,
-        "Basis": 0.1121,
-        "Comparison": 0.1105,
-        "Application": 0.1131,
-        "Modification_Improvement": 0.1093,
-        "Evidence": 0.1106,
-        "Identification_of_the_Originator": 0.1101,
-        "Further_Reading": 0.112
+        "Background": 0.1104,
+        "Gap": 0.1132,
+        "Basis": 0.1103,
+        "Comparison": 0.1083,
+        "Application": 0.1115,
+        "Modification_Improvement": 0.1111,
+        "Evidence": 0.1129,
+        "Identification_of_the_Originator": 0.1104,
+        "Further_Reading": 0.1118
       },
-      "min_clase": 1371,
-      "max_clase": 1432,
-      "ratio_desbalance": 1.044,
+      "min_clase": 1566,
+      "max_clase": 1637,
+      "ratio_desbalance": 1.045,
       "entropia_normalizada": 1.0
     },
     "val": {
       "conteo": {
-        "Background": 271,
-        "Gap": 315,
-        "Basis": 307,
-        "Comparison": 303,
-        "Application": 277,
-        "Modification_Improvement": 300,
-        "Evidence": 302,
-        "Identification_of_the_Originator": 312,
-        "Further_Reading": 313
+        "Background": 341,
+        "Gap": 344,
+        "Basis": 349,
+        "Comparison": 361,
+        "Application": 357,
+        "Modification_Improvement": 357,
+        "Evidence": 324,
+        "Identification_of_the_Originator": 332,
+        "Further_Reading": 333
       },
       "proporcion": {
-        "Background": 0.1004,
-        "Gap": 0.1167,
-        "Basis": 0.1137,
-        "Comparison": 0.1122,
-        "Application": 0.1026,
-        "Modification_Improvement": 0.1111,
-        "Evidence": 0.1119,
-        "Identification_of_the_Originator": 0.1156,
-        "Further_Reading": 0.1159
+        "Background": 0.1101,
+        "Gap": 0.111,
+        "Basis": 0.1127,
+        "Comparison": 0.1165,
+        "Application": 0.1152,
+        "Modification_Improvement": 0.1152,
+        "Evidence": 0.1046,
+        "Identification_of_the_Originator": 0.1072,
+        "Further_Reading": 0.1075
       },
-      "min_clase": 271,
-      "max_clase": 315,
-      "ratio_desbalance": 1.162,
-      "entropia_normalizada": 0.9994
+      "min_clase": 324,
+      "max_clase": 361,
+      "ratio_desbalance": 1.114,
+      "entropia_normalizada": 0.9997
     },
     "test": {
       "conteo": {
-        "Background": 297,
+        "Background": 357,
         "Gap": 314,
-        "Basis": 281,
-        "Comparison": 305,
-        "Application": 298,
-        "Modification_Improvement": 323,
-        "Evidence": 305,
-        "Identification_of_the_Originator": 301,
-        "Further_Reading": 276
+        "Basis": 351,
+        "Comparison": 368,
+        "Application": 325,
+        "Modification_Improvement": 331,
+        "Evidence": 339,
+        "Identification_of_the_Originator": 366,
+        "Further_Reading": 345
       },
       "proporcion": {
-        "Background": 0.11,
-        "Gap": 0.1163,
-        "Basis": 0.1041,
-        "Comparison": 0.113,
-        "Application": 0.1104,
-        "Modification_Improvement": 0.1196,
-        "Evidence": 0.113,
-        "Identification_of_the_Originator": 0.1115,
-        "Further_Reading": 0.1022
+        "Background": 0.1153,
+        "Gap": 0.1014,
+        "Basis": 0.1134,
+        "Comparison": 0.1189,
+        "Application": 0.105,
+        "Modification_Improvement": 0.1069,
+        "Evidence": 0.1095,
+        "Identification_of_the_Originator": 0.1182,
+        "Further_Reading": 0.1114
       },
-      "min_clase": 276,
-      "max_clase": 323,
-      "ratio_desbalance": 1.17,
-      "entropia_normalizada": 0.9995
+      "min_clase": 314,
+      "max_clase": 368,
+      "ratio_desbalance": 1.172,
+      "entropia_normalizada": 0.9994
     },
-    "master_18k": {
+    "master": {
       "conteo": {
-        "Background": 2000,
-        "Gap": 2000,
-        "Basis": 2000,
-        "Comparison": 2000,
-        "Application": 2000,
-        "Modification_Improvement": 2000,
-        "Evidence": 2000,
-        "Identification_of_the_Originator": 2000,
-        "Further_Reading": 2000
+        "Background": 2295,
+        "Gap": 2295,
+        "Basis": 2295,
+        "Comparison": 2295,
+        "Application": 2295,
+        "Modification_Improvement": 2295,
+        "Evidence": 2295,
+        "Identification_of_the_Originator": 2295,
+        "Further_Reading": 2295
       },
       "proporcion": {
         "Background": 0.1111,
@@ -226,224 +250,241 @@
         "Identification_of_the_Originator": 0.1111,
         "Further_Reading": 0.1111
       },
-      "min_clase": 2000,
-      "max_clase": 2000,
+      "min_clase": 2295,
+      "max_clase": 2295,
       "ratio_desbalance": 1.0,
       "entropia_normalizada": 1.0
     }
   },
   "citation_context": {
     "train": {
-      "palabras_media": 28.35,
+      "palabras_media": 28.28,
       "palabras_mediana": 26.0,
       "palabras_p05": 10.0,
       "palabras_p95": 50.0,
       "palabras_min": 6,
-      "palabras_max": 246,
-      "pct_con_marcador_de_cita": 50.6,
-      "pct_muy_corto_<=8_palabras": 2.7
+      "palabras_max": 407,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.9
     },
     "val": {
-      "palabras_media": 28.98,
+      "palabras_media": 29.0,
       "palabras_mediana": 26.0,
       "palabras_p05": 10.0,
       "palabras_p95": 51.0,
       "palabras_min": 6,
-      "palabras_max": 407,
-      "pct_con_marcador_de_cita": 52.6,
-      "pct_muy_corto_<=8_palabras": 3.1
+      "palabras_max": 375,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.6
     },
     "test": {
-      "palabras_media": 28.09,
+      "palabras_media": 28.31,
       "palabras_mediana": 26.0,
       "palabras_p05": 10.0,
-      "palabras_p95": 49.0,
+      "palabras_p95": 50.0,
       "palabras_min": 6,
-      "palabras_max": 217,
-      "pct_con_marcador_de_cita": 52.2,
-      "pct_muy_corto_<=8_palabras": 2.9
+      "palabras_max": 228,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.7
     }
   },
   "retrieval_top3": {
-    "citing_id_==_cited_id_frac": 1.0,
-    "top1_text_==_citation_context_frac": 0.9481,
-    "top2_textos_distintos": 1162,
-    "top3_textos_distintos": 1121,
-    "n_filas": 12600,
+    "citing_id_==_cited_id_frac": 0.9825,
+    "top1_text_==_citation_context_frac": 0.8034,
+    "top2_textos_distintos": 14233,
+    "top3_textos_distintos": 14392,
+    "n_filas": 14461,
     "top1_sim_unicos": [
-      0.85,
-      0.92
+      0.718,
+      0.732,
+      0.735,
+      0.738,
+      0.749
     ],
     "top2_sim_unicos": [
-      0.73,
-      0.74
+      0.495,
+      0.5,
+      0.528,
+      0.552,
+      0.569
     ],
     "top3_sim_unicos": [
-      0.61
+      0.451,
+      0.458,
+      0.459,
+      0.487,
+      0.491
     ],
-    "top2_valor_mas_comun": "Foundational background and methodology related to Scientific Body.",
-    "top3_valor_mas_comun": "Experimental setup, results and empirical evidence for Scientific Body.",
-    "diagnostico": "citing_paper_id y cited_paper_id son el MISMO identificador; top1 es una copia del citation_context; top2/top3 son plantillas de texto con similitud constante. El componente de 'recomendacion local de citas' NO tiene datos reales en esta version -> se modela solo la clasificacion de funcion de cita y se documenta el retrieval como trabajo futuro (v3)."
+    "top2_valor_mas_comun": "2021).",
+    "top3_valor_mas_comun": "2021).",
+    "diagnostico": "En el 98.3% de las filas citing_paper_id y cited_paper_id son el MISMO identificador (auto-referencia). top2/top3 ya varian por fila (chunking real, aunque con ruido y fragmentos truncados) y las similitudes no son constantes. Como el documento citado casi nunca es distinto del citante, la 'recuperacion local de citas' se sigue documentando como pendiente y el modelado se restringe a la clasificacion de funcion de cita."
   },
   "no_leakage": {
-    "papers_train": 12600,
-    "papers_val": 2700,
-    "papers_test": 2700,
-    "overlap_train_val": 0,
+    "papers_train": 14434,
+    "papers_val": 3093,
+    "papers_test": 3093,
+    "overlap_train_val": 1,
     "overlap_train_test": 0,
     "overlap_val_test": 0,
     "contextos_duplicados_train_val": 0
   },
   "rhetorical_section": {
     "train": {
-      "valores_unicos_crudos": 558,
-      "pct_nulos": 1.48,
+      "valores_unicos_crudos": 622,
+      "pct_nulos": 1.35,
       "distribucion_canonica": {
-        "Cuerpo (sin seccion fina)": 8824,
-        "Metodos": 853,
-        "Discusion": 765,
-        "Introduccion": 613,
-        "Otra": 534,
-        "Trabajo relacionado": 313,
-        "Resultados": 260,
-        "Experimentos": 216,
-        "Desconocida": 186,
-        "Conclusion": 36
+        "Cuerpo (sin seccion fina)": 10280,
+        "Metodos": 914,
+        "Discusion": 861,
+        "Introduccion": 683,
+        "Otra": 601,
+        "Trabajo relacionado": 349,
+        "Resultados": 305,
+        "Experimentos": 234,
+        "Desconocida": 195,
+        "Conclusion": 39
       }
     },
     "val": {
-      "valores_unicos_crudos": 173,
-      "pct_nulos": 1.37,
+      "valores_unicos_crudos": 204,
+      "pct_nulos": 1.81,
       "distribucion_canonica": {
-        "Cuerpo (sin seccion fina)": 1900,
-        "Metodos": 185,
-        "Discusion": 160,
-        "Introduccion": 143,
-        "Otra": 120,
-        "Resultados": 61,
-        "Trabajo relacionado": 56,
-        "Desconocida": 37,
-        "Experimentos": 27,
-        "Conclusion": 11
+        "Cuerpo (sin seccion fina)": 2189,
+        "Metodos": 215,
+        "Discusion": 165,
+        "Introduccion": 147,
+        "Otra": 132,
+        "Resultados": 71,
+        "Trabajo relacionado": 70,
+        "Desconocida": 56,
+        "Experimentos": 46,
+        "Conclusion": 7
       }
     },
     "test": {
-      "valores_unicos_crudos": 197,
-      "pct_nulos": 1.56,
+      "valores_unicos_crudos": 213,
+      "pct_nulos": 1.52,
       "distribucion_canonica": {
-        "Cuerpo (sin seccion fina)": 1910,
-        "Metodos": 163,
-        "Discusion": 154,
-        "Introduccion": 125,
-        "Otra": 108,
-        "Trabajo relacionado": 81,
-        "Resultados": 63,
-        "Experimentos": 49,
-        "Desconocida": 42,
-        "Conclusion": 5
+        "Cuerpo (sin seccion fina)": 2193,
+        "Metodos": 192,
+        "Discusion": 183,
+        "Introduccion": 151,
+        "Otra": 122,
+        "Trabajo relacionado": 91,
+        "Resultados": 68,
+        "Desconocida": 47,
+        "Experimentos": 45,
+        "Conclusion": 4
       }
     }
   },
   "top_terminos_train": [
     [
       "based",
-      1173
+      1389
     ],
     [
       "learning",
-      1092
+      1244
     ],
     [
       "models",
-      1007
+      1201
     ],
     [
       "model",
-      963
+      1077
     ],
     [
       "data",
-      846
+      1001
     ],
     [
       "methods",
-      796
+      929
     ],
     [
       "been",
-      763
+      879
     ],
     [
       "training",
-      544
-    ],
-    [
-      "results",
-      506
-    ],
-    [
-      "other",
-      506
+      645
     ],
     [
       "policy",
-      506
+      603
     ],
     [
-      "two",
-      497
+      "results",
+      580
+    ],
+    [
+      "other",
+      575
     ],
     [
       "studies",
-      489
+      561
     ],
     [
-      "between",
-      434
-    ],
-    [
-      "performance",
-      433
-    ],
-    [
-      "one",
-      427
+      "two",
+      549
     ],
     [
       "while",
-      416
+      526
     ],
     [
-      "optimization",
-      415
+      "performance",
+      517
     ],
     [
-      "time",
-      411
+      "one",
+      501
+    ],
+    [
+      "between",
+      486
     ],
     [
       "recent",
-      411
+      464
     ],
     [
       "diffusion",
-      404
+      461
     ],
     [
-      "high",
-      382
+      "optimization",
+      450
     ],
     [
-      "large",
-      381
+      "time",
+      443
     ],
     [
       "method",
-      380
+      439
     ],
     [
-      "through",
-      378
+      "large",
+      438
+    ],
+    [
+      "high",
+      436
+    ],
+    [
+      "image",
+      427
     ]
-  ]
+  ],
+  "calidad_etiquetado": {
+    "filas_con_predicted_label": 173,
+    "acuerdo_predicted_vs_final": 0.7168,
+    "pct_reasignado_por_rescate": 28.3,
+    "pct_sin_marcador_de_cita_train": 48.7,
+    "nota": "El etiquetado no tiene anotacion humana completa; el rescate probabilistico reasigna a clases minoritarias. Junto con el 48.7% de contextos sin marcador, acota el techo de desempeno alcanzable (ver Conclusiones)."
+  }
 }

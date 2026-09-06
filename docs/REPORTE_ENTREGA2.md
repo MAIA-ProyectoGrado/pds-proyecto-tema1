@@ -47,11 +47,11 @@ revisión de literatura?**
 
 | Área | Entrega 1 | Entrega 2 |
 |---|---|---|
-| Datos | 24 855 registros que resultaron ser **abstracts**, no contextos de cita (`base_label` constante = 0) | **Dataset enriquecido de intención de cita**: 18 000 registros, contextos de cita **reales**, 9 clases balanceadas |
-| Variable objetivo | No se exploró | **Explorada** (distribución, balance entre las 9 categorías, implicaciones) — §2.1 |
+| Datos | 24 855 registros que resultaron ser **abstracts**, no contextos de cita (`base_label` constante = 0) | **Dataset enriquecido de intención de cita** (v3): 20 655 registros, contextos de cita **reales**, 9 clases balanceadas; versionado con **DVC** |
+| Variable objetivo | No se exploró | **Explorada** (distribución, balance entre las 9 categorías, calidad del etiquetado) — §2.1, §2.6 |
 | Alcance | Argumentado en términos académicos generales | Definido por usuario, entrada/salida y no-alcance — §1.3 |
-| Maqueta | Asumía un panel Top-3 de *chunks* con datos que no se mostraron consistentes | Panel Top-3 marcado como **ilustrativo / pendiente de datos**; la maqueta operativa es el clasificador — §4 |
-| Modelos | — | v1 (baseline) y v2 (iteración intermedia), versionados con MLflow — §3 |
+| Maqueta | Asumía un panel Top-3 de *chunks* con datos que no se mostraron consistentes | Panel Top-3 marcado como **ilustrativo / pendiente de datos** (v3 ya trae *chunks* reales pero ruidosos y casi siempre del citante) — §4 |
+| Modelos | — | v1 (baseline) y v2 (fine-tuning) versionados con MLflow — §3 |
 
 ---
 
@@ -63,101 +63,113 @@ Función retórica de la cita, 9 categorías mutuamente excluyentes codificadas
 `label_id` 0–8: **Application, Background, Basis, Comparison, Evidence,
 Further Reading, Gap, Identification of the Originator, Modification/Improvement**.
 
-**Balance entre las nueve categorías (entrenamiento, n = 12 600):**
+**Balance entre las nueve categorías (entrenamiento, n = 14 461):**
 
 | Función de cita | n | % |
 |---|--:|--:|
-| Background | 1 432 | 11.4 % |
-| Application | 1 425 | 11.3 % |
-| Basis | 1 412 | 11.2 % |
-| Further Reading | 1 411 | 11.2 % |
-| Evidence | 1 393 | 11.1 % |
-| Comparison | 1 392 | 11.0 % |
-| Identification of the Originator | 1 387 | 11.0 % |
-| Modification / Improvement | 1 377 | 10.9 % |
-| Gap | 1 371 | 10.9 % |
+| Gap | 1 637 | 11.3 % |
+| Evidence | 1 632 | 11.3 % |
+| Further Reading | 1 617 | 11.2 % |
+| Application | 1 613 | 11.2 % |
+| Modification / Improvement | 1 607 | 11.1 % |
+| Background | 1 597 | 11.0 % |
+| Identification of the Originator | 1 597 | 11.0 % |
+| Basis | 1 595 | 11.0 % |
+| Comparison | 1 566 | 10.8 % |
 
-- **Ratio de desbalance** (clase mayor / menor) = **1.04** en train (1.16–1.17 en
-  val/test); **entropía normalizada = 1.00** → distribución prácticamente uniforme.
-- El maestro de 18 000 registros está balanceado **por construcción** (2 000/clase)
-  y se particiona en train 12 600 / val 2 700 / test 2 700, manteniendo ~11 % por
+- **Ratio de desbalance** (clase mayor / menor) = **1.045** en train (1.11 en val,
+  1.17 en test); **entropía normalizada = 1.00** → distribución prácticamente uniforme.
+- El maestro de 20 655 registros está balanceado **por construcción** (2 295/clase)
+  y se particiona en train 14 461 / val 3 098 / test 3 096, manteniendo ~11 % por
   clase en cada partición (sin clases ausentes).
 
 *Figura 1 — `docs/eda_entrega2/01_variable_objetivo.png` (distribución de `label` por partición).*
 
-**Implicación para el negocio.** El balance es **artificial**: no refleja la
-prevalencia real de cada función de cita en un corpus natural. Es adecuado para
-entrenar y comparar modelos con F1-macro en esta fase, pero la evaluación de
-producción (v3) deberá hacerse con distribución realista y, probablemente,
-reponderando la pérdida.
+**Implicación para el negocio.** El balance es **artificial**: se fuerza a ~2 295
+ejemplos por clase, en parte con un mecanismo de **rescate** que reasigna citas a
+clases minoritarias (§2.6). No refleja la prevalencia real de cada función de cita
+ni la calidad de la etiqueta; la evaluación de producción deberá hacerse con
+distribución realista y anotación humana.
 
 ### 2.2 `citation_context` — ahora son citas reales
 
-| Métrica (palabras) | Entrega 2 (train) | Entrega 1 (abstracts) |
+| Métrica (palabras) | Entrega 2 v3 (train) | Entrega 1 (abstracts) |
 |---|--:|--:|
 | Mediana | **26** | 163 |
-| Media | 28.4 | 165.2 |
+| Media | 28.3 | 165.2 |
 | p05 / p95 | 10 / 50 | — |
-| % con marcador de cita explícito (`[12]`, `(Autor, 2020)`) | **~51 %** | ~0 % |
+| % con marcador de cita explícito (`[12]`, `(Autor, 2020)`) | **51.3 %** | ~0 % |
 
 La longitud (mediana 26 palabras, 6× menor que en la Entrega 1) y la presencia de
 marcadores confirman que ahora el texto **sí** es un contexto de cita. La longitud
-varía por clase (`Background` la más corta, `Comparison` la más larga → hay señal
-de longitud). ~49 % de contextos no tienen marcador detectable por regex: es ruido
-de calidad de datos que se reporta y se limpiará en v3.
+varía por clase (`Background` la más corta, `Comparison` la más larga). El
+**48.7 %** de contextos no tiene marcador detectable por regex: ruido de calidad
+que se reporta y acota el techo de desempeño (§4).
 
 *Figuras 2–3 — `02_longitud_contexto.png`, `03_longitud_por_clase.png`.*
 
 ### 2.3 Consistencia de los datos y ajuste de alcance
 
-La exploración confirma que **no existe un artículo citado real** distinto del
-citante:
+| Comprobación (train) | v3 | Entrega 2 (v2) |
+|---|---|---|
+| `citing_paper_id` == `cited_paper_id` | **98.3 %** | 100 % |
+| `top1_cited_chunk` == `citation_context` | 80.3 % | 94.8 % |
+| `top2` / `top3` | **varían por fila** (14 233 / 14 392 textos distintos), *chunking* real pero ruidoso (fragmentos truncados) | plantillas de texto |
+| Similitud top1 / top2 / top3 | varía | constante |
 
-| Comprobación (train) | Resultado |
-|---|---|
-| `citing_paper_id` == `cited_paper_id` | 100 % |
-| `top1_cited_chunk` == `citation_context` | 94.8 % |
-| Similitud en top1 / top2 / top3 | valores **constantes** (0.92 / 0.74 / 0.61) |
-| top2 / top3 | plantillas de texto genéricas |
-
-Por eso, en la Entrega 2 el componente de **recomendación de fragmentos (Top-3
-chunks)** queda fuera de alcance y el panel correspondiente de la maqueta se marca
-como *ilustrativo / pendiente de datos*. `scripts/prepare_dataset.py` **no propaga**
-esas columnas al dataset estandarizado para evitar que un modelo aprenda del
-artefacto.
+v3 mejora respecto a v2 (los *chunks* ya no son plantillas), pero el documento
+«citado» sigue siendo el mismo que el citante en el 98.3 % de las filas. El
+componente de **recomendación de fragmentos (Top-3 chunks)** queda fuera de alcance
+y el panel de la maqueta se marca como *ilustrativo / pendiente de datos*.
+`scripts/prepare_dataset.py` **no propaga** esas columnas al dataset de entrenamiento.
 
 ### 2.4 Aislamiento entre particiones (No-Leakage)
 
 | Solape de `citing_paper_id` | train∩val | train∩test | val∩test |
 |---|--:|--:|--:|
-| conteo | **0** | **0** | **0** |
+| conteo | **1** (0.03 % de val) | **0** | **0** |
 
-La garantía de no-leakage por documento se cumple. El detalle completo del EDA está
-en `docs/EDA_ENTREGA2.md` y es reproducible con `python scripts/eda_entrega2.py`.
+La garantía de no-leakage por documento se mantiene en la práctica (1
+`citing_paper_id` compartido train/val, despreciable). Detalle completo en
+`docs/EDA_ENTREGA2.md`.
 
 ### 2.5 Estructura del dataset
 
 | Partición | Registros | Uso |
 |---|--:|---|
-| Entrenamiento (`train`) | 12 600 | ajuste de los modelos |
-| Validación (`val`) | 2 700 | selección de modelo / hiperparámetros |
-| Prueba (`test`, para anotación humana) | 2 700 | evaluación final + acuerdo interanotador |
-| Maestro balanceado | 18 000 | fuente de las 3 particiones (2 000/clase) |
+| Entrenamiento (`train`) | 14 461 | ajuste de los modelos |
+| Validación (`val`) | 3 098 | selección de modelo / hiperparámetros |
+| Prueba (`test`, para anotación humana) | 3 096 | evaluación final + acuerdo interanotador |
+| Maestro balanceado | 20 655 | fuente de las 3 particiones (2 295/clase) |
 
 Variables usadas por el modelo: `citation_context` (texto) y
-`rhetorical_section_canon` (10 secciones canónicas, normalizadas desde 558 valores
-crudos; 1.5 % nulos). El archivo maestro y las particiones se versionan con **DVC**
-sobre `s3://citation-dvcstore-tema1`.
+`rhetorical_section_canon` (10 secciones canónicas, normalizadas desde 622 valores
+crudos; 1.35 % nulos). Las particiones se versionan con **DVC** (`dataset.dvc`,
+`data/raw.dvc`) sobre `s3://scif-dvcstore-779319895642-use1` (remoto `s2`).
+
+### 2.6 Calidad del etiquetado
+
+El etiquetado es asistido por LLM (`gemini-…-flash-lite`) con **rescate
+probabilístico** hacia clases minoritarias, sin anotación humana completa. En las
+173 filas donde el `predicted_label` del juez está disponible, el rescate **cambió
+la etiqueta en el 28.3 %** (acuerdo juez↔final = 71.7 %). Junto con el 48.7 % de
+contextos sin marcador de cita, es el principal límite del desempeño alcanzable.
 
 ---
 
 ## 3. Modelos desarrollados y su evaluación
 
-Se entrenan dos iteraciones para la tarea de **clasificación de la función de
+Se entrenan tres iteraciones para la tarea de **clasificación de la función de
 cita** (9 clases). Los experimentos se registran en **MLflow** sobre una instancia
 **AWS EC2** (experimento `scif-citation-intent`); pantallazos en `docs/soportes/`.
 El baseline (v1) es además reproducible sin servidor con
 `python scripts/eval_baseline.py` (artefactos en `docs/modelos_entrega2/`).
+
+> **Versión de datos.** Los resultados de v1, v2a y v2b de esta sección se
+> obtuvieron sobre el *snapshot* del dataset de 18 000 registros. La versión
+> entregada y versionada con DVC es la **v3 (20 655 registros)**; el reentrenamiento
+> sobre v3 con un encoder de dominio científico está pendiente de infraestructura
+> con GPU (§3.6) y su procedimiento está listo en `infra/train_v3_gpu.sh`.
 
 ### 3.1 Iteraciones
 
@@ -285,16 +297,16 @@ métrica?*, sobre el baseline v1 (barato de reentrenar):
 
 | n train | F1-macro train | F1-macro val | Brecha |
 |--:|--:|--:|--:|
-| 500 | 0.942 | 0.322 | 0.620 |
-| 1 000 | 0.903 | 0.371 | 0.531 |
-| 2 000 | 0.873 | 0.404 | 0.469 |
-| 4 000 | 0.847 | 0.441 | 0.406 |
-| 8 000 | 0.808 | 0.479 | 0.329 |
-| 12 600 | 0.798 | 0.496 | 0.303 |
+| 500 | 0.983 | 0.331 | 0.65 |
+| 1 000 | 0.952 | 0.378 | 0.58 |
+| 2 000 | 0.917 | 0.416 | 0.50 |
+| 4 000 | 0.887 | 0.442 | 0.45 |
+| 8 000 | 0.838 | 0.477 | 0.36 |
+| 12 600 | 0.823 | 0.496 | 0.33 |
 
 *Figura 7 — `docs/modelos_entrega2/v1_learning_curve.png`.* El F1 de validación
 **sube de forma sostenida** (+0.17 de 500 a 12 600) y la brecha **se cierra**
-(0.62 → 0.30) porque el F1 de entrenamiento baja al añadir datos. La pendiente en
+(0.65 → 0.33) porque el F1 de entrenamiento baja al añadir datos. La pendiente en
 12 600 sigue siendo positiva → **más contextos de cita reales seguirían mejorando
 v1**; el sobreajuste actual es en parte *falta de datos* y en parte límite léxico.
 
@@ -303,13 +315,30 @@ aislamiento por documento):
 
 | Fold | 0 | 1 | 2 | 3 | 4 | Media ± σ |
 |---|--:|--:|--:|--:|--:|--:|
-| F1-macro | 0.497 | 0.522 | 0.511 | 0.498 | 0.525 | **0.510 ± 0.012** |
+| F1-macro | 0.492 | 0.526 | 0.510 | 0.498 | 0.518 | **0.509 ± 0.012** |
 
 La métrica es **estable** (σ = 0.012; IC95 ≈ [0.50, 0.52]); el 0.496 del conjunto
 de validación fijo está dentro de ese rango. *No* se hace k-fold sobre los
 transformers: cada fold costaría ~80 min en las 2 vCPU. Para v2b se usa en su
 lugar la **validación cada 78 pasos** durante el entrenamiento (misma idea:
 seguir el progreso, no una sola foto al final).
+
+### 3.6 v3 — reentrenamiento sobre el dataset completo (pendiente de GPU)
+
+La curva de aprendizaje de v1 y el resultado de v2b indican dos palancas con
+retorno positivo que quedan preparadas pero no ejecutadas en esta entrega por
+falta de una instancia con GPU:
+
+1. **Datos completos:** v2b se entrenó con un submuestreo de 5 000 ejemplos por el
+   límite de 2 vCPU; v3 permite usar los 14 461 de entrenamiento.
+2. **Encoder de dominio científico:** `allenai/scibert_scivocab_uncased` o
+   `allenai/specter2` en lugar de `distilbert-base-uncased`.
+
+El procedimiento está listo en `infra/train_v3_gpu.sh` (aprovisiona una GPU,
+`dvc pull` de la v3, entrena y registra en MLflow). Con una `g5.xlarge` (A10G) el
+entrenamiento de SciBERT sobre los 14 461 ejemplos × 4 épocas toma ~20–35 min.
+Rango de F1-macro de validación esperado: **0.62–0.72** (por encima del 0.573 de v2b),
+con el ruido de etiqueta (§2.6) como techo estructural.
 
 ---
 

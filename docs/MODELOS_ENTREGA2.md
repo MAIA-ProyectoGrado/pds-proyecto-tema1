@@ -8,6 +8,13 @@ Tarea: **clasificación de la función de cita** (9 clases). Métrica principal
 Restricción de cómputo: AWS Academy Learner Lab → **sin GPU**, máx. `t3.large`
 (2 vCPU / 8 GB).
 
+> **Versión de datos.** v1 / v2a / v2b se entrenaron sobre el *snapshot* de 18 000
+> registros. El dataset entregado y versionado con DVC es **v3 (20 655)**; el
+> reentrenamiento sobre v3 con encoder de dominio científico (SciBERT / SPECTER2)
+> está preparado en `infra/train_v3_gpu.sh` y pendiente de una instancia con GPU
+> (la cuenta AWS propia está en «Free Plan» y no permite instancias de pago hasta
+> actualizarla; ver §5).
+
 ## 1. Comparativa de enfoques
 
 | # | Enfoque | F1 val | F1 test | Brecha train→val | Sobreajuste | Costo entren. |
@@ -32,8 +39,8 @@ que superan el baseline).
   (`v1_sweep_regularizacion.png`) muestra que con `C=10` el train llega a F1 0.998
   y la validación se queda en 0.50 → **techo del enfoque léxico ≈ 0.50**.
 - **Validación cruzada** 5-fold `GroupKFold` por `citing_paper_id`:
-  `[0.497, 0.522, 0.511, 0.498, 0.525]` → **0.510 ± 0.012** (métrica estable).
-- **Curva de aprendizaje** (`v1_learning_curve.png`): F1 val sube 0.32 → 0.50 al
+  `[0.492, 0.526, 0.510, 0.498, 0.518]` → **0.509 ± 0.012** (métrica estable).
+- **Curva de aprendizaje** (`v1_learning_curve.png`): F1 val sube 0.33 → 0.50 al
   pasar de 500 a 12 600 ejemplos, con pendiente aún positiva → **más datos reales
   seguirían ayudando**.
 - Peores clases (val): `Basis` F1 0.34, `Identification of the Originator` 0.39.
@@ -80,11 +87,20 @@ Es la mejor **de las probadas** y una elección sólida, pero no necesariamente
 - **No vale la pena** bajo la restricción: modelos *-large*, ensembles.
 
 **El cuello de botella es la calidad de los datos, no la arquitectura.** Los
-modelos publicados alcanzan ~0.80 F1 en datasets *limpios* de citation intent;
-aquí el ~0.57 se explica por: ~49 % de contextos sin marcador de cita detectable,
-etiquetas generadas por un juez-LLM (no anotación humana completa), balanceo
-artificial. La palanca principal de v3 es **mejores datos / etiquetas**, y sólo
-después el cambio de arquitectura.
+modelos publicados alcanzan ~0.80 F1 en datasets *limpios* de citation intent
+(Cohan et al., 2019); aquí el ~0.57 se explica por: 48.7 % de contextos sin
+marcador de cita detectable, etiquetas de un juez-LLM con rescate (que cambia
+~28 % de las etiquetas donde se puede medir; ver `docs/EDA_ENTREGA2.md` §7),
+balanceo artificial. La palanca principal de v3 es **mejores datos / etiquetas**,
+y sólo después el cambio de arquitectura.
+
+### Plan v3 (preparado, pendiente de GPU)
+
+`infra/train_v3_gpu.sh` ejecuta sobre una `g5.xlarge` (A10G): `dvc pull` de la v3
+(20 655), fine-tune de **SciBERT** y **SPECTER2** con los 14 461 de entrenamiento,
+4 épocas, `max_len 256`, validación cada 100 pasos, registro en MLflow.
+`infra/launch_gpu_ec2.sh` aprovisiona la instancia (requiere cuenta AWS en plan de
+pago y cuota G > 0). Estimado: ~20–35 min de entrenamiento por modelo, < USD 3.
 
 ## 6. Trazabilidad MLflow
 

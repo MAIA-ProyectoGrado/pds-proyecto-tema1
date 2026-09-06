@@ -48,7 +48,7 @@ def load_splits(data_dir: Path):
         "train": data_dir / "citation_intent_train_enriched.csv",
         "val": data_dir / "citation_intent_val_enriched.csv",
         "test": data_dir / "test_para_anotacion_humana_enriched.csv",
-        "master_18k": data_dir / "dataset_18k_balanceado_enriched.csv",
+        "master": next(iter(data_dir.glob("dataset_*balanceado_enriched.csv")), data_dir / "dataset_18k_balanceado_enriched.csv"),
     }
     return {k: pd.read_csv(v) for k, v in files.items() if v.exists()}
 
@@ -111,7 +111,7 @@ def main():
     # 2. VARIABLE OBJETIVO  (feedback principal)
     # ------------------------------------------------------------------
     target = {}
-    for name in ["train", "val", "test", "master_18k"]:
+    for name in ["train", "val", "test", "master"]:
         if name not in splits:
             continue
         vc = splits[name]["label"].value_counts()
@@ -215,10 +215,13 @@ def main():
     tr_top2_sim = tr["top2_cited_chunk"].map(lambda x: parse_json_field(x, "similarity_score"))
     tr_top3_sim = tr["top3_cited_chunk"].map(lambda x: parse_json_field(x, "similarity_score"))
 
+    top2_dist = int(tr_top2_txt.nunique())
+    n_sim2 = len(set(round(float(s), 3) for s in tr_top2_sim.dropna()))
+    plantillas = top2_dist < len(tr) * 0.2 and n_sim2 <= 3
     stats["retrieval_top3"] = {
         "citing_id_==_cited_id_frac": round(citing_eq_cited, 4),
         "top1_text_==_citation_context_frac": round(float((tr_top1_txt == tr["citation_context"]).mean()), 4),
-        "top2_textos_distintos": int(tr_top2_txt.nunique()),
+        "top2_textos_distintos": top2_dist,
         "top3_textos_distintos": int(tr_top3_txt.nunique()),
         "n_filas": len(tr),
         "top1_sim_unicos": sorted(set(round(float(s), 3) for s in tr_top1_sim.dropna()))[:5],
@@ -227,11 +230,15 @@ def main():
         "top2_valor_mas_comun": str(tr_top2_txt.value_counts().index[0])[:120],
         "top3_valor_mas_comun": str(tr_top3_txt.value_counts().index[0])[:120],
         "diagnostico": (
-            "citing_paper_id y cited_paper_id son el MISMO identificador; top1 es "
-            "una copia del citation_context; top2/top3 son plantillas de texto con "
-            "similitud constante. El componente de 'recomendacion local de citas' "
-            "NO tiene datos reales en esta version -> se modela solo la clasificacion "
-            "de funcion de cita y se documenta el retrieval como trabajo futuro (v3)."
+            f"En el {citing_eq_cited*100:.1f}% de las filas citing_paper_id y "
+            f"cited_paper_id son el MISMO identificador (auto-referencia). "
+            + ("top2/top3 siguen siendo plantillas de similitud constante. "
+               if plantillas else
+               "top2/top3 ya varian por fila (chunking real, aunque con ruido y "
+               "fragmentos truncados) y las similitudes no son constantes. ")
+            + "Como el documento citado casi nunca es distinto del citante, la "
+            "'recuperacion local de citas' se sigue documentando como pendiente y "
+            "el modelado se restringe a la clasificacion de funcion de cita."
         ),
     }
 
@@ -307,6 +314,26 @@ def main():
     for t in tr["citation_context"].str.lower().str.findall(r"[a-z]{3,}"):
         words.update(w for w in t if w not in STOP)
     stats["top_terminos_train"] = words.most_common(25)
+
+    # ------------------------------------------------------------------
+    # 8. Calidad del etiquetado (asistido por LLM + rescate)
+    # ------------------------------------------------------------------
+    lq = {}
+    alld = pd.concat([tr, va] + ([te] if te is not None else []), ignore_index=True)
+    if "predicted_label" in alld.columns:
+        prov = alld[alld["predicted_label"].notna()]
+        if len(prov):
+            lq["filas_con_predicted_label"] = int(len(prov))
+            lq["acuerdo_predicted_vs_final"] = round(float((prov["predicted_label"] == prov["label"]).mean()), 4)
+            lq["pct_reasignado_por_rescate"] = round(float((prov["predicted_label"] != prov["label"]).mean()) * 100, 1)
+    # contextos sin marcador de cita detectable (proxy de ruido)
+    tr_has = tr["citation_context"].str.contains(CITATION_MARKER)
+    lq["pct_sin_marcador_de_cita_train"] = round(float((~tr_has).mean()) * 100, 1)
+    lq["nota"] = ("El etiquetado no tiene anotacion humana completa; el rescate "
+                  "probabilistico reasigna a clases minoritarias. Junto con el "
+                  f"{lq['pct_sin_marcador_de_cita_train']}% de contextos sin marcador, "
+                  "acota el techo de desempeno alcanzable (ver Conclusiones).")
+    stats["calidad_etiquetado"] = lq
 
     with open(out / "eda_stats.json", "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=2, ensure_ascii=False, default=json_default)

@@ -1,0 +1,90 @@
+{
+  "labels": [
+    "Application",
+    "Background",
+    "Basis",
+    "Comparison",
+    "Evidence",
+    "Further_Reading",
+    "Gap",
+    "Identification_of_the_Originator",
+    "Modification_Improvement"
+  ],
+  "label2id": {
+    "Application": 0,
+    "Background": 1,
+    "Basis": 2,
+    "Comparison": 3,
+    "Evidence": 4,
+    "Further_Reading": 5,
+    "Gap": 6,
+    "Identification_of_the_Originator": 7,
+    "Modification_Improvement": 8
+  },
+  "n_por_split": {
+    "train": 14461,
+    "val": 3098,
+    "test": 3096
+  },
+  "balance_por_split": {
+    "train": {
+      "Application": 1613,
+      "Background": 1597,
+      "Basis": 1595,
+      "Comparison": 1566,
+      "Evidence": 1632,
+      "Further_Reading": 1617,
+      "Gap": 1637,
+      "Identification_of_the_Originator": 1597,
+      "Modification_Improvement": 1607
+    },
+    "val": {
+      "Application": 357,
+      "Background": 341,
+      "Basis": 349,
+      "Comparison": 361,
+      "Evidence": 324,
+      "Further_Reading": 333,
+      "Gap": 344,
+      "Identification_of_the_Originator": 332,
+      "Modification_Improvement": 357
+    },
+    "test": {
+      "Application": 325,
+      "Background": 357,
+      "Basis": 351,
+      "Comparison": 368,
+      "Evidence": 339,
+      "Further_Reading": 345,
+      "Gap": 314,
+      "Identification_of_the_Originator": 366,
+      "Modification_Improvement": 331
+    }
+  },
+  "no_leakage_citing_paper_id": {
+    "train_val": 1,
+    "train_test": 0,
+    "val_test": 0
+  },
+  "contexto_duplicado_entre_splits": 19,
+  "nulos_rhetorical_section": {
+    "train": 195,
+    "val": 56,
+    "test": 47
+  },
+  "par_citado_real_frac": {
+    "train": 0.0175,
+    "val": 0.0161,
+    "test": 0.0139
+  },
+  "filas_con_source_dataset": {
+    "train": 127,
+    "val": 29,
+    "test": 17
+  },
+  "md5_master": "04f725fc7c539b15482f1458f0fd3884",
+  "advertencias": [
+    "En ~98 % de las filas citing_paper_id y cited_paper_id son el mismo identificador (auto-referencia); solo ~2 % (par_citado_real=True) tiene un documento citado distinto. Las columnas top{1,2,3}_cited_chunk del CSV original NO se propagan al dataset estandarizado.",
+    "El etiquetado es asistido por LLM con rescate probabilistico; en las filas con predicted_label disponible, el rescate cambio la etiqueta del ~28 %. Hay ruido de etiqueta apreciable (ver EDA)."
+  ]
+}

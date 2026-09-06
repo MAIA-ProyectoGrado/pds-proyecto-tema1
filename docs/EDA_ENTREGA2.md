@@ -1,11 +1,12 @@
 # EDA — Entrega 2 (SCIF)
 
-> Reproducible con `python scripts/eda_entrega2.py --data_dir data/raw --out_dir docs/eda_entrega2`.
+> Reproducible con `python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/eda_entrega2`.
 > Figuras en `docs/eda_entrega2/*.png`; métricas crudas en `docs/eda_entrega2/eda_stats.json`.
+> Dataset **v3** (20 655 registros), versionado con DVC (`dataset.dvc`).
 
-Este EDA se hace sobre el **dataset enriquecido de intención de cita** (nuevo en
-la Entrega 2), que reemplaza al corpus de 24 855 abstracts de la Entrega 1. Está
-escrito para responder de forma explícita el feedback recibido.
+Este EDA se hace sobre el **dataset enriquecido de intención de cita**, que
+reemplaza al corpus de 24 855 *abstracts* de la Entrega 1. Está escrito para
+responder de forma explícita el feedback recibido.
 
 | Feedback Entrega 1 | Dónde se responde |
 |---|---|
@@ -20,18 +21,21 @@ escrito para responder de forma explícita el feedback recibido.
 
 | Partición | Filas | `citing_paper_id` únicos | Nulos `rhetorical_section` | Duplicados de fila |
 |---|--:|--:|--:|--:|
-| train | 12 600 | 12 600 | 186 (1.48 %) | 0 |
-| val   | 2 700  | 2 700  | 37 (1.37 %)  | 0 |
-| test (para anotación humana) | 2 700 | 2 700 | 42 (1.56 %) | 0 |
-| master 18k balanceado | 18 000 | 18 000 | 265 | 0 |
+| train | 14 461 | 14 434 | 195 (1.35 %) | 0 |
+| val   | 3 098  | 3 093  | 56 (1.81 %)  | 0 |
+| test (para anotación humana) | 3 096 | 3 093 | 47 (1.52 %) | 0 |
+| master balanceado (`dataset_20655_balanceado_enriched.csv`) | 20 655 | — | 298 | 0 |
 
-Columnas del CSV enriquecido: `citation_context`, `rhetorical_section`,
-`etiqueta_rescatada`, `label`, `citing_paper_id`, `cited_paper_id`, `pair_id`,
-`top1_cited_chunk`, `top2_cited_chunk`, `top3_cited_chunk`.
+Columnas del CSV: `citation_context`, `rhetorical_section`, `etiqueta_rescatada`,
+`label`, `citing_paper_id`, `cited_paper_id`, `pair_id`,
+`top1/2/3_cited_chunk`, y **nuevas en v3**: `source_dataset`, `predicted_label`,
+`scores_json` (presentes solo en 173 filas de procedencia *Semantic Scholar Async*).
 
-- `label` es **idéntica** a `etiqueta_rescatada` en el 100 % de las filas (columna redundante).
-- `train + val + test = 18 000` filas → las tres particiones son un **split del master 18k**.
-- 1 registro por `citing_paper_id`; `pair_id = citing_<n>__cited_<n>`.
+- `label` es **idéntica** a `etiqueta_rescatada` en el 100 % de las filas.
+- `train + val + test = 20 655` filas → las tres particiones son un **split del
+  master balanceado** (2 295 ejemplos por clase antes de particionar).
+- `pair_id = citing_<id>__cited_<id>`. En ~98 % `<id>` es común (auto-referencia,
+  ver §4).
 
 ---
 
@@ -43,33 +47,35 @@ excluyentes (`label_id` 0–8 en orden alfabético, ver `data/processed/dataset_
 
 ### 2.1 Balance entre las nueve categorías
 
-**train (n = 12 600)**
+**train (n = 14 461)**
 
 | Función de cita | n | % |
 |---|--:|--:|
-| Background | 1 432 | 11.4 % |
-| Application | 1 425 | 11.3 % |
-| Basis | 1 412 | 11.2 % |
-| Further_Reading | 1 411 | 11.2 % |
-| Evidence | 1 393 | 11.1 % |
-| Comparison | 1 392 | 11.0 % |
-| Identification_of_the_Originator | 1 387 | 11.0 % |
-| Modification_Improvement | 1 377 | 10.9 % |
-| Gap | 1 371 | 10.9 % |
+| Gap | 1 637 | 11.3 % |
+| Evidence | 1 632 | 11.3 % |
+| Further_Reading | 1 617 | 11.2 % |
+| Application | 1 613 | 11.2 % |
+| Modification_Improvement | 1 607 | 11.1 % |
+| Background | 1 597 | 11.0 % |
+| Identification_of_the_Originator | 1 597 | 11.0 % |
+| Basis | 1 595 | 11.0 % |
+| Comparison | 1 566 | 10.8 % |
 
-- **Ratio de desbalance** (clase mayor / clase menor): **1.04** en train, 1.16 en val, 1.17 en test.
-- **Entropía normalizada de la distribución: 1.00** (train) → prácticamente uniforme.
-- El *master 18k* está balanceado **por construcción** a 2 000 ejemplos/clase.
+- **Ratio de desbalance** (clase mayor / clase menor): **1.045** en train,
+  1.11 en val, 1.17 en test. **Entropía normalizada de la distribución: 1.00**
+  (train) → prácticamente uniforme.
+- El *master* está balanceado **por construcción** a 2 295 ejemplos/clase.
 
 > **Lectura para el negocio.** El desbalance «fuerte» que la literatura reporta
 > para esta tarea (Jurgens et al., 2018) **no aplica aquí porque el balanceo es
-> artificial**: el dataset se construyó forzando ~2 000 ejemplos por clase. Esto
-> es cómodo para entrenar y comparar modelos, pero implica que las métricas de
-> validación **no reflejan la prevalencia real** de cada función de cita en un
-> corpus natural. En producción (v3) habrá que re-evaluar con una distribución
-> realista y, muy probablemente, reponderar.
+> artificial**: el dataset se construyó forzando ~2 295 ejemplos por clase, en
+> parte con un **mecanismo de rescate** que reasigna citas a clases minoritarias
+> (ver §7). Esto es cómodo para entrenar y comparar modelos, pero implica que las
+> métricas de validación **no reflejan la prevalencia real** de cada función de
+> cita ni la calidad de la etiqueta. En producción habrá que re-evaluar con
+> distribución realista y anotación humana.
 
-Figura: `docs/eda_entrega2/01_variable_objetivo.png` (distribución por partición).
+Figura: `docs/eda_entrega2/01_variable_objetivo.png`.
 
 ### 2.2 Consistencia de la etiqueta entre particiones
 
@@ -78,114 +84,132 @@ estratificación. No hay clases ausentes en ninguna partición.
 
 ---
 
-## 3. `citation_context` — ¿ahora sí son citas reales?
+## 3. `citation_context` — ¿son citas reales?
 
 **Sí.** A diferencia de la Entrega 1 (donde el texto eran *abstracts* completos),
 ahora cada registro es **una o dos oraciones alrededor de una mención bibliográfica**.
 
 | Métrica (palabras) | train | val | test | Entrega 1 (abstracts) |
 |---|--:|--:|--:|--:|
-| media | 28.4 | 29.0 | 28.1 | 165.2 |
+| media | 28.3 | 29.0 | 28.3 | 165.2 |
 | mediana | 26 | 26 | 26 | 163 |
-| p05 / p95 | 10 / 50 | 10 / 51 | 10 / 49 | — |
-| máx | 246 | 407 | 217 | 482 |
-| % con marcador de cita explícito (`[12]`, `(Autor, 2020)`, `Autor et al. (2020)`) | **50.6 %** | 52.6 % | 52.2 % | ~0 % |
-| % muy corto (≤ 8 palabras) | 2.7 % | 3.1 % | 2.9 % | — |
+| p05 / p95 | 10 / 50 | 10 / 51 | 10 / 50 | — |
+| máx | 407 | 375 | 228 | 482 |
+| % con marcador de cita explícito (`[12]`, `(Autor, 2020)`, `Autor et al. (2020)`) | **51.3 %** | 51.3 % | 51.3 % | ~0 % |
+| % muy corto (≤ 8 palabras) | 2.9 % | 2.6 % | 2.7 % | — |
 
-- Longitud coherente con un *citation context* (mediana 26 palabras) y **6× más
-  corta** que en la Entrega 1: prueba cuantitativa de que el problema señalado en
-  el feedback está corregido.
-- **~50 % de los contextos no tienen un marcador de cita detectable por regex.**
-  Parte es ruido real (frases de enunciados de ejercicios, encabezados), parte
-  son citas narrativas sin paréntesis. Es un **límite de calidad** a vigilar: se
-  reporta y se deja la limpieza fina como tarea de datos.
-- La longitud varía por clase (`03_longitud_por_clase.png`): `Background` es la
-  más corta (≈ 19 palabras de media) y `Comparison` la más larga (≈ 32); hay,
-  por tanto, una señal de longitud que un modelo lineal puede explotar.
+- Longitud coherente con un *citation context* (mediana 26 palabras), **6× más
+  corta** que en la Entrega 1: el problema señalado en el feedback está corregido.
+- **48.7 % de los contextos no tienen un marcador de cita detectable por regex.**
+  Parte es ruido real (encabezados, entradas de bibliografía, frases genéricas sin
+  cita), parte son citas narrativas sin paréntesis. Es un **límite de calidad**
+  cuantificado que acota el techo de desempeño (§7).
+- La longitud varía por clase (`03_longitud_por_clase.png`): `Background` la más
+  corta, `Comparison` la más larga → hay señal de longitud.
 
 Figuras: `02_longitud_contexto.png`, `03_longitud_por_clase.png`.
 
 ---
 
-## 4. `cited_paper_id` y `top{1,2,3}_cited_chunk` — inconsistencia que afecta a la maqueta
+## 4. `cited_paper_id` y `top{1,2,3}_cited_chunk` — consistencia (feedback maqueta)
 
-El feedback dice: *«la maqueta asume datos que no se mostraron consistentes en la
-exploración de variables»*. Confirmado y cuantificado:
+El feedback dice: *«la maqueta asume datos que no se mostraron consistentes»*.
+Estado en v3:
 
-| Comprobación | Resultado |
-|---|---|
-| `citing_paper_id` == `cited_paper_id` (sin el prefijo) | **100 %** de las filas |
-| `top1_cited_chunk.text` == `citation_context` | **94.8 %** de las filas |
-| Valores de similitud distintos en `top1` / `top2` / `top3` | `{0.85, 0.92}` / `{0.73, 0.74}` / `{0.61}` |
-| Textos distintos en `top2_cited_chunk` (de 12 600 filas) | 1 162, dominados por la plantilla *«Foundational background and methodology related to \<sección\>»* |
-| Textos distintos en `top3_cited_chunk` | 1 121, plantilla *«Experimental setup, results and empirical evidence for \<sección\>»* |
+| Comprobación (train) | Resultado v3 | (Entrega 2, v2) |
+|---|---|---|
+| `citing_paper_id` == `cited_paper_id` (sin prefijo) | **98.3 %** | 100 % |
+| `top1_cited_chunk.text` == `citation_context` | **80.3 %** | 94.8 % |
+| Textos distintos en `top2_cited_chunk` (de 14 461) | **14 233** | 1 162 (plantillas) |
+| Textos distintos en `top3_cited_chunk` | 14 392 | 1 121 (plantillas) |
+| Similitud `top1` / `top2` / `top3` | varía (~0.72 / ~0.55 / ~0.48) | constante (0.92 / 0.74 / 0.61) |
 
-**Diagnóstico.** No existe un documento citado real distinto del citante:
-`cited_paper_id` es un espejo de `citing_paper_id`. El «Top-3 de fragmentos
-recuperados» del CSV es **sintético** (top-1 = copia del contexto; top-2/top-3 =
-plantillas con similitud constante). Es exactamente el mismo hallazgo de la
-Entrega 1, ahora con evidencia numérica.
+**Diagnóstico.** v3 mejora respecto a v2: `top2`/`top3` ya **no son plantillas**
+(varían por fila y las similitudes no son constantes), lo que indica un *chunking*
+real — aunque **ruidoso**: el fragmento más común de `top2`/`top3` es `"2021)."`,
+señal de fragmentos truncados. Y sigue siendo cierto que en el **98.3 %** de las
+filas el documento «citado» es el mismo que el citante (auto-referencia
+`citing_legacy_N == cited_legacy_N`); solo el **1.7 %** tiene un par citante/citado
+distinto y con identificador real (columna `par_citado_real`).
 
 **Consecuencia sobre el alcance de la Entrega 2:**
 
 1. Se modela **solo la clasificación de la función de cita** (9 clases) a partir
-   de `citation_context` + sección. Es una tarea bien definida y con datos
-   consistentes.
+   de `citation_context` + sección retórica. Tarea bien definida y consistente.
 2. El componente de **recomendación local de citas (Top-3 chunks)** se declara
-   **fuera del alcance de esta iteración** y pasa a *trabajo futuro (v3)*: requiere
-   descargar el PDF del artículo citado real, segmentarlo en *chunks* ≤ 300
-   palabras y calcular similitud con SciBERT. La maqueta se ajusta para marcar ese
-   panel como *ilustrativo / pendiente de datos* (ver `MEJORAS_ENTREGA2.md`).
+   **fuera del alcance de esta iteración**: aunque v3 ya trae *chunks* reales,
+   provienen mayoritariamente del propio artículo citante y con ruido de
+   segmentación. La maqueta marca ese panel como *ilustrativo / pendiente de datos*.
 3. `scripts/prepare_dataset.py` **no propaga** las columnas `top*_cited_chunk` al
-   dataset estandarizado, para evitar que un modelo aprenda del artefacto.
+   dataset de entrenamiento; sí propaga `par_citado_real` para análisis.
 
 ---
 
-## 5. Fuga de información entre particiones (No-Leakage Guarantee)
+## 5. Fuga de información entre particiones (No-Leakage)
 
 | Solape de `citing_paper_id` | conteo |
 |---|--:|
-| train ∩ val | **0** |
+| train ∩ val | **1** (0.03 % de val) |
 | train ∩ test | **0** |
 | val ∩ test | **0** |
-| Contextos de texto idénticos entre particiones | 11 (0.06 %) — mismo texto, distinto `citing_paper_id`; no rompe el aislamiento por documento |
+| Contextos de texto idénticos entre particiones | 19 (0.09 %) — mismo texto, distinto `citing_paper_id` |
 
-La garantía de no-leakage por documento **se cumple**. Los 11 textos repetidos se
-documentan como frases genéricas cortas ("We use the same setup as …").
+La garantía de no-leakage por documento **se mantiene en la práctica**: 1
+`citing_paper_id` compartido entre train y val (frente a 0 en la Entrega 2) es
+despreciable pero se documenta. Los 19 textos repetidos son frases genéricas
+cortas que no rompen el aislamiento por documento.
 
 ---
 
 ## 6. Diversidad temática del corpus (alcance)
 
-Top términos de contenido en `citation_context` (train): *model, learning, data,
-method, network, training, based, using, approach, performance, results, dataset,
-tasks, image, language, framework, algorithm, features, proposed, feature…*
+Top términos de contenido en `citation_context` (train): *based, learning, models,
+model, data, methods, training, policy, results, studies, performance, recent,
+approach, task, propose, method, framework, network, image, language…*
 
-El núcleo es ML/NLP/visión, **pero hay contextos claramente fuera de Ciencias de
-la Computación** (radiación en trabajadores de granito, células endoteliales de
-cerebro de ratón, síndrome de Thurston, composición porcentual de elementos
-químicos). Es decir: el corpus **no está restringido a `cs.AI` / `cs.LG` /
-`cs.CL`** como afirmaba el alcance de la Entrega 1.
-
-→ En el reporte se ajusta el alcance: **«contextos de cita en inglés de literatura
-científica multidominio, con predominio de Ciencias de la Computación»**, y se
-añade el dominio como variable a monitorear en v3.
+El núcleo es ML / NLP / RL, **pero hay contextos claramente fuera de Ciencias de
+la Computación** (Cox proportional hazards, β-catenin y E-cadherina, dispersión de
+semillas, ternary plots de cationes y aniones). El corpus **no está restringido a
+`cs.AI` / `cs.LG` / `cs.CL`** como afirmaba la Entrega 1 → alcance ajustado a
+**«literatura científica multidominio, con predominio de Ciencias de la Computación»**.
 
 ---
 
-## 7. Implicaciones para el modelado (Entrega 2)
+## 7. Calidad del etiquetado (asistido por LLM + rescate)
+
+El etiquetado es **asistido por LLM** (`gemini-…-flash-lite`, esquema estructurado)
+con un **rescate probabilístico** que reasigna citas a clases minoritarias. No hay
+anotación humana completa (el 15 % «test humano» está reservado para ese fin).
+
+| Señal | Valor |
+|---|--:|
+| Filas con `predicted_label` (juez LLM) disponible | 173 |
+| Acuerdo `predicted_label` == `label` final | **71.7 %** |
+| → citas **reasignadas por el rescate** en ese subconjunto | **28.3 %** |
+| Contextos sin marcador de cita detectable (train) | **48.7 %** |
+
+**Implicación.** El rescate cambia casi 1 de cada 3 etiquetas donde se puede medir,
+y casi la mitad de los contextos no contienen una cita detectable. Una inspección
+manual de ejemplos por clase confirma etiquetas discutibles (p. ej. *"Training uses
+Adam with learning rate 1e-3, batch size 256…"* etiquetado como
+`Identification_of_the_Originator`). Este **ruido de etiqueta** —no la
+arquitectura— es el principal límite del desempeño alcanzable (ver
+`docs/MODELOS_ENTREGA2.md`, §5).
+
+---
+
+## 8. Implicaciones para el modelado
 
 | Hallazgo | Decisión de modelado |
 |---|---|
-| Variable objetivo balanceada (9 clases, ratio 1.04) | Métrica principal **F1-macro**; `accuracy` es interpretable (baseline aleatorio = 0.111) |
-| Texto corto (mediana 26 palabras) | `max_length` 256 tokens sobra; el costo de fine-tuning es bajo |
-| Señal de sección retórica (`04_seccion_x_label.png`) | Se concatena `[SEC] <sección canónica>` al texto de entrada |
-| `rhetorical_section` con 558 valores crudos y 1.5 % nulos | Normalización a 10 secciones canónicas en `prepare_dataset.py` |
-| Top-3 chunks sintéticos | Excluidos del entrenamiento; retrieval → v3 |
-| Balanceo artificial | Se reporta como amenaza a la validez externa; no se optimiza *accuracy* de producción todavía |
+| Variable objetivo balanceada (9 clases, ratio 1.045) | Métrica principal **F1-macro** (aleatorio = 0.111); accuracy interpretable |
+| Texto corto (mediana 26 palabras) | `max_length` ≤ 256 sobra; fine-tuning barato |
+| Señal de sección retórica (`04_seccion_x_label.png`) | Se concatena `[SEC] <sección canónica>` a la entrada |
+| `rhetorical_section` con 622 valores crudos y 1.35 % nulos | Normalización a 10 secciones canónicas en `prepare_dataset.py` |
+| Top-3 chunks reales pero ruidosos, casi siempre del citante | Excluidos del entrenamiento; retrieval → trabajo futuro |
+| Balanceo artificial + rescate + 48.7 % sin marcador | Amenaza a la validez externa y techo de desempeño; se documenta |
+| Dataset v3 más grande (14 461 train vs 12 600) | La curva de aprendizaje de v1 predice ganancia → v3 reentrena con datos completos |
 
-Modelos entrenados (ver `docs/MODELOS_ENTREGA2.md`):
-
-- **v1 baseline** — TF-IDF (1–2 gramas) + Regresión Logística.
-- **v2 (iteración intermedia)** — embeddings de `all-MiniLM-L6-v2` + LogReg (v2a) y
-  fine-tuning de `distilbert-base-uncased` en CPU (v2b); deja margen deliberado para v3.
+Modelos (ver `docs/MODELOS_ENTREGA2.md`): **v1** TF-IDF + LogReg · **v2a**
+embeddings MiniLM congeladas + LogReg · **v2b** DistilBERT fine-tuned · **v3**
+(planificado) encoder de dominio científico con datos completos.

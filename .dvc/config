@@ -1,4 +1,6 @@
 [core]
     remote = storage
+['remote "s2"']
+    url = s3://scif-dvcstore-779319895642-use1
 ['remote "storage"']
     url = s3://citation-dvcstore-tema1
