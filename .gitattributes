@@ -1,0 +1,10 @@
+# Scripts que corren en Linux (EC2): forzar LF siempre
+*.sh text eol=lf
+scripts/*.py text eol=lf
+
+# Datos y binarios: sin conversion de fin de linea
+*.csv -text
+*.jsonl -text
+*.png binary
+*.whl binary
+*.pdf binary

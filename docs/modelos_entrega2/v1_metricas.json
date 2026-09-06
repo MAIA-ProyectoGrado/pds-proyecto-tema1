@@ -1,0 +1,166 @@
+{
+  "config": {
+    "vectorizer": "TF-IDF (1,2)-gramas, min_df=2, max_features=50000, sublinear_tf",
+    "classifier": "LogisticRegression(C=1.0, class_weight='balanced', max_iter=3000)",
+    "entrada": "citation_context + ' [SEC] ' + rhetorical_section_canon",
+    "fit_seconds": 8.9
+  },
+  "metricas": {
+    "train": {
+      "accuracy": 0.7979,
+      "f1_macro": 0.7983,
+      "f1_micro": 0.7979,
+      "precision_macro": 0.8053,
+      "recall_macro": 0.7978
+    },
+    "val": {
+      "accuracy": 0.5019,
+      "f1_macro": 0.4957,
+      "f1_micro": 0.5019,
+      "precision_macro": 0.5072,
+      "recall_macro": 0.5059
+    },
+    "test": {
+      "accuracy": 0.5337,
+      "f1_macro": 0.528,
+      "f1_micro": 0.5337,
+      "precision_macro": 0.5377,
+      "recall_macro": 0.5333
+    }
+  },
+  "sobreajuste": {
+    "gap_f1_macro_train_val": 0.3026,
+    "gap_accuracy_train_val": 0.296,
+    "gap_f1_macro_val_test": -0.0323,
+    "veredicto": "severo"
+  },
+  "reporte_val_por_clase": [
+    {
+      "clase": "Application",
+      "precision": 0.515,
+      "recall": 0.556,
+      "f1": 0.535,
+      "soporte": 277
+    },
+    {
+      "clase": "Background",
+      "precision": 0.495,
+      "recall": 0.782,
+      "f1": 0.607,
+      "soporte": 271
+    },
+    {
+      "clase": "Basis",
+      "precision": 0.4,
+      "recall": 0.3,
+      "f1": 0.343,
+      "soporte": 307
+    },
+    {
+      "clase": "Comparison",
+      "precision": 0.609,
+      "recall": 0.37,
+      "f1": 0.46,
+      "soporte": 303
+    },
+    {
+      "clase": "Evidence",
+      "precision": 0.503,
+      "recall": 0.56,
+      "f1": 0.53,
+      "soporte": 302
+    },
+    {
+      "clase": "Further_Reading",
+      "precision": 0.461,
+      "recall": 0.61,
+      "f1": 0.525,
+      "soporte": 313
+    },
+    {
+      "clase": "Gap",
+      "precision": 0.652,
+      "recall": 0.552,
+      "f1": 0.598,
+      "soporte": 315
+    },
+    {
+      "clase": "Identification_of_the_Originator",
+      "precision": 0.475,
+      "recall": 0.337,
+      "f1": 0.394,
+      "soporte": 312
+    },
+    {
+      "clase": "Modification_Improvement",
+      "precision": 0.455,
+      "recall": 0.487,
+      "f1": 0.47,
+      "soporte": 300
+    }
+  ],
+  "peores_clases_val": [
+    "Basis",
+    "Identification_of_the_Originator",
+    "Comparison"
+  ],
+  "pares_mas_confundidos_val": [
+    {
+      "real": "Evidence",
+      "predicho": "Background",
+      "tasa": 0.199
+    },
+    {
+      "real": "Basis",
+      "predicho": "Modification_Improvement",
+      "tasa": 0.179
+    },
+    {
+      "real": "Application",
+      "predicho": "Background",
+      "tasa": 0.162
+    },
+    {
+      "real": "Identification_of_the_Originator",
+      "predicho": "Application",
+      "tasa": 0.144
+    },
+    {
+      "real": "Comparison",
+      "predicho": "Evidence",
+      "tasa": 0.142
+    }
+  ],
+  "sweep_regularizacion": [
+    {
+      "C": 0.1,
+      "f1_train": 0.5243,
+      "f1_val": 0.4174,
+      "gap": 0.1069
+    },
+    {
+      "C": 0.3,
+      "f1_train": 0.6311,
+      "f1_val": 0.4564,
+      "gap": 0.1747
+    },
+    {
+      "C": 1.0,
+      "f1_train": 0.7983,
+      "f1_val": 0.4957,
+      "gap": 0.3026
+    },
+    {
+      "C": 3.0,
+      "f1_train": 0.957,
+      "f1_val": 0.5034,
+      "gap": 0.4536
+    },
+    {
+      "C": 10.0,
+      "f1_train": 0.9983,
+      "f1_val": 0.5008,
+      "gap": 0.4975
+    }
+  ]
+}

@@ -2,6 +2,14 @@
 env-proj/
 venv/
 .venv/
+.venv-train/
+
+# MLflow local / infra
+mlruns/
+mlruns_test/
+mlflow.db
+infra/ec2_instance.env
+docs/model_results.json
 
 # Python
 __pycache__/
@@ -22,3 +30,9 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/dataset_manifest.json
+/dataset
+
+# encoder ajustado v3 (grande): se versiona con DVC, no con git
+models/scif-scibert/
+models/scif-*-v3/

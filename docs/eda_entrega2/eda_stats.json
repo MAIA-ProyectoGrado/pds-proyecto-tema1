@@ -1,0 +1,490 @@
+{
+  "estructura": {
+    "train": {
+      "filas": 14461,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 195,
+        "etiqueta_rescatada": 0,
+        "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 14334,
+        "predicted_label": 14334,
+        "scores_json": 14334,
+        "label": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "val": {
+      "filas": 3098,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 56,
+        "etiqueta_rescatada": 0,
+        "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 3069,
+        "predicted_label": 3069,
+        "scores_json": 3069,
+        "label": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "test": {
+      "filas": 3096,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 47,
+        "etiqueta_rescatada": 0,
+        "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 3079,
+        "predicted_label": 3079,
+        "scores_json": 3079,
+        "label": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    },
+    "master": {
+      "filas": 20655,
+      "columnas": [
+        "citation_context",
+        "rhetorical_section",
+        "etiqueta_rescatada",
+        "cited_paper_id",
+        "citing_paper_id",
+        "source_dataset",
+        "predicted_label",
+        "scores_json",
+        "label",
+        "pair_id",
+        "top1_cited_chunk",
+        "top2_cited_chunk",
+        "top3_cited_chunk"
+      ],
+      "nulos_por_columna": {
+        "citation_context": 0,
+        "rhetorical_section": 298,
+        "etiqueta_rescatada": 0,
+        "cited_paper_id": 0,
+        "citing_paper_id": 0,
+        "source_dataset": 20482,
+        "predicted_label": 20482,
+        "scores_json": 20482,
+        "label": 0,
+        "pair_id": 0,
+        "top1_cited_chunk": 0,
+        "top2_cited_chunk": 0,
+        "top3_cited_chunk": 0
+      },
+      "duplicados_fila": 0,
+      "duplicados_citation_context": 0
+    }
+  },
+  "label_vs_etiqueta_rescatada_iguales": true,
+  "variable_objetivo": {
+    "train": {
+      "conteo": {
+        "Background": 1597,
+        "Gap": 1637,
+        "Basis": 1595,
+        "Comparison": 1566,
+        "Application": 1613,
+        "Modification_Improvement": 1607,
+        "Evidence": 1632,
+        "Identification_of_the_Originator": 1597,
+        "Further_Reading": 1617
+      },
+      "proporcion": {
+        "Background": 0.1104,
+        "Gap": 0.1132,
+        "Basis": 0.1103,
+        "Comparison": 0.1083,
+        "Application": 0.1115,
+        "Modification_Improvement": 0.1111,
+        "Evidence": 0.1129,
+        "Identification_of_the_Originator": 0.1104,
+        "Further_Reading": 0.1118
+      },
+      "min_clase": 1566,
+      "max_clase": 1637,
+      "ratio_desbalance": 1.045,
+      "entropia_normalizada": 1.0
+    },
+    "val": {
+      "conteo": {
+        "Background": 341,
+        "Gap": 344,
+        "Basis": 349,
+        "Comparison": 361,
+        "Application": 357,
+        "Modification_Improvement": 357,
+        "Evidence": 324,
+        "Identification_of_the_Originator": 332,
+        "Further_Reading": 333
+      },
+      "proporcion": {
+        "Background": 0.1101,
+        "Gap": 0.111,
+        "Basis": 0.1127,
+        "Comparison": 0.1165,
+        "Application": 0.1152,
+        "Modification_Improvement": 0.1152,
+        "Evidence": 0.1046,
+        "Identification_of_the_Originator": 0.1072,
+        "Further_Reading": 0.1075
+      },
+      "min_clase": 324,
+      "max_clase": 361,
+      "ratio_desbalance": 1.114,
+      "entropia_normalizada": 0.9997
+    },
+    "test": {
+      "conteo": {
+        "Background": 357,
+        "Gap": 314,
+        "Basis": 351,
+        "Comparison": 368,
+        "Application": 325,
+        "Modification_Improvement": 331,
+        "Evidence": 339,
+        "Identification_of_the_Originator": 366,
+        "Further_Reading": 345
+      },
+      "proporcion": {
+        "Background": 0.1153,
+        "Gap": 0.1014,
+        "Basis": 0.1134,
+        "Comparison": 0.1189,
+        "Application": 0.105,
+        "Modification_Improvement": 0.1069,
+        "Evidence": 0.1095,
+        "Identification_of_the_Originator": 0.1182,
+        "Further_Reading": 0.1114
+      },
+      "min_clase": 314,
+      "max_clase": 368,
+      "ratio_desbalance": 1.172,
+      "entropia_normalizada": 0.9994
+    },
+    "master": {
+      "conteo": {
+        "Background": 2295,
+        "Gap": 2295,
+        "Basis": 2295,
+        "Comparison": 2295,
+        "Application": 2295,
+        "Modification_Improvement": 2295,
+        "Evidence": 2295,
+        "Identification_of_the_Originator": 2295,
+        "Further_Reading": 2295
+      },
+      "proporcion": {
+        "Background": 0.1111,
+        "Gap": 0.1111,
+        "Basis": 0.1111,
+        "Comparison": 0.1111,
+        "Application": 0.1111,
+        "Modification_Improvement": 0.1111,
+        "Evidence": 0.1111,
+        "Identification_of_the_Originator": 0.1111,
+        "Further_Reading": 0.1111
+      },
+      "min_clase": 2295,
+      "max_clase": 2295,
+      "ratio_desbalance": 1.0,
+      "entropia_normalizada": 1.0
+    }
+  },
+  "citation_context": {
+    "train": {
+      "palabras_media": 28.28,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 50.0,
+      "palabras_min": 6,
+      "palabras_max": 407,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.9
+    },
+    "val": {
+      "palabras_media": 29.0,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 51.0,
+      "palabras_min": 6,
+      "palabras_max": 375,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.6
+    },
+    "test": {
+      "palabras_media": 28.31,
+      "palabras_mediana": 26.0,
+      "palabras_p05": 10.0,
+      "palabras_p95": 50.0,
+      "palabras_min": 6,
+      "palabras_max": 228,
+      "pct_con_marcador_de_cita": 51.3,
+      "pct_muy_corto_<=8_palabras": 2.7
+    }
+  },
+  "retrieval_top3": {
+    "citing_id_==_cited_id_frac": 0.9825,
+    "top1_text_==_citation_context_frac": 0.8034,
+    "top2_textos_distintos": 14233,
+    "top3_textos_distintos": 14392,
+    "n_filas": 14461,
+    "top1_sim_unicos": [
+      0.718,
+      0.732,
+      0.735,
+      0.738,
+      0.749
+    ],
+    "top2_sim_unicos": [
+      0.495,
+      0.5,
+      0.528,
+      0.552,
+      0.569
+    ],
+    "top3_sim_unicos": [
+      0.451,
+      0.458,
+      0.459,
+      0.487,
+      0.491
+    ],
+    "top2_valor_mas_comun": "2021).",
+    "top3_valor_mas_comun": "2021).",
+    "diagnostico": "En el 98.3% de las filas citing_paper_id y cited_paper_id son el MISMO identificador (auto-referencia). top2/top3 ya varian por fila (chunking real, aunque con ruido y fragmentos truncados) y las similitudes no son constantes. Como el documento citado casi nunca es distinto del citante, la 'recuperacion local de citas' se sigue documentando como pendiente y el modelado se restringe a la clasificacion de funcion de cita."
+  },
+  "no_leakage": {
+    "papers_train": 14434,
+    "papers_val": 3093,
+    "papers_test": 3093,
+    "overlap_train_val": 1,
+    "overlap_train_test": 0,
+    "overlap_val_test": 0,
+    "contextos_duplicados_train_val": 0
+  },
+  "rhetorical_section": {
+    "train": {
+      "valores_unicos_crudos": 622,
+      "pct_nulos": 1.35,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 10280,
+        "Metodos": 914,
+        "Discusion": 861,
+        "Introduccion": 683,
+        "Otra": 601,
+        "Trabajo relacionado": 349,
+        "Resultados": 305,
+        "Experimentos": 234,
+        "Desconocida": 195,
+        "Conclusion": 39
+      }
+    },
+    "val": {
+      "valores_unicos_crudos": 204,
+      "pct_nulos": 1.81,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 2189,
+        "Metodos": 215,
+        "Discusion": 165,
+        "Introduccion": 147,
+        "Otra": 132,
+        "Resultados": 71,
+        "Trabajo relacionado": 70,
+        "Desconocida": 56,
+        "Experimentos": 46,
+        "Conclusion": 7
+      }
+    },
+    "test": {
+      "valores_unicos_crudos": 213,
+      "pct_nulos": 1.52,
+      "distribucion_canonica": {
+        "Cuerpo (sin seccion fina)": 2193,
+        "Metodos": 192,
+        "Discusion": 183,
+        "Introduccion": 151,
+        "Otra": 122,
+        "Trabajo relacionado": 91,
+        "Resultados": 68,
+        "Desconocida": 47,
+        "Experimentos": 45,
+        "Conclusion": 4
+      }
+    }
+  },
+  "top_terminos_train": [
+    [
+      "based",
+      1389
+    ],
+    [
+      "learning",
+      1244
+    ],
+    [
+      "models",
+      1201
+    ],
+    [
+      "model",
+      1077
+    ],
+    [
+      "data",
+      1001
+    ],
+    [
+      "methods",
+      929
+    ],
+    [
+      "been",
+      879
+    ],
+    [
+      "training",
+      645
+    ],
+    [
+      "policy",
+      603
+    ],
+    [
+      "results",
+      580
+    ],
+    [
+      "other",
+      575
+    ],
+    [
+      "studies",
+      561
+    ],
+    [
+      "two",
+      549
+    ],
+    [
+      "while",
+      526
+    ],
+    [
+      "performance",
+      517
+    ],
+    [
+      "one",
+      501
+    ],
+    [
+      "between",
+      486
+    ],
+    [
+      "recent",
+      464
+    ],
+    [
+      "diffusion",
+      461
+    ],
+    [
+      "optimization",
+      450
+    ],
+    [
+      "time",
+      443
+    ],
+    [
+      "method",
+      439
+    ],
+    [
+      "large",
+      438
+    ],
+    [
+      "high",
+      436
+    ],
+    [
+      "image",
+      427
+    ]
+  ],
+  "calidad_etiquetado": {
+    "filas_con_predicted_label": 173,
+    "acuerdo_predicted_vs_final": 0.7168,
+    "pct_reasignado_por_rescate": 28.3,
+    "pct_sin_marcador_de_cita_train": 48.7,
+    "nota": "El etiquetado no tiene anotacion humana completa; el rescate probabilistico reasigna a clases minoritarias. Junto con el 48.7% de contextos sin marcador, acota el techo de desempeno alcanzable (ver Conclusiones)."
+  }
+}

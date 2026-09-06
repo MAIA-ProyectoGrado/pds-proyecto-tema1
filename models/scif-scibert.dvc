@@ -1,0 +1,6 @@
+outs:
+- md5: ddc0fc74fc830de1b86541374015e7dc.dir
+  size: 440715306
+  nfiles: 8
+  hash: md5
+  path: scif-scibert

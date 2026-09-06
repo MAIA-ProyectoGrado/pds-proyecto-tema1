@@ -1,0 +1,18 @@
+# Entrenamiento y experimentacion - Entrega 2
+# (se instala en un venv aparte: .venv-train)
+pandas>=2.0
+numpy>=1.26
+scikit-learn>=1.4
+matplotlib>=3.7
+mlflow==3.15.2
+boto3>=1.34
+dvc[s3]>=3.50
+
+# v2 (por defecto) - embeddings de sentence-encoder congelado + LogReg
+torch>=2.2
+sentence-transformers>=3.0
+
+# v2 alternativo (--v2_method finetune) - fine-tuning de un encoder
+transformers>=4.40
+datasets>=2.19
+accelerate>=0.30

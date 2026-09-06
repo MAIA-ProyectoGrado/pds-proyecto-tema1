@@ -1,0 +1,57 @@
+{
+  "v1": {
+    "run_id": "7803f9f615ad49b6b3725fddd036fac3",
+    "metrics": {
+      "train_accuracy": 0.8234920634920635,
+      "train_f1_macro": 0.8235223991014968,
+      "train_f1_micro": 0.8234920634920635,
+      "train_precision_macro": 0.8286274534427601,
+      "train_recall_macro": 0.8234419940459619,
+      "val_accuracy": 0.5022222222222222,
+      "val_f1_macro": 0.4959395363660065,
+      "val_f1_micro": 0.5022222222222222,
+      "val_precision_macro": 0.5050436497638309,
+      "val_recall_macro": 0.5063448749732447,
+      "test_accuracy": 0.5374074074074074,
+      "test_f1_macro": 0.5310919317031269,
+      "test_f1_micro": 0.5374074074074074,
+      "test_precision_macro": 0.5389978079676045,
+      "test_recall_macro": 0.5367033741795213
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.3275828627354903,
+      "gap_accuracy_train_val": 0.32126984126984126,
+      "gap_val_test_f1": -0.035152395337120335,
+      "veredicto": "severo"
+    }
+  },
+  "v2": {
+    "run_id": "feb11c72723e41b2adce334e08ae7a3a",
+    "metrics": {
+      "train_accuracy": 0.7226890756302521,
+      "train_f1_macro": 0.7219477412994167,
+      "train_f1_micro": 0.7226890756302521,
+      "train_precision_macro": 0.7227073396773884,
+      "train_recall_macro": 0.7226985437396997,
+      "train_loss": 0.9197337031364441,
+      "val_accuracy": 0.5722222222222222,
+      "val_f1_macro": 0.5732480371904516,
+      "val_f1_micro": 0.5722222222222222,
+      "val_precision_macro": 0.5769989513843179,
+      "val_recall_macro": 0.574369880703895,
+      "val_loss": 1.2802866697311401,
+      "test_accuracy": 0.58,
+      "test_f1_macro": 0.5766664404525349,
+      "test_f1_micro": 0.58,
+      "test_precision_macro": 0.5793665359628897,
+      "test_recall_macro": 0.5784644680416973,
+      "test_loss": 1.2416578531265259
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.14869970410896516,
+      "gap_accuracy_train_val": 0.1504668534080299,
+      "gap_val_test_f1": -0.003418403262083314,
+      "veredicto": "moderado"
+    }
+  }
+}
