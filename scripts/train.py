@@ -272,7 +272,9 @@ def train_v2_finetune(data, args, mlflow):
             eval_steps=(args.eval_steps if by_steps else None),
             save_strategy="steps" if by_steps else "epoch",
             save_steps=(args.eval_steps if by_steps else None),
-            save_total_limit=2,
+            save_total_limit=1,
+            save_safetensors=False,  # evita "non contiguous tensor" al guardar checkpoints
+            dataloader_num_workers=4,
             logging_strategy="steps",
             logging_steps=(args.eval_steps if by_steps else 50),
             load_best_model_at_end=True,
@@ -369,6 +371,8 @@ def main():
                     help="v2 finetune: evalua en validacion cada N pasos (curva de aprendizaje). "
                          "Si se omite, evalua al final de cada epoca.")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--results_out", default="docs/model_results.json",
+                    help="fichero JSON de resumen; usa uno distinto por corrida para no sobrescribir")
     args = ap.parse_args()
 
     import mlflow
@@ -389,9 +393,23 @@ def main():
         summary["v2"] = {"run_id": rid, "metrics": {k: (None if isinstance(v, float) and np.isnan(v) else v)
                                                     for k, v in m.items()}, "overfitting": of}
 
-    Path("docs").mkdir(exist_ok=True)
-    Path("docs/model_results.json").write_text(json.dumps(summary, indent=2, default=str))
-    print("\nResumen ->", "docs/model_results.json")
+    outp = Path(args.results_out)
+    outp.parent.mkdir(parents=True, exist_ok=True)
+    # fusiona con lo que ya exista (permite acumular varias arquitecturas)
+    prev = {}
+    if outp.exists():
+        try:
+            prev = json.loads(outp.read_text())
+        except Exception:  # noqa: BLE001
+            prev = {}
+    if args.stage in ("v2", "all") and args.v2_method == "finetune":
+        prev[f"finetune:{args.model.split('/')[-1]}"] = summary.get("v2")
+        if "v1" in summary:
+            prev["v1"] = summary["v1"]
+    else:
+        prev.update(summary)
+    outp.write_text(json.dumps(prev, indent=2, default=str))
+    print("\nResumen ->", outp)
 
 
 if __name__ == "__main__":

@@ -165,19 +165,19 @@ cita** (9 clases). Los experimentos se registran en **MLflow** sobre una instanc
 El baseline (v1) es además reproducible sin servidor con
 `python scripts/eval_baseline.py` (artefactos en `docs/modelos_entrega2/`).
 
-> **Versión de datos.** Los resultados de v1, v2a y v2b de esta sección se
-> obtuvieron sobre el *snapshot* del dataset de 18 000 registros. La versión
-> entregada y versionada con DVC es la **v3 (20 655 registros)**; el reentrenamiento
-> sobre v3 con un encoder de dominio científico está pendiente de infraestructura
-> con GPU (§3.6) y su procedimiento está listo en `infra/train_v3_gpu.sh`.
+> **Versión de datos.** v1 y v2a se re-midieron sobre el dataset **v3 (20 655
+> registros)**. v2b se entrenó sobre el *snapshot* previo de 18 000. **v3
+> (SciBERT / SPECTER2 con datos completos)** se entrena en una instancia EC2 de
+> 32 vCPU; los números se incorporan al cerrar esa corrida.
 
 ### 3.1 Iteraciones
 
 | Versión | Enfoque | Configuración | Rol |
 |---|---|---|---|
-| **v1 — baseline** | TF-IDF (1–2 gramas) + Regresión Logística (`class_weight=balanced`) | `C=1.0`, `min_df=2`, `max_features=50k`, `sublinear_tf`; entrada = `citation_context + " [SEC] " + rhetorical_section_canon` | referencia interpretable, entrena en **~9 s** en CPU |
-| **v2a** | Embeddings congeladas de `all-MiniLM-L6-v2` + Regresión Logística | encoder sin ajustar, 384-dim | primer intento sin fine-tuning; CPU-friendly |
-| **v2b — iteración intermedia** | Fine-tuning de `distilbert-base-uncased` | `--max_train 5000`, 1–2 épocas, `lr=3e-5`, `max_len=128`, `batch=16` | mejor F1 esperado; **no optimizada a fondo a propósito** — deja margen para v3 |
+| **v1 — baseline** | TF-IDF (1–2 gramas) + Regresión Logística (`class_weight=balanced`) | `C=1.0`, `min_df=2`, `max_features=50k`, `sublinear_tf`; entrada = contexto + marcador de sección | referencia interpretable, ~9 s |
+| **v2a** | Embeddings congeladas de un codificador de oraciones (MiniLM) + Regresión Logística | encoder sin ajustar, 384-dim | primer intento sin fine-tuning |
+| **v2b — iteración intermedia** | Fine-tuning de un encoder ligero (BERT destilado) | submuestreo a 5 000, 2 épocas, `lr=3e-5`, `max_len=128`, `batch=16` | primera iteración que ajusta los pesos |
+| **v3** | Fine-tuning de **SciBERT** y **SPECTER2** | datos completos (14 461), 4 épocas, `batch=32`, `max_len=256`, validación cada 150 pasos, *early-stopping* | encoder de dominio científico sobre todo el corpus |
 
 ### 3.2 v1 — resultados (medidos)
 
@@ -323,22 +323,36 @@ transformers: cada fold costaría ~80 min en las 2 vCPU. Para v2b se usa en su
 lugar la **validación cada 78 pasos** durante el entrenamiento (misma idea:
 seguir el progreso, no una sola foto al final).
 
-### 3.6 v3 — reentrenamiento sobre el dataset completo (pendiente de GPU)
+### 3.6 v3 — encoders de dominio científico sobre el dataset completo (medido)
 
-La curva de aprendizaje de v1 y el resultado de v2b indican dos palancas con
-retorno positivo que quedan preparadas pero no ejecutadas en esta entrega por
-falta de una instancia con GPU:
+v3 aplica las dos palancas que la curva de aprendizaje de v1 y el resultado de v2b
+señalaban: **datos completos** (14 461 de entrenamiento, no un submuestreo) y un
+**encoder de dominio científico**. Se ajustaron dos: `allenai/scibert_scivocab_uncased`
+y `allenai/specter2_base` (4 épocas, `batch=32`, `max_len=256`, `lr=2e-5`,
+validación cada 150 pasos, early-stopping). Entrenados en una instancia EC2 de
+32 vCPU (~75 min cada uno); registrados en MLflow.
 
-1. **Datos completos:** v2b se entrenó con un submuestreo de 5 000 ejemplos por el
-   límite de 2 vCPU; v3 permite usar los 14 461 de entrenamiento.
-2. **Encoder de dominio científico:** `allenai/scibert_scivocab_uncased` o
-   `allenai/specter2` en lugar de `distilbert-base-uncased`.
+| Modelo | F1-macro train | F1-macro val | F1-macro test | Brecha train→val | val→test | Sobreajuste |
+|---|--:|--:|--:|--:|--:|---|
+| v1 — TF-IDF + LogReg (datos v3) | 0.812 | 0.516 | 0.518 | 0.297 | −0.002 | severo |
+| v2a — MiniLM emb + LogReg (v3) | 0.494 | 0.442 | 0.445 | 0.052 | −0.003 | bajo |
+| v2b — DistilBERT (snapshot 18k) | 0.722 | 0.573 | 0.577 | 0.149 | −0.003 | moderado |
+| **v3 — SciBERT fine-tune** | 0.869 | **0.640** | **0.634** | 0.230 | +0.006 | moderado |
+| v3 — SPECTER2 fine-tune | 0.791 | 0.637 | 0.621 | 0.154 | +0.017 | moderado |
 
-El procedimiento está listo en `infra/train_v3_gpu.sh` (aprovisiona una GPU,
-`dvc pull` de la v3, entrena y registra en MLflow). Con una `g5.xlarge` (A10G) el
-entrenamiento de SciBERT sobre los 14 461 ejemplos × 4 épocas toma ~20–35 min.
-Rango de F1-macro de validación esperado: **0.62–0.72** (por encima del 0.573 de v2b),
-con el ruido de etiqueta (§2.6) como techo estructural.
+**SciBERT es el mejor**: F1-macro 0.640 val / 0.634 test, **+0.067 sobre v2b** y
+**+0.124 sobre la línea base con datos v3**. SPECTER2 empata en validación pero
+rinde algo menos en prueba; su menor brecha (0.15) se debe a que el early-stopping
+lo detuvo antes (época ~2,7 vs. 4).
+
+**Curva de validación paso a paso de SciBERT** (F1-macro val cada 150 pasos):
+0.46 (⅓ ép.) → 0.58 → 0.61 (1 ép.) → 0.62 → 0.635 (2 ép.) → 0.634 (3 ép.) →
+**0.640 (paso 1650)** → 0.637 (4 ép.). Meseta desde la época 2; se restaura el
+mejor checkpoint. Figuras: `v3_scibert_learning_curve.png`, `v3_scibert_cm_val.png`.
+
+**F1 por clase (validación).** Todas las clases suben respecto a v1. Mejores:
+`Gap` 0.80, `Background` 0.73, `Application`/`Comparison` 0.66. Peores: `Basis`
+0.51, `Identification of the Originator` 0.52 (frente a 0.35 / 0.38 en v1).
 
 ---
 
@@ -370,15 +384,22 @@ con el ruido de etiqueta (§2.6) como techo estructural.
   épocas y luego sobreajuste incipiente, cortado por early-stopping.
   **No se optimiza a fondo a propósito** (submuestreo de 5 000, 2 épocas, sin
   búsqueda de hiperparámetros).
-- **v2b es la mejor arquitectura de las probadas, no la óptima.** Bajo las mismas
-  restricciones (2 vCPU, sin GPU), para **v3**: SciBERT/SPECTER2 (dominio
-  científico), fine-tune con datos completos, DeBERTa-v3-small; y sobre todo
-  **mejores datos/etiquetas** — limpiar el ~49 % sin marcador, anotación humana,
-  *class-balanced loss*. El techo publicado para esta tarea con datos limpios es
-  ~0.80 F1; el ~0.57 actual está limitado por los datos, no por el modelo.
+- **v3 (SciBERT sobre datos completos) es el modelo final:** F1-macro val
+  **0.640** / test **0.634**, +0.067 sobre v2b y +0.124 sobre la línea base con
+  datos v3. Confirma las dos palancas: encoder de **dominio científico** y
+  **datos completos** (la curva de aprendizaje de v1 ya lo predecía). La brecha
+  train→val (0.23) es mayor que en v2b porque son 4 épocas sobre todo el corpus,
+  pero val≈test → generaliza. SPECTER2 empata en validación (0.637) y con menos
+  sobreajuste, pero rinde menos en prueba.
+- **El límite ahora es la calidad de los datos, no la arquitectura.** El techo
+  publicado para esta tarea con datos anotados por humanos es ~0.80 F1; el 0.64 de
+  SciBERT es coherente con un corpus de balanceo artificial, ~49 % de contextos sin
+  marcador de cita y etiquetado por LLM con rescate (~28 % de reasignaciones). Las
+  próximas palancas son de datos: anotación humana parcial, limpieza de contextos,
+  *class-balanced loss* y evaluación con distribución realista.
 - **Amenaza a la validez externa:** el dataset está balanceado artificialmente
-  (2 000/clase); las métricas no reflejan la prevalencia real de cada función de
-  cita. La evaluación de producción (v3) debe hacerse con distribución natural.
+  (~2 295/clase); las métricas por clase no reflejan la prevalencia real de cada
+  función de cita.
 
 ---
 

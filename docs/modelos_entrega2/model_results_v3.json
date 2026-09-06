@@ -1,0 +1,112 @@
+{
+  "v1": {
+    "run_id": "d7c884a0f5214109987ad78c4328048a",
+    "metrics": {
+      "train_accuracy": 0.8125994052970057,
+      "train_f1_macro": 0.8124155597480054,
+      "train_f1_micro": 0.8125994052970057,
+      "train_precision_macro": 0.8175726399157607,
+      "train_recall_macro": 0.8122571474520731,
+      "val_accuracy": 0.5238863783085862,
+      "val_f1_macro": 0.5158512341960111,
+      "val_f1_micro": 0.5238863783085862,
+      "val_precision_macro": 0.5196511153928279,
+      "val_recall_macro": 0.5245316554169145,
+      "test_accuracy": 0.5213178294573644,
+      "test_f1_macro": 0.5177398747366602,
+      "test_f1_micro": 0.5213178294573644,
+      "test_precision_macro": 0.5238306882867331,
+      "test_recall_macro": 0.5232300647198658
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.2965643255519943,
+      "gap_accuracy_train_val": 0.2887130269884195,
+      "gap_val_test_f1": -0.001888640540649078,
+      "veredicto": "severo"
+    }
+  },
+  "v2": {
+    "run_id": "8abf196dba054436a3d4aac5a38e68e5",
+    "metrics": {
+      "train_accuracy": 0.5008643938870064,
+      "train_f1_macro": 0.49431340458976714,
+      "train_f1_micro": 0.5008643938870064,
+      "train_precision_macro": 0.49444605713174755,
+      "train_recall_macro": 0.5001407164669301,
+      "val_accuracy": 0.4483537766300839,
+      "val_f1_macro": 0.4418746219387789,
+      "val_f1_micro": 0.4483537766300839,
+      "val_precision_macro": 0.4426296876429,
+      "val_recall_macro": 0.4495231652655129,
+      "test_accuracy": 0.4509043927648579,
+      "test_f1_macro": 0.4446411945027237,
+      "test_f1_micro": 0.4509043927648579,
+      "test_precision_macro": 0.4446790652089183,
+      "test_recall_macro": 0.4523625256671575
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.052438782650988225,
+      "gap_accuracy_train_val": 0.05251061725692252,
+      "gap_val_test_f1": -0.0027665725639448024,
+      "veredicto": "bajo"
+    }
+  },
+  "finetune:scibert_scivocab_uncased": {
+    "run_id": "1d1542eabfe0492191d2d118fd699a9b",
+    "metrics": {
+      "train_accuracy": 0.8706866745038379,
+      "train_f1_macro": 0.8693704642666193,
+      "train_f1_micro": 0.8706866745038379,
+      "train_precision_macro": 0.8709065282105538,
+      "train_recall_macro": 0.8700744751411623,
+      "train_loss": 0.41223910450935364,
+      "val_accuracy": 0.6420271142672692,
+      "val_f1_macro": 0.6395278481139903,
+      "val_f1_micro": 0.6420271142672692,
+      "val_precision_macro": 0.6405925910416005,
+      "val_recall_macro": 0.6420076138075279,
+      "val_loss": 1.1303019523620605,
+      "test_accuracy": 0.6337209302325582,
+      "test_f1_macro": 0.6335313229482371,
+      "test_f1_micro": 0.6337209302325582,
+      "test_precision_macro": 0.6341010156201835,
+      "test_recall_macro": 0.6369858257912256,
+      "test_loss": 1.1072652339935303
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.22984261615262902,
+      "gap_accuracy_train_val": 0.22865956023656864,
+      "gap_val_test_f1": 0.005996525165753219,
+      "veredicto": "moderado"
+    }
+  },
+  "finetune:specter2_base": {
+    "run_id": "fe4a4397e4f14f5b90589ced94ca908b",
+    "metrics": {
+      "train_accuracy": 0.792061406541733,
+      "train_f1_macro": 0.7906687317540695,
+      "train_f1_micro": 0.792061406541733,
+      "train_precision_macro": 0.7933758625838593,
+      "train_recall_macro": 0.7916663935681059,
+      "train_loss": 0.6427512764930725,
+      "val_accuracy": 0.6400903808908973,
+      "val_f1_macro": 0.6370396082109264,
+      "val_f1_micro": 0.6400903808908973,
+      "val_precision_macro": 0.6402845762989643,
+      "val_recall_macro": 0.6393144494877807,
+      "val_loss": 1.0586098432540894,
+      "test_accuracy": 0.622093023255814,
+      "test_f1_macro": 0.6205218781792554,
+      "test_f1_micro": 0.622093023255814,
+      "test_precision_macro": 0.6224268932076146,
+      "test_recall_macro": 0.6241814095051929,
+      "test_loss": 1.06413996219635
+    },
+    "overfitting": {
+      "gap_f1_macro_train_val": 0.15362912354314306,
+      "gap_accuracy_train_val": 0.15197102565083564,
+      "gap_val_test_f1": 0.016517730031671007,
+      "veredicto": "moderado"
+    }
+  }
+}
