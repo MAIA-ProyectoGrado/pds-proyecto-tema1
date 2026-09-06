@@ -293,7 +293,7 @@ def train_v2_finetune(data, args, mlflow):
             train_dataset=ds["train"], eval_dataset=ds["val"],
             tokenizer=tok, data_collator=DataCollatorWithPadding(tok),
             compute_metrics=compute_metrics,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
+            callbacks=[EarlyStoppingCallback(early_stopping_patience=args.early_stop_patience)],
         )
         t = time.time()
         train_out = trainer.train()
@@ -388,6 +388,8 @@ def main():
     ap.add_argument("--max_len", type=int, default=256)
     ap.add_argument("--max_train", type=int, default=None,
                     help="submuestrea train a N filas (estratificado). Para v2 en CPU 2 vCPU: 4000-6000.")
+    ap.add_argument("--early_stop_patience", type=int, default=2,
+                    help="nº de evaluaciones sin mejora antes de detener (menor = corta antes)")
     ap.add_argument("--eval_steps", type=int, default=None,
                     help="v2 finetune: evalua en validacion cada N pasos (curva de aprendizaje). "
                          "Si se omite, evalua al final de cada epoca.")

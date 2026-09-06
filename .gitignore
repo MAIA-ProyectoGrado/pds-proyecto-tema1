@@ -32,3 +32,7 @@ data/processed/*
 !data/processed/.gitkeep
 !data/processed/dataset_manifest.json
 /dataset
+
+# encoder ajustado v3 (grande): se versiona con DVC, no con git
+models/scif-scibert/
+models/scif-*-v3/
