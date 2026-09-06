@@ -274,7 +274,7 @@ def train_v2_finetune(data, args, mlflow):
             save_steps=(args.eval_steps if by_steps else None),
             save_total_limit=1,
             save_safetensors=False,  # evita "non contiguous tensor" al guardar checkpoints
-            dataloader_num_workers=4,
+            dataloader_num_workers=(4 if device == "cuda" else 0),
             logging_strategy="steps",
             logging_steps=(args.eval_steps if by_steps else 50),
             load_best_model_at_end=True,
@@ -342,10 +342,31 @@ def train_v2_finetune(data, args, mlflow):
         of = overfitting_summary(mlflow, m)
         mlflow.log_dict(of, "overfitting_v2.json")
 
-        import mlflow.transformers
-        _log_model_safe(lambda **kw: mlflow.transformers.log_model(
-            {"model": trainer.model, "tokenizer": tok}, "model",
-            task="text-classification", **kw))
+        # 1) Guardado ROBUSTO como directorio HuggingFace plano (lo que sirve la API).
+        pkg = Path(args.model_out or f"models/scif-{args.model.split('/')[-1]}")
+        pkg.mkdir(parents=True, exist_ok=True)
+        try:
+            trainer.model.config.contiguous = True
+        except Exception:  # noqa: BLE001
+            pass
+        for p in trainer.model.parameters():
+            p.data = p.data.contiguous()
+        trainer.save_model(str(pkg))          # config.json + pytorch_model.bin (safetensors off)
+        tok.save_pretrained(str(pkg))
+        (pkg / "label_order.json").write_text(json.dumps(LABELS))
+        (pkg / "input_format.json").write_text(json.dumps(
+            {"template": 'citation_context + " [SEC] " + rhetorical_section_canon',
+             "max_len": args.max_len, "base_model": args.model}))
+        print(f"[ok] modelo empaquetado en {pkg}/")
+        mlflow.log_artifacts(str(pkg), artifact_path="model")
+        # 2) Ademas, intento el formato MLflow (no bloquea si falla).
+        try:
+            import mlflow.transformers
+            _log_model_safe(lambda **kw: mlflow.transformers.log_model(
+                {"model": trainer.model, "tokenizer": tok}, "model_mlflow",
+                task="text-classification", **kw))
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] mlflow.transformers.log_model omitido: {e}")
         print("v2", json.dumps({k: round(float(v), 4) for k, v in m.items() if not np.isnan(v)}, indent=2))
         print("v2 overfitting:", of)
         return run.info.run_id, m, of
@@ -371,6 +392,8 @@ def main():
                     help="v2 finetune: evalua en validacion cada N pasos (curva de aprendizaje). "
                          "Si se omite, evalua al final de cada epoca.")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--model_out", default=None,
+                    help="carpeta donde empaquetar el modelo HF ajustado (por defecto models/scif-<modelo>)")
     ap.add_argument("--results_out", default="docs/model_results.json",
                     help="fichero JSON de resumen; usa uno distinto por corrida para no sobrescribir")
     args = ap.parse_args()
