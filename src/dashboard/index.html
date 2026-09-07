@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tablero SCIF — función de cita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wordmark">
+    <h1>Tablero</h1>
+    <span class="rulebar" aria-hidden="true">
+      <i style="background:var(--retr)"></i><i style="background:var(--rhet)"></i>
+    </span>
+    <p>Clasificación de la función retórica de una cita científica.</p>
+  </div>
+  <div class="top-right">
+    <div class="theme" role="group" aria-label="Tema de color">
+      <button id="tLight" aria-pressed="false">Claro</button>
+      <button id="tDark" aria-pressed="false">Oscuro</button>
+    </div>
+    <div class="tags">
+      <span id="apiState">conectando…</span>
+      <span>9 clases</span>
+      <span>EN</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <aside class="rail">
+
+    <div class="blk">
+      <div class="blk-head">
+        <span class="ix">01</span><h2>Contexto de cita</h2>
+        <span class="hint">inglés</span>
+      </div>
+      <div class="examples" role="group" aria-label="Textos de ejemplo">
+        <button type="button" data-ex="0">Ejemplo A</button>
+        <button type="button" data-ex="1">Ejemplo B</button>
+        <button type="button" data-ex="2">Ejemplo C</button>
+      </div>
+      <textarea class="field" id="ctx" spellcheck="false"
+                aria-label="Contexto de cita en inglés"
+                placeholder="Pega aquí una o dos oraciones en inglés que contengan la mención bibliográfica."></textarea>
+      <div class="counter"><span id="wc">0 palabras</span><span id="mk">sin marcador</span></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-head"><span class="ix">02</span><h2>Sección retórica</h2></div>
+      <select class="field" id="section" aria-label="Sección del artículo donde aparece la cita"></select>
+      <p class="help">El modelo la recibe concatenada como <code>[SEC]</code> y afecta la
+      predicción. Es parte de la entrada, no un metadato decorativo.</p>
+    </div>
+
+    <div class="blk">
+      <div class="blk-head"><span class="ix">03</span><h2>Clasificador</h2></div>
+      <div class="models" id="models"></div>
+    </div>
+
+    <button class="run" id="run" disabled>
+      <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M2.5 1.6v9.8l8.4-4.9z" fill="currentColor"/></svg>
+      Clasificar
+    </button>
+  </aside>
+
+  <main class="stage">
+
+    <div class="banner" id="banner" hidden></div>
+
+    <div id="results" hidden>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Función de cita predicha</h3>
+          <span class="sp"></span><span class="eyebrow" id="mChip">—</span>
+        </div>
+        <div class="panel-body">
+          <div class="verdict">
+            <div class="v-l">
+              <span class="eyebrow">clase de mayor probabilidad</span>
+              <span class="v-name" id="vName">—</span>
+              <span class="v-def" id="vDef"></span>
+            </div>
+            <div class="gauge">
+              <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
+                <rect x="8" y="8" width="88" height="88" fill="none" stroke="var(--sunken)" stroke-width="9"/>
+                <rect id="gArc" x="8" y="8" width="88" height="88" fill="none" stroke="var(--rhet)"
+                      stroke-width="9" stroke-dasharray="352" stroke-dashoffset="352"
+                      style="transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.25,1)"/>
+                <text id="gTxt" x="52" y="52" text-anchor="middle" dominant-baseline="middle"
+                      font-family="'DM Mono', monospace" font-size="24" font-weight="500" fill="var(--ink)">—</text>
+                <text x="52" y="70" text-anchor="middle" font-family="'DM Mono', monospace"
+                      font-size="8" letter-spacing="1.2" fill="var(--ink-4)">CONFIANZA</text>
+              </svg>
+            </div>
+          </div>
+          <div class="alert" id="alert" hidden>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex:none;margin-top:3px">
+              <path d="M7 1.6L13.2 12.4H.8z" stroke="var(--warn)" stroke-width="1.3" stroke-linejoin="round"/>
+              <path d="M7 5.6v3M7 10.3h.01" stroke="var(--warn)" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <span id="alertTxt"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Distribución sobre las 9 funciones</h3>
+          <span class="sp"></span><span class="eyebrow">probabilidades devueltas por el modelo</span>
+        </div>
+        <div class="panel-body"><div class="dist" id="dist"></div></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Entrada efectiva enviada al modelo</h3>
+          <span class="sp"></span><span class="eyebrow">campo input_text de la respuesta</span>
+        </div>
+        <div class="panel-body"><pre class="io" id="ioText"></pre></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Ejecución</h3>
+          <span class="sp"></span><span class="eyebrow">medido en esta petición</span>
+        </div>
+        <div class="panel-body">
+          <div class="tele" id="tele"></div>
+          <p class="prov" id="prov"></p>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="empty" id="empty">
+      <h3>Sin clasificación todavía</h3>
+      <p>Escribe un contexto de cita en inglés, elige la sección y el clasificador,
+         y pulsa <strong>Clasificar</strong>.</p>
+    </div>
+
+    <p class="scope-note">
+      <span class="tag">Fuera del alcance de esta entrega</span>
+      Recuperación local de los Top-3 pasajes del artículo citado.
+    </p>
+
+  </main>
+</div>
+
+<footer class="bot">
+  <span>Dashboard SCIF</span>
+  <span id="apiUrlLabel"></span>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

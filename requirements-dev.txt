@@ -1,2 +1,9 @@
 -r requirements.txt
 pytest
+
+# API de inferencia (tests/test_api.py). Se instala solo lo necesario para probar
+# la línea base sklearn; los casos de SciBERT se omiten si no hay torch.
+fastapi==0.121.2
+httpx
+scikit-learn==1.7.2
+cloudpickle>=3.0

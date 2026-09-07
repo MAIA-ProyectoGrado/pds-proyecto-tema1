@@ -1,0 +1,15 @@
+# Servicio de inferencia (se instala en un venv aparte: .venv-api)
+# Requiere Python <= 3.13: torch todavía no publica ruedas para 3.14.
+fastapi==0.121.2
+uvicorn==0.34.0
+pydantic==2.10.6
+
+# Línea base scif-v1-tfidf-logreg (model.pkl serializado con cloudpickle).
+# La versión de scikit-learn debe coincidir con la del entrenamiento.
+scikit-learn==1.7.2
+cloudpickle>=3.0
+numpy>=1.26
+
+# Solo necesarios para scif-scibert; la API funciona sin ellos con la línea base.
+torch>=2.2
+transformers>=4.40

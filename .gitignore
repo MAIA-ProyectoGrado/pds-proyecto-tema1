@@ -3,6 +3,7 @@ env-proj/
 venv/
 .venv/
 .venv-train/
+.venv-api/
 
 # MLflow local / infra
 mlruns/
