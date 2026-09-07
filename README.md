@@ -57,14 +57,18 @@ vigilar el espacio en disco disponible.
 ```
 .
 ├── data/
-│   ├── raw/          # datos crudos descargados de arXiv (versionados con DVC)
-│   └── processed/     # datos ya limpios/estructurados (versionados con DVC)
-├── scripts/           # scripts de extracción y procesamiento de datos
-├── tests/             # pruebas automatizadas
-├── notebooks/         # exploración de datos
-├── docs/               # documentación adicional (maqueta, diagramas, etc.)
-├── src/                 # código fuente del modelo/API/tablero (próximas entregas)
-└── .github/workflows/   # pipeline de integración continua
+│   ├── raw/            # datos crudos descargados de arXiv (versionados con DVC)
+│   └── processed/      # datos ya limpios/estructurados (versionados con DVC)
+├── models/             # modelos empaquetados listos para servir + cargador de referencia
+├── src/
+│   ├── api/            # servicio de inferencia (FastAPI)
+│   └── dashboard/      # tablero que consume la API
+├── scripts/            # extracción, preparación de datos, entrenamiento y métricas
+├── tests/              # pruebas automatizadas
+├── notebooks/          # exploración de datos
+├── infra/              # aprovisionamiento de EC2 y MLflow
+├── docs/               # EDA, resultados de modelos y soportes
+└── .github/workflows/  # pipeline de integración continua
 ```
 
 ## Instrucciones de uso
@@ -115,6 +119,37 @@ vigilar el espacio en disco disponible.
 
    ```
    ```
+
+## API de inferencia y tablero
+
+El clasificador de función de cita se sirve con FastAPI y se opera desde un tablero
+web. El tablero **solo muestra información devuelta por la API**: no incorpora
+datos simulados.
+
+```bash
+# Entorno del servicio (torch todavía no publica ruedas para Python 3.14)
+python3.12 -m venv .venv-api && source .venv-api/bin/activate
+pip install -r src/api/requirements.txt
+
+# 1) API — desde la raíz del repo
+uvicorn src.api.main:app --port 8000
+
+# 2) Tablero — en otra terminal
+python src/dashboard/serve.py        # http://127.0.0.1:8080
+```
+
+Endpoints:
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/` | Estado del servicio |
+| `GET` | `/models` | Modelos servibles, sus métricas y las 9 etiquetas canónicas |
+| `POST` | `/predict` | Clasifica un `citation_context` + `rhetorical_section` |
+
+Los pesos se buscan en `models/` (o en la ruta que indique la variable
+`SCIF_MODELS_DIR`). `scif-v1-tfidf-logreg` está versionado en Git;
+`scif-scibert` se obtiene con `dvc pull`. Si SciBERT no está presente, la API
+arranca igual y sirve la línea base.
 
 ## Pruebas
 
