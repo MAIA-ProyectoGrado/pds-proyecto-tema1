@@ -1,11 +1,5 @@
-"""Etiquetas de función de cita: nombre canónico ↔ nombre para mostrar.
+"""Etiquetas de función de cita: nombre canónico - nombre para mostrar.
 
-El nombre **canónico** es el que usó el entrenamiento y el que devuelven los
-artefactos (`models/scif-scibert/label_order.json`). Es la clave con la que viaja
-todo por la API. El nombre *display* existe solo para la interfaz.
-
-Fuente de verdad del orden: `models/<modelo>/label_order.json`. La lista de abajo
-se usa como respaldo cuando el artefacto no la trae.
 """
 from __future__ import annotations
 
