@@ -120,11 +120,56 @@ vigilar el espacio en disco disponible.
    ```
    ```
 
+## Despliegue con Docker
+
+Forma recomendada de levantar el prototipo: un solo comando y un solo puerto.
+
+```bash
+docker compose up -d --build     # tablero en http://localhost:8080
+```
+
+Arquitectura de los contenedores:
+
+| Servicio | Imagen | Puerto | Función |
+|---|---|---|---|
+| `api` | `scif-api` (~410 MB) | interno | FastAPI con los modelos; no se publica al exterior |
+| `dashboard` | `scif-dashboard` (~76 MB) | `8080` | nginx sirve el tablero y hace proxy de `/api/` hacia `api:8000` |
+
+El navegador habla con un único origen, así que **no interviene CORS** y en la nube
+basta abrir un puerto. Los pesos se montan desde `./models` en modo solo lectura:
+no se copian a la imagen, siguen viniendo de DVC. Si falta `models/scif-scibert/`,
+la API arranca igual y sirve la línea base; la recuperación de pasajes responde
+`503` y el tablero lo indica.
+
+```bash
+docker compose logs -f api     # registros
+docker compose ps              # estado y healthcheck
+docker compose down            # detener
+SCIF_PORT=9000 docker compose up -d   # otro puerto
+```
+
+### Despliegue en EC2
+
+```bash
+ssh -i <llave>.pem ubuntu@<IP>
+git clone <repo> && cd pds-proyecto-tema1
+dvc pull models/scif-scibert.dvc      # pesos de SciBERT
+bash infra/deploy_ec2.sh
+```
+
+El script instala Docker si falta, construye las imágenes **en la propia
+instancia** (es x86_64; construirlas en un equipo arm64 daría una arquitectura
+incompatible), levanta los servicios y espera al healthcheck. Hay que abrir el
+puerto 8080/tcp en el grupo de seguridad. La API necesita salida a internet hacia
+`arxiv.org` para la recuperación de pasajes.
+
 ## API de inferencia y tablero
 
-El clasificador de función de cita se sirve con FastAPI y se opera desde un tablero
-web. El tablero **solo muestra información devuelta por la API**: no incorpora
-datos simulados.
+El clasificador de función de cita y la recuperación de pasajes del artículo citado
+se sirven con FastAPI y se operan desde un tablero web. El tablero **solo muestra
+información devuelta por la API**: no incorpora datos simulados.
+
+Para desarrollo sin contenedores:
 
 ```bash
 # Entorno del servicio (torch todavía no publica ruedas para Python 3.14)
@@ -145,6 +190,13 @@ Endpoints:
 | `GET` | `/` | Estado del servicio |
 | `GET` | `/models` | Modelos servibles, sus métricas y las 9 etiquetas canónicas |
 | `POST` | `/predict` | Clasifica un `citation_context` + `rhetorical_section` |
+| `POST` | `/retrieve` | Top-k pasajes del artículo citado (por `arxiv_id` o `cited_text`) más similares al contexto |
+
+La recuperación descarga el PDF de arXiv, lo segmenta en fragmentos de hasta 300
+palabras respetando oraciones y secciones, y los compara con el contexto de cita
+usando el mismo encoder SciBERT del clasificador (mean pooling + coseno). Los
+documentos ya procesados quedan en caché en memoria. Requiere salida a internet
+hacia `arxiv.org` y los pesos de SciBERT.
 
 Los pesos se buscan en `models/` (o en la ruta que indique la variable
 `SCIF_MODELS_DIR`). `scif-v1-tfidf-logreg` está versionado en Git;
