@@ -52,12 +52,13 @@ def test_models_catalog(client):
     assert body["default_model"] in ids
 
 
-def test_scibert_metric_is_not_published_as_verified(client):
-    """El artefacto servido se empaquetó a 1 época y el 0.640 documentado es de 4.
-    Mientras no se pueda re-medir, la API no debe presentarlo como dato firme."""
+def test_catalog_does_not_publish_metrics(client):
+    """El catálogo describe los modelos servibles, no su desempeño: las métricas
+    van en el reporte, donde se puede explicar su procedencia."""
     scibert = next(m for m in client.get("/models").json()["models"] if m["id"] == "scibert")
-    assert scibert["metric_verified"] is False
-    assert scibert["f1_macro_val"] is None
+    assert scibert["recommended"] is True
+    assert scibert["available"] is model_loader.is_available("scibert")
+    assert not any(k.startswith("f1") or k.startswith("metric") for k in scibert)
 
 
 def test_empty_context_is_rejected(client):
