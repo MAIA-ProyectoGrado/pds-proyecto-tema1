@@ -1,0 +1,49 @@
+# Despliegue del prototipo: servicio de inferencia + tablero.
+#
+#   docker compose up -d --build
+#   → tablero en http://localhost:8080
+#
+# Solo se publica el puerto del tablero. El servicio de inferencia queda en la red
+# interna y se alcanza a través de /api/, que nginx redirige. En la EC2 esto
+# significa abrir un único puerto en el grupo de seguridad.
+#
+# Los pesos se montan desde ./models (de solo lectura). Si SciBERT no está,
+# la API arranca igual y sirve la línea base; la recuperación de pasajes queda
+# deshabilitada y el tablero lo indica.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: scif-api:latest
+    container_name: scif-api
+    environment:
+      SCIF_MODELS_DIR: /models
+      # Sin CORS: el navegador solo habla con nginx. La lista queda por si se
+      # expone el puerto 8000 directamente en algún entorno.
+      SCIF_ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+    volumes:
+      - ./models:/models:ro
+    expose:
+      - "8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/', timeout=4).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/dashboard.Dockerfile
+    image: scif-dashboard:latest
+    container_name: scif-dashboard
+    ports:
+      - "${SCIF_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
