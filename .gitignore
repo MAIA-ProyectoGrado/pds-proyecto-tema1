@@ -10,6 +10,7 @@ mlruns/
 mlruns_test/
 mlflow.db
 infra/ec2_instance.env
+infra/ec2_inference.env
 docs/model_results.json
 
 # Python
