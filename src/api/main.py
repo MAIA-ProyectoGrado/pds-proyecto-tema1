@@ -1,15 +1,28 @@
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api import model_loader
+from src.api import model_loader, retrieval
 from src.api.labels import CANONICAL_LABELS, DISPLAY_NAMES, SECTION_OPTIONS, display_name
-from src.api.schemas import ModelsResponse, PredictRequest, PredictResponse
+from src.api.schemas import (
+    ModelsResponse,
+    PredictRequest,
+    PredictResponse,
+    RetrieveRequest,
+    RetrieveResponse,
+)
 
+# Orígenes permitidos. En el despliegue con Docker el navegador solo habla con
+# nginx (mismo origen), así que CORS no interviene; la variable sirve para los
+# entornos donde el tablero y la API se sirven por separado.
 ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
+    o.strip()
+    for o in os.environ.get(
+        "SCIF_ALLOWED_ORIGINS", "http://localhost:8080,http://127.0.0.1:8080"
+    ).split(",")
+    if o.strip()
 ]
 
 
@@ -21,8 +34,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SCIF - API de Inferencia",
-    description="Endpoint REST para clasificar la función retórica de citas científicas.",
-    version="2.0.0",
+    description=(
+        "Clasificación de la función retórica de citas científicas y recuperación "
+        "local de los pasajes más relevantes del artículo citado."
+    ),
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -49,6 +65,7 @@ def list_models():
         labels=CANONICAL_LABELS,
         label_display=DISPLAY_NAMES,
         sections=SECTION_OPTIONS,
+        retrieval_available=retrieval.retrieval_available(),
     )
 
 
@@ -85,3 +102,40 @@ def predict_citation(request: PredictRequest):
         latency_ms=res["latency_ms"],
         status="success",
     )
+
+
+@app.post("/retrieve", response_model=RetrieveResponse)
+def retrieve_passages(request: RetrieveRequest):
+    """Top-k pasajes del artículo citado más similares al contexto de cita.
+    El artículo se indica por id/URL de arXiv o pegando su texto completo."""
+    if not request.citation_context or not request.citation_context.strip():
+        raise HTTPException(status_code=400, detail="El campo citation_context no puede estar vacío.")
+    has_id = bool(request.arxiv_id and request.arxiv_id.strip())
+    has_text = bool(request.cited_text and request.cited_text.strip())
+    if not has_id and not has_text:
+        raise HTTPException(
+            status_code=400,
+            detail="Indica el artículo citado: arxiv_id (id o URL de arXiv) o cited_text (texto completo).",
+        )
+
+    try:
+        res = retrieval.retrieve(
+            request.citation_context,
+            arxiv_id=request.arxiv_id if has_id else None,
+            cited_text=request.cited_text if has_text else None,
+            top_k=request.top_k,
+        )
+    except retrieval.InvalidArxivId as exc:
+        raise HTTPException(status_code=422, detail=f"'{exc}' no es un identificador de arXiv válido.")
+    except retrieval.PaperNotFound as exc:
+        raise HTTPException(status_code=404, detail=f"arXiv no tiene ningún artículo con id '{exc}'.")
+    except retrieval.TextTooShort as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    except retrieval.DownloadError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    except model_loader.ModelUnavailable as exc:
+        raise HTTPException(status_code=503, detail=f"La recuperación requiere SciBERT. {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error durante la recuperación: {exc}")
+
+    return RetrieveResponse(**res, status="success")
