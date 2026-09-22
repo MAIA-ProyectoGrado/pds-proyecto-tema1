@@ -10,6 +10,12 @@ scikit-learn==1.7.2
 cloudpickle>=3.0
 numpy>=1.26
 
+# Recuperación local de pasajes (POST /retrieve): descarga de arXiv y lectura de PDF.
+requests>=2.31
+certifi>=2024.2
+pdfplumber>=0.11
+
 # Solo necesarios para scif-scibert; la API funciona sin ellos con la línea base.
+# La recuperación de pasajes sí los requiere (usa el encoder de SciBERT).
 torch>=2.2
 transformers>=4.40

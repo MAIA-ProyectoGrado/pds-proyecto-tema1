@@ -35,9 +35,6 @@ class ModelInfo(BaseModel):
     available: bool
     loaded: bool
     recommended: bool
-    f1_macro_val: Optional[float]
-    metric_verified: bool
-    metric_note: str
 
 
 class ModelsResponse(BaseModel):
@@ -46,3 +43,54 @@ class ModelsResponse(BaseModel):
     labels: List[str]
     label_display: Dict[str, str]
     sections: List[str]
+    #: la recuperación de pasajes requiere el encoder SciBERT
+    retrieval_available: bool
+
+
+# ── recuperación local de pasajes ───────────────────────────────────────────
+
+class RetrieveRequest(BaseModel):
+    citation_context: str = Field(
+        ...,
+        examples=["We build our citation encoder on top of SciBERT [4] and keep its in-domain vocabulary unchanged."],
+    )
+    #: uno de los dos: identificador (o URL) de arXiv, o el texto completo del artículo citado
+    arxiv_id: Optional[str] = Field(default=None, examples=["1903.10676"])
+    cited_text: Optional[str] = Field(default=None)
+    top_k: int = Field(default=3, ge=1, le=10)
+
+
+class PaperInfo(BaseModel):
+    id: Optional[str]
+    title: Optional[str]
+    authors: List[str]
+    year: str
+    source: str            # "arxiv-pdf" | "text"
+
+
+class RetrievedChunk(BaseModel):
+    rank: int
+    index: int             # posición del chunk dentro del documento (0-based)
+    section: str           # sección retórica canónica de origen
+    text: str
+    n_words: int
+    cosine: float
+
+
+class RetrieveLatency(BaseModel):
+    download: float
+    embed_document: float
+    total: float
+
+
+class RetrieveResponse(BaseModel):
+    paper: PaperInfo
+    n_chunks: int
+    n_words: int
+    chunks: List[RetrievedChunk]
+    #: similitud de cada chunk del documento, en orden; alimenta el mapa del documento
+    scores: List[float]
+    sections: List[str]
+    cached: bool
+    latency_ms: RetrieveLatency
+    status: str

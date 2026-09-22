@@ -1,0 +1,28 @@
+# Contexto de build mínimo: sin esto se copian 420 MB de pesos y el venv en cada build.
+.git
+.dvc
+.venv*
+env-proj
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+
+# Pesos y datos: se montan como volumen o se traen con DVC, no van en la imagen
+models/scif-scibert/
+models/scif-*-v3/
+data/
+dataset/
+*.dvc
+
+# Material que no necesita el runtime
+docs/
+notebooks/
+infra/
+scripts/
+tests/
+mlruns/
+*.md
+!README.md
+*.pem
+.env

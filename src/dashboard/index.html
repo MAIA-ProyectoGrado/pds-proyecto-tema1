@@ -17,7 +17,8 @@
     <span class="rulebar" aria-hidden="true">
       <i style="background:var(--retr)"></i><i style="background:var(--rhet)"></i>
     </span>
-    <p>Clasificación de la función retórica de una cita científica.</p>
+    <p>Clasificación de la función retórica de una cita científica y recuperación de los pasajes
+       más relevantes del artículo citado.</p>
   </div>
   <div class="top-right">
     <div class="theme" role="group" aria-label="Tema de color">
@@ -27,6 +28,7 @@
     <div class="tags">
       <span id="apiState">conectando…</span>
       <span>9 clases</span>
+      <span id="retrTag">Top-3</span>
       <span>EN</span>
     </div>
   </div>
@@ -62,6 +64,22 @@
     <div class="blk">
       <div class="blk-head"><span class="ix">03</span><h2>Clasificador</h2></div>
       <div class="models" id="models"></div>
+    </div>
+
+    <div class="blk">
+      <div class="blk-head">
+        <span class="ix">04</span><h2>Documento citado</h2>
+        <span class="hint">opcional</span>
+      </div>
+      <input class="field" id="arxiv" type="text" spellcheck="false" autocomplete="off"
+             aria-label="Identificador o URL de arXiv del artículo citado"
+             placeholder="ID o URL de arXiv, p. ej. 1903.10676">
+      <p class="help">Se descarga el PDF, se segmenta en fragmentos de hasta 300 palabras y se
+      devuelven los 3 más cercanos al contexto. <strong>Si lo dejas vacío solo se clasifica la
+      función de la cita.</strong> <button type="button" class="link" id="togglePaste">Pegar el texto en su lugar</button></p>
+      <textarea class="field" id="citedText" spellcheck="false" hidden
+                aria-label="Texto completo del artículo citado"
+                placeholder="Pega aquí el texto completo del artículo citado (mínimo 50 palabras)."></textarea>
     </div>
 
     <button class="run" id="run" disabled>
@@ -119,6 +137,34 @@
         <div class="panel-body"><div class="dist" id="dist"></div></div>
       </section>
 
+      <section class="panel" id="pChunks" hidden>
+        <div class="panel-head">
+          <h3>Top-3 pasajes del artículo citado</h3>
+          <span class="sp"></span><span class="eyebrow" id="chunksEyebrow">similitud coseno · SciBERT</span>
+        </div>
+        <div class="panel-body">
+          <div class="paper" id="paperMeta" hidden></div>
+          <div class="rstate" id="rstate" hidden></div>
+          <div class="chunks" id="chunks"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="pMap" hidden>
+        <div class="panel-head">
+          <h3>Mapa del documento citado</h3>
+          <span class="sp"></span><span class="eyebrow" id="mapEyebrow">similitud de cada fragmento</span>
+        </div>
+        <div class="panel-body">
+          <svg class="map-svg" id="map" viewBox="0 0 900 190" preserveAspectRatio="none" role="img"
+               aria-label="Similitud de cada fragmento del documento citado con el contexto de cita"></svg>
+          <div class="map-key">
+            <b><i style="background:var(--retr)"></i>fragmento recuperado (Top-3)</b>
+            <b><i style="background:var(--sunken);border:1px solid var(--rule)"></i>fragmento descartado</b>
+            <b>eje Y = similitud coseno · bandas = secciones</b>
+          </div>
+        </div>
+      </section>
+
       <section class="panel">
         <div class="panel-head">
           <h3>Entrada efectiva enviada al modelo</h3>
@@ -134,7 +180,6 @@
         </div>
         <div class="panel-body">
           <div class="tele" id="tele"></div>
-          <p class="prov" id="prov"></p>
         </div>
       </section>
 
@@ -142,14 +187,10 @@
 
     <div class="empty" id="empty">
       <h3>Sin clasificación todavía</h3>
-      <p>Escribe un contexto de cita en inglés, elige la sección y el clasificador,
-         y pulsa <strong>Clasificar</strong>.</p>
+      <p>Escribe un contexto de cita en inglés, elige la sección y el clasificador y,
+         si quieres los pasajes del artículo citado, indica su id de arXiv. Luego pulsa
+         <strong>Clasificar</strong>.</p>
     </div>
-
-    <p class="scope-note">
-      <span class="tag">Fuera del alcance de esta entrega</span>
-      Recuperación local de los Top-3 pasajes del artículo citado.
-    </p>
 
   </main>
 </div>
