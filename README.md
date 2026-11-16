@@ -226,3 +226,64 @@ Para garantizar alta disponibilidad y continuidad del servicio de inferencia sin
 ### Ventajas Operativas
 * **Cero tiempo de inactividad (Zero-Downtime):** Permite levantar y probar el microservicio y el tablero Dash en segundos tras clonar el repositorio, incluso sin credenciales activas de S3/DVC.
 * **Bajo consumo de recursos:** Opera en instancias CPU mínimas con latencias inferiores a 5 ms por consulta.
+
+
+
+
+## Especificaciones de Hardware y Rendimiento
+
+### Infraestructura de Cómputo (AWS EC2)
+* **Entorno de Producción / Inferencia (API + Tablero):** Instancia AWS EC2 `t3.large` (2 vCPUs Intel Xeon, 8 GB RAM, almacenamiento EBS gp3) ejecutando contenedores Docker aislados para FastAPI (`puerto 8000`) y Dash (`puerto 8050`).
+* **Entorno de Entrenamiento (Fine-Tuning):** Instancia escalada a **32 vCPUs** (64 GB RAM) para el ajuste fino supervisado de arquitecturas Transformer (`max_len=256`, `batch_size=32`, 4 épocas, ~75 minutos por modelo) con trazabilidad en MLflow y versionamiento de datos en DVC/S3.
+
+### Tabla Comparativa de Latencia y Desempeño (Partición de Prueba)
+
+| Modelo | Tipo de Arquitectura | F1-Macro (Test) | Latencia Promedio (CPU) | Tamaño Artefacto |
+| :--- | :--- | :---: | :---: | :---: |
+| **v1 — TF-IDF + Reg. Logística** | Léxico (Respaldo) | `0.520` | `< 5 ms` | `~4 MB` |
+| **v2a — Embeddings Congelados** | Semántico Estático | `0.440` | `~25 ms` | `~90 MB` |
+| **v2b — DistilBERT Fine-Tuned** | Encoder Ligero | `0.580` | `~45 ms` | `~260 MB` |
+| **v3 — SPECTER2 Fine-Tuned** | Encoder Científico | `0.621` | `~95 ms` | `~440 MB` |
+| **v3 — SciBERT Fine-Tuned (Activo)** | Encoder Científico | **`0.634`** | `~90 ms` | `~440 MB` |
+
+---
+
+## Ejemplos de Consulta a la API (`curl`)
+
+### 1. Verificar estado del servicio (`/health`)
+```bash
+curl -X GET "http://localhost:8000/health" \
+     -H "Accept: application/json"
+```
+
+### 2. Clasificar la función retórica de una cita (`/predict`)
+```bash
+curl -X POST "http://localhost:8000/predict" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "citation_context": "In contrast to previous approaches that rely solely on surface lexical cues, our framework models discourse-level rhetorical intent.",
+           "rhetorical_section": "Introduction"
+         }'
+```
+
+**Ejemplo de respuesta JSON:**
+```json
+{
+  "predicted_label": "Comparison",
+  "confidence": 0.84,
+  "ambiguity_warning": false,
+  "model_used": "scibert-finetuned",
+  "latency_ms": 88.4,
+  "probabilities": {
+    "Comparison": 0.84,
+    "Gap": 0.08,
+    "Background": 0.04,
+    "Basis": 0.01,
+    "Application": 0.01,
+    "Modification_Improvement": 0.01,
+    "Evidence": 0.005,
+    "Identification_of_the_Originator": 0.003,
+    "Further_Reading": 0.002
+  }
+}
+```
