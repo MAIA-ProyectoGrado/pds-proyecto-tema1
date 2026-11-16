@@ -213,3 +213,16 @@ pytest
 
 y corren automáticamente en cada push mediante el pipeline definido en
 `.github/workflows/tests.yml`.
+
+## Respaldo Léxico Autónomo (Fallback Operativo)
+
+Para garantizar alta disponibilidad y continuidad del servicio de inferencia sin depender estrictamente de la descarga o carga en memoria de los pesos pesados de Transformers (`SciBERT` / `SPECTER2`, >400 MB), la API de FastAPI implementa un mecanismo automático de **degradación elegante (graceful fallback)** hacia la línea base léxica (`TF-IDF + Regresión Logística`).
+
+### Funcionamiento del Mecanismo
+1. **Verificación al arranque y en inferencia:** Al iniciar el contenedor o recibir una solicitud en `/predict`, el gestor de modelos verifica la existencia e integridad de los artefactos densos en `MODEL_DIR` (`models/scibert_finetuned`).
+2. **Activación automática del respaldo:** Si los pesos pesados no están presentes (por ejemplo, en despliegues ligeros sin descarga previa desde AWS S3/DVC, entornos con restricciones de RAM o fallos de carga), el sistema redirecciona automáticamente la inferencia al artefacto liviano definido en `FALLBACK_MODEL_PATH` (`models/tfidf_logreg.joblib`, <5 MB).
+3. **Transparencia en la respuesta JSON:** El endpoint `/predict` mantiene exactamente el mismo contrato de salida (categoría predicha, distribución probabilística de 9 clases, alerta de ambigüedad si la brecha es `< 0.10` y latencia en ms), indicando explícitamente en los metadatos de respuesta (`model_used: "tfidf-fallback"`) que la predicción fue atendida en modo autónomo ligero.
+
+### Ventajas Operativas
+* **Cero tiempo de inactividad (Zero-Downtime):** Permite levantar y probar el microservicio y el tablero Dash en segundos tras clonar el repositorio, incluso sin credenciales activas de S3/DVC.
+* **Bajo consumo de recursos:** Opera en instancias CPU mínimas con latencias inferiores a 5 ms por consulta.
