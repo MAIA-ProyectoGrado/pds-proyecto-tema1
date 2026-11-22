@@ -89,6 +89,13 @@ def is_available(model_id: str) -> bool:
     return (d / "model.pkl").exists() or (d / "config.json").exists()
 
 
+def missing_weights_message(model_id: str) -> str:
+    """Qué falta y cómo obtenerlo. Lo usan el catálogo, el tablero y los errores 503."""
+    return (f"Faltan los pesos de {REGISTRY[model_id]['name']} en "
+            f"models/{REGISTRY[model_id]['dirname']}. "
+            "Para descargarlos, sigue la sección «Modelos» del README.")
+
+
 def get_predictor(model_id: str) -> Predictor:
     """Carga (una sola vez) y devuelve el predictor del modelo pedido."""
     if model_id not in REGISTRY:
@@ -99,10 +106,7 @@ def get_predictor(model_id: str) -> Predictor:
         if model_id in _cache:
             return _cache[model_id]
         if not is_available(model_id):
-            raise ModelUnavailable(
-                f"No hay pesos en {model_dir(model_id)}. "
-                "Ejecuta `dvc pull` o define SCIF_MODELS_DIR."
-            )
+            raise ModelUnavailable(missing_weights_message(model_id))
         _cache[model_id] = Predictor(model_dir(model_id), config.AMBIGUITY_THRESHOLD)
     return _cache[model_id]
 
@@ -125,12 +129,13 @@ def encoder_loaded() -> bool:
 
 def predict(citation_context: str, rhetorical_section: str | None, model_id: str,
             passages: list[str] | None = None, cited_title: str | None = None) -> dict:
-    """Inferencia real. Devuelve además la entrada efectiva y la latencia medida."""
+    """Inferencia real. Devuelve además la entrada efectiva y la latencia del modelo,
+    medida sin la espera por el turno de inferencia."""
     predictor = get_predictor(model_id)
-    started = time.perf_counter()
     with _infer_lock:
+        started = time.perf_counter()
         result = predictor.predict(citation_context, rhetorical_section, passages, cited_title)
-    result["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        result["latency_ms"] = round((time.perf_counter() - started) * 1000, 1)
     result["model_id"] = model_id
     return result
 
@@ -142,6 +147,7 @@ def catalog() -> list[dict[str, Any]]:
         entry = {k: v for k, v in meta.items() if k != "dirname"}
         entry["available"] = is_available(mid)
         entry["loaded"] = mid in _cache
+        entry["unavailable_reason"] = None if entry["available"] else missing_weights_message(mid)
         out.append(entry)
     return out
 

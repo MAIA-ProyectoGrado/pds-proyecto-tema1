@@ -59,11 +59,11 @@ def build(citation_context: str, *, reads_passages: bool,
                             detail="Este modelo solo lee el contexto y la sección; no usa el artículo citado.")
     if not has_id and not has_text:
         return KeySentences(NOT_PROVIDED,
-                            detail="No se indicó el artículo citado: el modelo clasificó solo con el contexto y la sección.")
+                            detail="No se indicó el artículo citado: el modelo clasificó sin él.")
     if not model_loader.encoder_available():
         return KeySentences(FAILED, detail=(
             "Falta el codificador de oraciones clave (models/minilm-l6-v2). "
-            "El modelo clasificó solo con el contexto y la sección."))
+            "El modelo clasificó sin el artículo citado."))
 
     paper_id = title = None
     t = time.perf_counter()
@@ -99,10 +99,10 @@ def build(citation_context: str, *, reads_passages: bool,
             source, text, cap = "text", cited_text, MAX_CANDIDATES
     fetch_ms = _ms(t)
 
-    t = time.perf_counter()
     with model_loader._infer_lock:
+        t = time.perf_counter()
         sentences = select_passages(citation_context, text, model_loader.encoder(), k=K, max_candidates=cap)
-    encode_ms = _ms(t)
+        encode_ms = _ms(t)
     if not sentences:
         return KeySentences(FAILED, source=source, paper_id=paper_id, title=title,
                             detail="El texto del artículo citado no tiene oraciones utilizables. "

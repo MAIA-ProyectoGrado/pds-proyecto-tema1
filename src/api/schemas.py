@@ -96,6 +96,8 @@ class ModelInfo(BaseModel):
     available: bool
     loaded: bool
     recommended: bool
+    #: qué falta y cómo obtenerlo, si los pesos no están en disco (null si está disponible)
+    unavailable_reason: Optional[str] = None
 
 
 class ModelsResponse(BaseModel):

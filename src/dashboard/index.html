@@ -13,12 +13,12 @@
 
 <header class="top">
   <div class="wordmark">
-    <h1>Tablero</h1>
+    <h1>Tablero SCIF</h1>
     <span class="rulebar" aria-hidden="true">
       <i style="background:var(--retr)"></i><i style="background:var(--rhet)"></i>
     </span>
-    <p>Clasificación de la función retórica de una cita científica y recuperación de los pasajes
-       más relevantes del artículo citado.</p>
+    <p>Clasifica la función retórica de una cita científica y muestra en qué pasajes del
+       artículo citado se sustenta.</p>
   </div>
   <div class="top-right">
     <div class="theme" role="group" aria-label="Tema de color">
@@ -26,10 +26,10 @@
       <button id="tDark" aria-pressed="false">Oscuro</button>
     </div>
     <div class="tags">
-      <span id="apiState">conectando…</span>
-      <span>9 clases</span>
-      <span id="retrTag">Top-3</span>
-      <span>EN</span>
+      <span id="apiState" role="status">conectando…</span>
+      <span>9 funciones</span>
+      <span id="retrTag">pasajes</span>
+      <a id="docsLink" href="#" target="_blank" rel="noopener">documentación de la API</a>
     </div>
   </div>
 </header>
@@ -55,31 +55,31 @@
     </div>
 
     <div class="blk">
-      <div class="blk-head"><span class="ix">02</span><h2>Sección retórica</h2></div>
+      <div class="blk-head"><span class="ix">02</span><h2>Sección del artículo</h2></div>
       <select class="field" id="section" aria-label="Sección del artículo donde aparece la cita"></select>
-      <p class="help">El modelo la recibe concatenada como <code>[SEC]</code> y afecta la
-      predicción. Es parte de la entrada, no un metadato decorativo.</p>
-    </div>
-
-    <div class="blk">
-      <div class="blk-head"><span class="ix">03</span><h2>Clasificador</h2></div>
-      <div class="models" id="models"></div>
+      <p class="help">El modelo la lee junto al contexto. Si no la conoces, elige
+      <strong>Otra / no sé</strong> y el modelo clasifica sin sección.</p>
     </div>
 
     <div class="blk">
       <div class="blk-head">
-        <span class="ix">04</span><h2>Documento citado</h2>
-        <span class="hint">opcional</span>
+        <span class="ix">03</span><h2>Artículo citado</h2>
+        <span class="hint rec">recomendado</span>
       </div>
       <input class="field" id="arxiv" type="text" spellcheck="false" autocomplete="off"
              aria-label="Identificador o URL de arXiv del artículo citado"
              placeholder="ID o URL de arXiv, p. ej. 1903.10676">
-      <p class="help">Se descarga el PDF, se segmenta en fragmentos de hasta 300 palabras y se
-      devuelven los 3 más cercanos al contexto. <strong>Si lo dejas vacío solo se clasifica la
-      función de la cita.</strong> <button type="button" class="link" id="togglePaste">Pegar el texto en su lugar</button></p>
+      <p class="help">SciBERT lee las <strong>3 oraciones clave</strong> de su abstract, las más
+      cercanas a la cita. El tablero además busca los 3 pasajes más parecidos en el artículo
+      completo. <button type="button" class="link" id="togglePaste">Pegar el texto en su lugar</button></p>
       <textarea class="field" id="citedText" spellcheck="false" hidden
-                aria-label="Texto completo del artículo citado"
-                placeholder="Pega aquí el texto completo del artículo citado (mínimo 50 palabras)."></textarea>
+                aria-label="Abstract o texto completo del artículo citado"
+                placeholder="Pega aquí el abstract o el texto completo del artículo citado. Para buscar pasajes se necesitan al menos 50 palabras."></textarea>
+    </div>
+
+    <div class="blk">
+      <div class="blk-head"><span class="ix">04</span><h2>Clasificador</h2></div>
+      <div class="models" id="models" role="radiogroup" aria-label="Clasificador"></div>
     </div>
 
     <button class="run" id="run" disabled>
@@ -90,21 +90,28 @@
 
   <main class="stage">
 
-    <div class="banner" id="banner" hidden></div>
+    <div class="notice" id="notice" role="status" hidden></div>
+    <div class="banner" id="banner" role="alert" hidden></div>
+
+    <details class="glossary">
+      <summary>Las 9 funciones de cita</summary>
+      <dl id="glossary"></dl>
+    </details>
 
     <div id="results" hidden>
 
       <section class="panel">
         <div class="panel-head">
           <h3>Función de cita predicha</h3>
-          <span class="sp"></span><span class="eyebrow" id="mChip">—</span>
+          <span class="sp"></span><span class="eyebrow" id="mChip"></span>
         </div>
         <div class="panel-body">
           <div class="verdict">
             <div class="v-l">
               <span class="eyebrow">clase de mayor probabilidad</span>
-              <span class="v-name" id="vName">—</span>
+              <span class="v-name" id="vName"></span>
               <span class="v-def" id="vDef"></span>
+              <span class="readtag" id="readTag"></span>
             </div>
             <div class="gauge">
               <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
@@ -113,19 +120,33 @@
                       stroke-width="9" stroke-dasharray="352" stroke-dashoffset="352"
                       style="transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.25,1)"/>
                 <text id="gTxt" x="52" y="52" text-anchor="middle" dominant-baseline="middle"
-                      font-family="'DM Mono', monospace" font-size="24" font-weight="500" fill="var(--ink)">—</text>
+                      font-family="'DM Mono', monospace" font-size="24" font-weight="500" fill="var(--ink)"></text>
                 <text x="52" y="70" text-anchor="middle" font-family="'DM Mono', monospace"
                       font-size="8" letter-spacing="1.2" fill="var(--ink-4)">CONFIANZA</text>
               </svg>
             </div>
           </div>
           <div class="alert" id="alert" hidden>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex:none;margin-top:3px">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex:none;margin-top:3px" aria-hidden="true">
               <path d="M7 1.6L13.2 12.4H.8z" stroke="var(--warn)" stroke-width="1.3" stroke-linejoin="round"/>
               <path d="M7 5.6v3M7 10.3h.01" stroke="var(--warn)" stroke-width="1.4" stroke-linecap="round"/>
             </svg>
             <span id="alertTxt"></span>
           </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h3>Lo que leyó el modelo</h3>
+          <span class="sp"></span><span class="eyebrow">entrada del clasificador</span>
+        </div>
+        <div class="panel-body">
+          <div class="read" id="readBody"></div>
+          <details class="raw">
+            <summary>Entrada exacta enviada al modelo</summary>
+            <pre class="io" id="ioText"></pre>
+          </details>
         </div>
       </section>
 
@@ -139,8 +160,8 @@
 
       <section class="panel" id="pChunks" hidden>
         <div class="panel-head">
-          <h3>Top-3 pasajes del artículo citado</h3>
-          <span class="sp"></span><span class="eyebrow" id="chunksEyebrow">similitud coseno · SciBERT</span>
+          <h3>Dónde se sustenta en el artículo completo</h3>
+          <span class="sp"></span><span class="eyebrow" id="chunksEyebrow">pasajes del artículo · SciBERT</span>
         </div>
         <div class="panel-body">
           <div class="paper" id="paperMeta" hidden></div>
@@ -151,15 +172,15 @@
 
       <section class="panel" id="pMap" hidden>
         <div class="panel-head">
-          <h3>Mapa del documento citado</h3>
+          <h3>Mapa del artículo citado</h3>
           <span class="sp"></span><span class="eyebrow" id="mapEyebrow">similitud de cada fragmento</span>
         </div>
         <div class="panel-body">
           <svg class="map-svg" id="map" viewBox="0 0 900 190" preserveAspectRatio="none" role="img"
-               aria-label="Similitud de cada fragmento del documento citado con el contexto de cita"></svg>
+               aria-label="Similitud de cada fragmento del artículo citado con el contexto de cita"></svg>
           <div class="map-key">
-            <b><i style="background:var(--retr)"></i>fragmento recuperado (Top-3)</b>
-            <b><i style="background:var(--sunken);border:1px solid var(--rule)"></i>fragmento descartado</b>
+            <b><i style="background:var(--retr)"></i>pasaje mostrado arriba</b>
+            <b><i style="background:var(--sunken);border:1px solid var(--rule)"></i>resto del artículo</b>
             <b>eje Y = similitud coseno · bandas = secciones</b>
           </div>
         </div>
@@ -167,16 +188,8 @@
 
       <section class="panel">
         <div class="panel-head">
-          <h3>Entrada efectiva enviada al modelo</h3>
-          <span class="sp"></span><span class="eyebrow">campo input_text de la respuesta</span>
-        </div>
-        <div class="panel-body"><pre class="io" id="ioText"></pre></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
           <h3>Ejecución</h3>
-          <span class="sp"></span><span class="eyebrow">medido en esta petición</span>
+          <span class="sp"></span><span class="eyebrow">medido en esta consulta</span>
         </div>
         <div class="panel-body">
           <div class="tele" id="tele"></div>
@@ -187,16 +200,15 @@
 
     <div class="empty" id="empty">
       <h3>Sin clasificación todavía</h3>
-      <p>Escribe un contexto de cita en inglés, elige la sección y el clasificador y,
-         si quieres los pasajes del artículo citado, indica su id de arXiv. Luego pulsa
-         <strong>Clasificar</strong>.</p>
+      <p>Escribe un contexto de cita en inglés, elige la sección y, si puedes, indica el
+         artículo citado. Luego pulsa <strong>Clasificar</strong>.</p>
     </div>
 
   </main>
 </div>
 
 <footer class="bot">
-  <span>Dashboard SCIF</span>
+  <span>Tablero SCIF</span>
   <span id="apiUrlLabel"></span>
 </footer>
 

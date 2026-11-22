@@ -91,6 +91,28 @@ def test_catalog_does_not_publish_metrics(client):
     assert not any(k.startswith("f1") or k.startswith("metric") for k in scibert)
 
 
+def _without_scibert(monkeypatch):
+    real = model_loader.is_available
+    monkeypatch.setattr(model_loader, "is_available", lambda mid: mid != "scibert" and real(mid))
+
+
+@baseline_required
+def test_catalog_explains_missing_weights(client, monkeypatch):
+    _without_scibert(monkeypatch)
+    models = {m["id"]: m for m in client.get("/models").json()["models"]}
+    reason = models["scibert"]["unavailable_reason"]
+    assert models["scibert"]["available"] is False
+    assert "models/scif-scibert-chunks" in reason and "README" in reason
+    assert models[BASELINE]["available"] is True and models[BASELINE]["unavailable_reason"] is None
+
+
+def test_predict_without_weights_says_how_to_get_them(client, monkeypatch):
+    _without_scibert(monkeypatch)
+    r = post(client, "We fine-tune SciBERT [4].", model="scibert")
+    assert r.status_code == 503
+    assert r.json()["detail"] == model_loader.missing_weights_message("scibert")
+
+
 def test_docs_are_served(client):
     assert client.get("/docs").status_code == 200
     assert client.get("/openapi.json").json()["info"]["version"] == main.API_VERSION

@@ -163,11 +163,7 @@ def predict_citation(request: PredictRequest):
             detail=f"Modelo '{request.model}' desconocido. Disponibles: {disponibles}.",
         )
     if not model_loader.is_available(request.model):
-        raise HTTPException(
-            status_code=503,
-            detail=f"No hay pesos para '{request.model}' en {model_loader.model_dir(request.model)}. "
-                   "Ejecuta `dvc pull` o define SCIF_MODELS_DIR.",
-        )
+        raise HTTPException(status_code=503, detail=model_loader.missing_weights_message(request.model))
     section = (request.rhetorical_section or "").strip() or None
     meta = model_loader.REGISTRY[request.model]
 
