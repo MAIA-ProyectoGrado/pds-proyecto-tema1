@@ -1,0 +1,6 @@
+outs:
+- md5: fb9a36c4cb93a933f9fef655de188fc4.dir
+  size: 440444797
+  nfiles: 6
+  hash: md5
+  path: scif-scibert-chunks

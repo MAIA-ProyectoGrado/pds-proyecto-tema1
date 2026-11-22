@@ -32,7 +32,6 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-!data/processed/dataset_manifest.json
 /dataset
 
 # Modelos grandes: se versionan con DVC, no con git (el TF-IDF sí va en git)
