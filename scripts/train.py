@@ -5,7 +5,7 @@ Entrenamiento y registro de modelos - Entrega 2 (SCIF)
 Tarea modelada: clasificacion de la FUNCION DE CITA (9 clases) a partir de
 `citation_context` (+ seccion retorica canonica).  El componente de
 recomendacion local de citas (Top-3 chunks) NO se modela en esta entrega
-porque el dataset no contiene documento citado real (ver docs/EDA_ENTREGA2.md).
+porque el dataset no contiene documento citado real (ver docs/historial/EDA_ENTREGA2.md).
 
 Dos iteraciones:
   v1  baseline    : TF-IDF (1-2 gramas) + Regresion Logistica (multinomial)

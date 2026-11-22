@@ -30,7 +30,7 @@ export MLFLOW_TRACKING_URI="http://localhost:5000"
 export SCIF_SKIP_MODEL_LOGGING=0
 
 # EDA (rapido). Usa los CSV enriquecidos originales (van en git, en dataset/).
-python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/eda_entrega2
+python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/historial/eda_entrega2
 
 # v1 baseline (CPU, ~10 s)
 python scripts/train.py --stage v1 --data_dir data/raw
@@ -40,8 +40,8 @@ python scripts/train.py --stage v1 --data_dir data/raw
 python scripts/train.py --stage v2 --data_dir data/raw \
   --model distilbert-base-uncased --max_train 5000 --epochs 1 --max_len 128 --batch 16 --lr 3e-5
 
-# analisis de metricas / overfitting -> docs/MODELOS_ENTREGA2.md (tablas)
-python scripts/analyze_metrics.py --results docs/model_results.json --out docs/MODELOS_ENTREGA2.md
+# analisis de metricas / overfitting -> docs/historial/MODELOS_ENTREGA2.md (tablas)
+python scripts/analyze_metrics.py --results docs/model_results.json --out docs/historial/MODELOS_ENTREGA2.md
 
 echo ">> Listo. Revisa MLflow (http://<IP>:5000), toma los pantallazos y haz commit de docs/."
 echo ">> Cuando termines: ./infra/stop_ec2.sh desde tu maquina local."

@@ -112,6 +112,95 @@ def test_text_too_short_is_rejected():
         R.load_text_document("solo unas pocas palabras aquí")
 
 
+def test_abstract_is_recognized_in_pasted_full_text():
+    abstract = R.abstract_of(DOC)
+    assert abstract.startswith("This abstract sentence number 0")
+    assert "Introduction sentence" not in abstract
+
+
+def test_pasted_text_without_headings_has_no_abstract():
+    assert R.abstract_of("Only an abstract pasted as plain text. " * 10) is None
+
+
+# ── arXiv: errores de red, caché de metadatos y tope del PDF (sin red) ──────
+
+class _FakeResponse:
+    def __init__(self, content=b"", headers=None, text=""):
+        self.content, self.headers, self.text = content, headers or {}, text
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def raise_for_status(self):
+        pass
+
+    def iter_content(self, chunk_size=1):
+        for i in range(0, len(self.content), chunk_size):
+            yield self.content[i:i + chunk_size]
+
+
+class _FakeSession:
+    def __init__(self, response=None, error=None):
+        self.response, self.error = response, error
+
+    def get(self, *_a, **_k):
+        if self.error:
+            raise self.error
+        return self.response
+
+
+def test_arxiv_network_error_becomes_download_error(monkeypatch):
+    import requests
+    monkeypatch.setattr(R, "_session", lambda: _FakeSession(error=requests.ConnectionError("sin red")))
+    with pytest.raises(R.DownloadError, match="No se pudo consultar arXiv"):
+        R.fetch_arxiv_metadata("1903.10676")
+
+
+ATOM_ENTRY = """<feed xmlns="http://www.w3.org/2005/Atom"><entry>
+<title>SciBERT: A Pretrained
+  Language Model</title><summary>  We release SciBERT.
+  It is trained on papers. </summary><published>2019-03-26T00:00:00Z</published>
+<author><name>Iz Beltagy</name></author></entry></feed>"""
+
+
+def test_arxiv_metadata_includes_normalized_abstract(monkeypatch):
+    monkeypatch.setattr(R, "_session", lambda: _FakeSession(_FakeResponse(text=ATOM_ENTRY)))
+    meta = R.fetch_arxiv_metadata("1903.10676")
+    assert meta["title"] == "SciBERT: A Pretrained Language Model"
+    assert meta["abstract"] == "We release SciBERT. It is trained on papers."
+    assert meta["authors"] == ["Iz Beltagy"] and meta["year"] == "2019"
+
+
+def test_metadata_is_cached(monkeypatch):
+    calls = []
+    monkeypatch.setattr(R, "fetch_arxiv_metadata", lambda i: calls.append(i) or {"id": i, "title": "T"})
+    R._meta_cache.pop("2401.00003", None)
+    assert R.get_arxiv_metadata("2401.00003") is R.get_arxiv_metadata("2401.00003")
+    assert calls == ["2401.00003"]
+    R._meta_cache.pop("2401.00003", None)
+
+
+def test_pdf_larger_than_limit_is_rejected(monkeypatch):
+    monkeypatch.setattr(R, "MAX_PDF_BYTES", 1000)
+    big = _FakeResponse(content=b"%PDF" + b"0" * 5000)
+    monkeypatch.setattr(R, "_session", lambda: _FakeSession(big))
+    with pytest.raises(R.DownloadError, match="supera el máximo"):
+        R.fetch_arxiv_pdf_text("1903.10676")
+
+
+def test_retrieve_maps_arxiv_outage_to_502(client, monkeypatch):
+    def outage(_id):
+        raise R.DownloadError("No se pudo consultar arXiv: timeout.")
+
+    monkeypatch.setattr(R, "fetch_arxiv_metadata", outage)
+    R._doc_cache.pop("2401.00004", None)
+    r = client.post("/retrieve", json={"citation_context": "x", "arxiv_id": "2401.00004"})
+    assert r.status_code == 502
+
+
 # ── endpoint: validaciones que no necesitan modelo ──────────────────────────
 
 def test_retrieve_requires_context(client):
@@ -165,6 +254,7 @@ def test_arxiv_path_uses_cache_and_mocked_download(client, monkeypatch):
     monkeypatch.setattr(R, "fetch_arxiv_metadata", fake_meta)
     monkeypatch.setattr(R, "fetch_arxiv_pdf_text", fake_pdf)
     R._doc_cache.pop("2401.00001", None)
+    R._meta_cache.pop("2401.00001", None)
 
     req = {"citation_context": "vocabulary and subword units during fine-tuning", "arxiv_id": "2401.00001"}
     first = client.post("/retrieve", json=req).json()

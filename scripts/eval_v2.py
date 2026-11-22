@@ -6,13 +6,13 @@ la LEXICA de v1 (TF-IDF), sin el costo de un fine-tuning completo -> apto para C
 de 2 vCPU (Learner Lab).
 
 Genera:
-  docs/modelos_entrega2/v2_metricas.json
-  docs/modelos_entrega2/v2_reporte_val.csv
-  docs/modelos_entrega2/v2_matriz_confusion_val.png
-  docs/modelos_entrega2/comparativa_v1_v2.json   (si existe v1_metricas.json)
+  docs/historial/modelos_entrega2/v2_metricas.json
+  docs/historial/modelos_entrega2/v2_reporte_val.csv
+  docs/historial/modelos_entrega2/v2_matriz_confusion_val.png
+  docs/historial/modelos_entrega2/comparativa_v1_v2.json   (si existe v1_metricas.json)
 
 Uso:
-    python scripts/eval_v2.py --data_dir dataset --out docs/modelos_entrega2
+    python scripts/eval_v2.py --data_dir dataset --out docs/historial/modelos_entrega2
     python scripts/eval_v2.py --st_model sentence-transformers/all-mpnet-base-v2   # mas lento, +calidad
 """
 import argparse
@@ -67,7 +67,7 @@ def metrics(y_true, y_pred):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_dir", default="dataset")
-    ap.add_argument("--out", default="docs/modelos_entrega2")
+    ap.add_argument("--out", default="docs/historial/modelos_entrega2")
     ap.add_argument("--st_model", default="sentence-transformers/all-MiniLM-L6-v2")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)

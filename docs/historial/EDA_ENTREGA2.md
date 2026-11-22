@@ -1,7 +1,7 @@
 # EDA — Entrega 2 (SCIF)
 
-> Reproducible con `python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/eda_entrega2`.
-> Figuras en `docs/eda_entrega2/*.png`; métricas crudas en `docs/eda_entrega2/eda_stats.json`.
+> Reproducible con `python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/historial/eda_entrega2`.
+> Figuras en `docs/historial/eda_entrega2/*.png`; métricas crudas en `docs/historial/eda_entrega2/eda_stats.json`.
 > Dataset **v3** (20 655 registros), versionado con DVC (`dataset.dvc`).
 
 Este EDA se hace sobre el **dataset enriquecido de intención de cita**, que
@@ -75,7 +75,7 @@ excluyentes (`label_id` 0–8 en orden alfabético, ver `data/processed/dataset_
 > cita ni la calidad de la etiqueta. En producción habrá que re-evaluar con
 > distribución realista y anotación humana.
 
-Figura: `docs/eda_entrega2/01_variable_objetivo.png`.
+Figura: `docs/historial/eda_entrega2/01_variable_objetivo.png`.
 
 ### 2.2 Consistencia de la etiqueta entre particiones
 
@@ -194,7 +194,7 @@ manual de ejemplos por clase confirma etiquetas discutibles (p. ej. *"Training u
 Adam with learning rate 1e-3, batch size 256…"* etiquetado como
 `Identification_of_the_Originator`). Este **ruido de etiqueta** —no la
 arquitectura— es el principal límite del desempeño alcanzable (ver
-`docs/MODELOS_ENTREGA2.md`, §5).
+`docs/historial/MODELOS_ENTREGA2.md`, §5).
 
 ---
 
@@ -210,6 +210,6 @@ arquitectura— es el principal límite del desempeño alcanzable (ver
 | Balanceo artificial + rescate + 48.7 % sin marcador | Amenaza a la validez externa y techo de desempeño; se documenta |
 | Dataset v3 más grande (14 461 train vs 12 600) | La curva de aprendizaje de v1 predice ganancia → v3 reentrena con datos completos |
 
-Modelos (ver `docs/MODELOS_ENTREGA2.md`): **v1** TF-IDF + LogReg · **v2a**
+Modelos (ver `docs/historial/MODELOS_ENTREGA2.md`): **v1** TF-IDF + LogReg · **v2a**
 embeddings MiniLM congeladas + LogReg · **v2b** DistilBERT fine-tuned · **v3**
 (planificado) encoder de dominio científico con datos completos.

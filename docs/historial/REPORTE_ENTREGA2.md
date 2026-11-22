@@ -83,7 +83,7 @@ Further Reading, Gap, Identification of the Originator, Modification/Improvement
   y se particiona en train 14 461 / val 3 098 / test 3 096, manteniendo ~11 % por
   clase en cada partición (sin clases ausentes).
 
-*Figura 1 — `docs/eda_entrega2/01_variable_objetivo.png` (distribución de `label` por partición).*
+*Figura 1 — `docs/historial/eda_entrega2/01_variable_objetivo.png` (distribución de `label` por partición).*
 
 **Implicación para el negocio.** El balance es **artificial**: se fuerza a ~2 295
 ejemplos por clase, en parte con un mecanismo de **rescate** que reasigna citas a
@@ -131,7 +131,7 @@ y el panel de la maqueta se marca como *ilustrativo / pendiente de datos*.
 
 La garantía de no-leakage por documento se mantiene en la práctica (1
 `citing_paper_id` compartido train/val, despreciable). Detalle completo en
-`docs/EDA_ENTREGA2.md`.
+`docs/historial/EDA_ENTREGA2.md`.
 
 ### 2.5 Estructura del dataset
 
@@ -161,9 +161,9 @@ contextos sin marcador de cita, es el principal límite del desempeño alcanzabl
 
 Se entrenan tres iteraciones para la tarea de **clasificación de la función de
 cita** (9 clases). Los experimentos se registran en **MLflow** sobre una instancia
-**AWS EC2** (experimento `scif-citation-intent`); pantallazos en `docs/soportes/`.
+**AWS EC2** (experimento `scif-citation-intent`); pantallazos en `docs/historial/soportes/`.
 El baseline (v1) es además reproducible sin servidor con
-`python scripts/eval_baseline.py` (artefactos en `docs/modelos_entrega2/`).
+`python scripts/eval_baseline.py` (artefactos en `docs/historial/modelos_entrega2/`).
 
 > **Versión de datos.** v1 y v2a se re-midieron sobre el dataset **v3 (20 655
 > registros)**. v2b se entrenó sobre el *snapshot* previo de 18 000. **v3
@@ -203,7 +203,7 @@ El baseline (v1) es además reproducible sin servidor con
 | Identification of the Originator | 0.48 | 0.34 | **0.39** | 312 |
 | Basis | 0.40 | 0.30 | **0.34** | 307 |
 
-*Figura 4 — `docs/modelos_entrega2/v1_matriz_confusion_val.png` (matriz de confusión normalizada).*
+*Figura 4 — `docs/historial/modelos_entrega2/v1_matriz_confusion_val.png` (matriz de confusión normalizada).*
 
 **Pares de clases más confundidos (validación):** `Evidence`→`Background` (0.20),
 `Basis`→`Modification/Improvement` (0.18), `Application`→`Background` (0.16),
@@ -231,7 +231,7 @@ El baseline (v1) es además reproducible sin servidor con
 | 3.0 | 0.957 | 0.503 | 0.454 |
 | 10.0 | 0.998 | 0.501 | 0.498 |
 
-*Figura 5 — `docs/modelos_entrega2/v1_sweep_regularizacion.png`.* El F1 de validación
+*Figura 5 — `docs/historial/modelos_entrega2/v1_sweep_regularizacion.png`.* El F1 de validación
 **se estanca en ≈ 0.50** mientras el de entrenamiento sube hasta 1.0: regularizar
 más no mejora la generalización, solo reduce la brecha. `C = 1.0` es un punto de
 equilibrio razonable para el baseline; **el techo de este enfoque léxico es ≈ 0.50**.
@@ -270,13 +270,13 @@ early-stopping; ~55 min en la `t3.large`, registrado en MLflow):
 **v2b supera al baseline en +0.077 de F1-macro val** y reduce el sobreajuste a la
 mitad (0.33 → 0.15). La brecha val→test es **−0.003** → generaliza sin fuga.
 
-*Curva de aprendizaje paso a paso* (`docs/modelos_entrega2/v2b_learning_curve.png`),
+*Curva de aprendizaje paso a paso* (`docs/historial/modelos_entrega2/v2b_learning_curve.png`),
 F1-macro val: 0.23 (paso 78) → 0.52 (234) → **0.573 (468)** → 0.56 (546) → 0.56 (624).
 Mejora sostenida hasta el paso 468 (~1.5 épocas), luego **empieza a bajar**: la
 validación frecuente detecta el inicio del sobreajuste y el early-stopping restaura
 el mejor checkpoint, ahorrando ~1 época de cómputo.
 
-*Figura 6 — `docs/modelos_entrega2/v2b_matriz_confusion_val.png` (v2b).* Mejores
+*Figura 6 — `docs/historial/modelos_entrega2/v2b_matriz_confusion_val.png` (v2b).* Mejores
 clases: `Gap` 0.72, `Background` 0.70; peores `Basis` 0.40, `Identification of the
 Originator` 0.47.
 
@@ -304,7 +304,7 @@ métrica?*, sobre el baseline v1 (barato de reentrenar):
 | 8 000 | 0.838 | 0.477 | 0.36 |
 | 12 600 | 0.823 | 0.496 | 0.33 |
 
-*Figura 7 — `docs/modelos_entrega2/v1_learning_curve.png`.* El F1 de validación
+*Figura 7 — `docs/historial/modelos_entrega2/v1_learning_curve.png`.* El F1 de validación
 **sube de forma sostenida** (+0.17 de 500 a 12 600) y la brecha **se cierra**
 (0.65 → 0.33) porque el F1 de entrenamiento baja al añadir datos. La pendiente en
 12 600 sigue siendo positiva → **más contextos de cita reales seguirían mejorando

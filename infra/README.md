@@ -20,7 +20,7 @@ INSTANCE_TYPE=g4dn.xlarge ./infra/launch_ec2.sh        # GPU T4, ~USD 0.53/h
 source infra/ec2_instance.env
 curl -sf "$MLFLOW_TRACKING_URI/health" && echo OK       # esperar 3-5 min
 
-# 2. pantallazos (docs/soportes/01_ec2_consola.png, 02_security_group.png, 03_mlflow_ui.png)
+# 2. pantallazos (docs/historial/soportes/01_ec2_consola.png, 02_security_group.png, 03_mlflow_ui.png)
 
 # 3. entrenar
 ssh -i infra/scif-entrega2.pem ubuntu@$PUBLIC_IP

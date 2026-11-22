@@ -1,13 +1,9 @@
 """Recuperación local de pasajes: Top-k chunks del artículo citado.
 
 Dado un contexto de cita y el artículo citado (por id de arXiv o texto pegado),
-segmenta el documento en chunks de hasta 300 palabras respetando oraciones y
+segmenta el documento en chunks de hasta 300 palabras (SCIF_CHUNK_WORDS) respetando oraciones y
 secciones, los representa con el mismo encoder SciBERT que sirve el clasificador
 y devuelve los k más similares por coseno.
-
-La técnica (SciBERT + segmentación oracional + coseno) es la del pipeline de
-`notebooks/procesamiento.ipynb`; la diferencia es que aquí se aplica al texto del
-documento citado y no al propio contexto de cita.
 """
 from __future__ import annotations
 
@@ -17,6 +13,7 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
+from collections import OrderedDict
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -30,18 +27,21 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from models.scif_predict import canon_section  # noqa: E402
-from src.api import model_loader  # noqa: E402
+from src.api import config, model_loader  # noqa: E402
 
 ARXIV_API = "https://export.arxiv.org/api/query"
 ARXIV_PDF = "https://arxiv.org/pdf/{id}"
 ATOM = {"a": "http://www.w3.org/2005/Atom"}
 
-MAX_WORDS_PER_CHUNK = 300
+MAX_WORDS_PER_CHUNK = config.CHUNK_WORDS
+MAX_PDF_BYTES = config.MAX_PDF_MB * 1024 * 1024
+MAX_PDF_PAGES = config.MAX_PDF_PAGES
+META_CACHE_SIZE = 256
 MIN_WORDS_DOCUMENT = 50
 MAX_LEN_TOKENS = 256
 MIN_WORDS_PER_CHUNK = 20      # descarta residuos: marca de agua de arXiv, pies de figura sueltos
 X_TOLERANCE = 2               # pdfplumber pega palabras con el valor por defecto (3)
-HTTP_TIMEOUT = 40
+HTTP_TIMEOUT = config.HTTP_TIMEOUT
 USER_AGENT = "scif-citation-dashboard/1.0 (academic project)"
 
 
@@ -91,9 +91,15 @@ def _session() -> requests.Session:
 
 
 def fetch_arxiv_metadata(arxiv_id: str) -> dict[str, Any]:
-    r = _session().get(ARXIV_API, params={"id_list": arxiv_id}, timeout=HTTP_TIMEOUT)
-    r.raise_for_status()
-    root = ET.fromstring(r.text)
+    """Título, autores, año y abstract desde la API de arXiv."""
+    try:
+        r = _session().get(ARXIV_API, params={"id_list": arxiv_id}, timeout=HTTP_TIMEOUT)
+        r.raise_for_status()
+        root = ET.fromstring(r.text)
+    except requests.RequestException as exc:
+        raise DownloadError(f"No se pudo consultar arXiv: {exc}") from exc
+    except ET.ParseError as exc:
+        raise DownloadError(f"arXiv devolvió una respuesta ilegible: {exc}") from exc
     entry = root.find("a:entry", ATOM)
     # arXiv responde con una entrada de error, no con 404, cuando el id no existe
     if entry is None or entry.find("a:title", ATOM) is None or (entry.find("a:title", ATOM).text or "").strip() == "Error":
@@ -105,26 +111,69 @@ def fetch_arxiv_metadata(arxiv_id: str) -> dict[str, Any]:
         if a.find("a:name", ATOM) is not None
     ]
     published = (entry.findtext("a:published", default="", namespaces=ATOM) or "")[:4]
-    return {"id": arxiv_id, "title": title, "authors": authors, "year": published, "source": "arxiv-pdf"}
+    abstract = re.sub(r"\s+", " ", entry.findtext("a:summary", default="", namespaces=ATOM) or "").strip()
+    return {"id": arxiv_id, "title": title, "authors": authors, "year": published,
+            "abstract": abstract, "source": "arxiv-pdf"}
+
+
+#: metadatos ya consultados. El tablero pide /predict y /retrieve a la vez para el
+#: mismo artículo: con esta caché arXiv recibe una sola consulta.
+_meta_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
+_meta_lock = threading.Lock()
+_meta_inflight: dict[str, threading.Lock] = {}
+
+
+def get_arxiv_metadata(arxiv_id: str) -> dict[str, Any]:
+    """`fetch_arxiv_metadata` con caché LRU. Si llegan dos peticiones simultáneas por
+    el mismo id, la segunda espera a la primera en lugar de repetir la consulta."""
+    with _meta_lock:
+        if arxiv_id in _meta_cache:
+            _meta_cache.move_to_end(arxiv_id)
+            return _meta_cache[arxiv_id]
+        inflight = _meta_inflight.setdefault(arxiv_id, threading.Lock())
+    with inflight:
+        with _meta_lock:
+            if arxiv_id in _meta_cache:
+                return _meta_cache[arxiv_id]
+        try:
+            meta = fetch_arxiv_metadata(arxiv_id)
+        finally:
+            with _meta_lock:
+                _meta_inflight.pop(arxiv_id, None)
+        with _meta_lock:
+            _meta_cache[arxiv_id] = meta
+            while len(_meta_cache) > META_CACHE_SIZE:
+                _meta_cache.popitem(last=False)
+    return meta
 
 
 def fetch_arxiv_pdf_text(arxiv_id: str) -> str:
+    """Descarga el PDF con un tope de tamaño (SCIF_MAX_PDF_MB) y extrae su texto."""
     try:
-        r = _session().get(ARXIV_PDF.format(id=arxiv_id), timeout=HTTP_TIMEOUT)
-        r.raise_for_status()
+        with _session().get(ARXIV_PDF.format(id=arxiv_id), timeout=HTTP_TIMEOUT, stream=True) as r:
+            r.raise_for_status()
+            declared = r.headers.get("Content-Length")
+            if declared and declared.isdigit() and int(declared) > MAX_PDF_BYTES:
+                raise DownloadError(f"El PDF de arXiv:{arxiv_id} supera el máximo de {config.MAX_PDF_MB} MB.")
+            buf = bytearray()
+            for part in r.iter_content(chunk_size=1 << 16):
+                buf.extend(part)
+                if len(buf) > MAX_PDF_BYTES:
+                    raise DownloadError(f"El PDF de arXiv:{arxiv_id} supera el máximo de {config.MAX_PDF_MB} MB.")
     except requests.RequestException as exc:
         raise DownloadError(f"No se pudo descargar el PDF de arXiv:{arxiv_id}: {exc}") from exc
-    if not r.content.startswith(b"%PDF"):
+    data = bytes(buf)
+    if not data.startswith(b"%PDF"):
         raise DownloadError(f"arXiv:{arxiv_id} no devolvió un PDF (¿artículo retirado o solo fuente LaTeX?).")
-    return pdf_to_text(r.content)
+    return pdf_to_text(data)
 
 
 # ── extracción de texto ─────────────────────────────────────────────────────
 
 def _page_text(page) -> str:
     """Texto de una página. Si la página está a dos columnas (casi ninguna palabra
-    cruza el eje central), se extraen las columnas por separado para no entreverar
-    las líneas — el defecto habitual de pdfplumber con los PDF de arXiv."""
+    cruza el eje central), se extraen las columnas por separado. Así no se mezclan
+    las líneas de las dos columnas, como hace pdfplumber con los PDF de arXiv."""
     words = page.extract_words()
     if not words:
         return ""
@@ -140,7 +189,9 @@ def _page_text(page) -> str:
 def pdf_to_text(data: bytes) -> str:
     try:
         with pdfplumber.open(io.BytesIO(data)) as pdf:
-            pages = [_page_text(p) for p in pdf.pages]
+            # Tope de páginas (SCIF_MAX_PDF_PAGES): acota el tiempo de lectura; las
+            # referencias y los apéndices, que van al final, se descartan igual.
+            pages = [_page_text(p) for p in pdf.pages[:MAX_PDF_PAGES]]
     except Exception as exc:  # pdf corrupto, cifrado, etc.
         raise DownloadError(f"No se pudo leer el PDF: {exc}") from exc
     text = "\n".join(pages)
@@ -215,6 +266,21 @@ def pack_chunks(sentences: list[str], section: str, start_index: int,
     return chunks
 
 
+def abstract_of(text: str) -> str | None:
+    """Abstract de un texto pegado, si se reconoce por sus encabezados.
+
+    Con encabezados, el abstract es la sección "Abstract" más larga (la que queda
+    antes de la introducción). Sin encabezados no se puede distinguir y se devuelve
+    None: puede ser solo el abstract o el texto completo sin formato.
+    """
+    text = re.sub(r"-\n(?=[a-z])", "", text or "")
+    sections = split_sections(text)
+    if len(sections) < 2:
+        return None
+    candidates = [body for name, body in sections if name == "Abstract" and len(body.split()) >= 20]
+    return max(candidates, key=len) if candidates else None
+
+
 def build_chunks(text: str) -> list[Chunk]:
     raw: list[Chunk] = []
     for section, body in split_sections(text):
@@ -252,7 +318,9 @@ def retrieval_available() -> bool:
 
 # ── caché de documentos ─────────────────────────────────────────────────────
 
-_doc_cache: dict[str, dict[str, Any]] = {}
+#: LRU acotada (SCIF_DOC_CACHE_SIZE) para que la memoria no crezca sin límite
+#: con cada artículo nuevo; 0 desactiva la caché.
+_doc_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _doc_lock = threading.Lock()
 
 
@@ -273,24 +341,28 @@ def load_arxiv_document(raw_id: str) -> dict[str, Any]:
     arxiv_id = parse_arxiv_id(raw_id)
     with _doc_lock:
         if arxiv_id in _doc_cache:
+            _doc_cache.move_to_end(arxiv_id)
             doc = dict(_doc_cache[arxiv_id])
             doc["download_ms"] = 0.0
             doc["cached"] = True
             return doc
     t = time.perf_counter()
-    meta = fetch_arxiv_metadata(arxiv_id)
+    meta = get_arxiv_metadata(arxiv_id)
     text = fetch_arxiv_pdf_text(arxiv_id)
     download_ms = round((time.perf_counter() - t) * 1000, 1)
     doc = _prepare_document(text, meta)
     doc["download_ms"] = download_ms
     doc["cached"] = False
-    with _doc_lock:
-        _doc_cache[arxiv_id] = doc
+    if config.DOC_CACHE_SIZE > 0:
+        with _doc_lock:
+            _doc_cache[arxiv_id] = doc
+            while len(_doc_cache) > config.DOC_CACHE_SIZE:
+                _doc_cache.popitem(last=False)
     return doc
 
 
 def load_text_document(text: str) -> dict[str, Any]:
-    meta = {"id": None, "title": None, "authors": [], "year": "", "source": "text"}
+    meta = {"id": None, "title": None, "authors": [], "year": "", "abstract": "", "source": "text"}
     doc = _prepare_document(text, meta)
     doc["download_ms"] = 0.0
     doc["cached"] = False

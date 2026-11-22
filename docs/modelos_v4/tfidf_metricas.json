@@ -1,0 +1,453 @@
+{
+  "modelo": "TF-IDF + regresión logística (v4)",
+  "entrada": "contexto [SEC] sección normalizada (sin pasajes)",
+  "hiperparametros": {
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "max_features": 50000,
+    "sublinear_tf": true,
+    "C": 1.0,
+    "class_weight": "balanced",
+    "max_iter": 3000
+  },
+  "sklearn": "1.7.2",
+  "fecha_utc": "2026-11-22T03:16:15+00:00",
+  "segundos_entrenamiento": 2.5,
+  "particiones": {
+    "train": {
+      "n": 10416,
+      "clases_presentes": 9,
+      "f1_macro": 0.8559,
+      "f1_micro": 0.8478,
+      "precision_macro": 0.8469,
+      "recall_macro": 0.8719,
+      "f1_por_clase": {
+        "Application": 0.8534,
+        "Background": 0.8437,
+        "Basis": 0.8455,
+        "Comparison": 0.7949,
+        "Evidence": 0.8661,
+        "Further_Reading": 0.9141,
+        "Gap": 0.844,
+        "Identification_of_the_Originator": 0.8482,
+        "Modification_Improvement": 0.8931
+      },
+      "soporte_por_clase": {
+        "Application": 1425,
+        "Background": 1386,
+        "Basis": 1407,
+        "Comparison": 1388,
+        "Evidence": 1168,
+        "Further_Reading": 373,
+        "Gap": 1424,
+        "Identification_of_the_Originator": 1399,
+        "Modification_Improvement": 446
+      },
+      "matriz_confusion": {
+        "orden": [
+          "Application",
+          "Background",
+          "Basis",
+          "Comparison",
+          "Evidence",
+          "Further_Reading",
+          "Gap",
+          "Identification_of_the_Originator",
+          "Modification_Improvement"
+        ],
+        "valores": [
+          [
+            1185,
+            33,
+            29,
+            24,
+            16,
+            12,
+            62,
+            28,
+            36
+          ],
+          [
+            8,
+            1169,
+            83,
+            8,
+            14,
+            16,
+            26,
+            54,
+            8
+          ],
+          [
+            35,
+            61,
+            1185,
+            20,
+            14,
+            5,
+            25,
+            47,
+            15
+          ],
+          [
+            57,
+            24,
+            16,
+            1002,
+            162,
+            7,
+            67,
+            24,
+            29
+          ],
+          [
+            8,
+            6,
+            2,
+            15,
+            1122,
+            3,
+            6,
+            5,
+            1
+          ],
+          [
+            0,
+            0,
+            1,
+            1,
+            3,
+            367,
+            0,
+            0,
+            1
+          ],
+          [
+            40,
+            28,
+            22,
+            39,
+            62,
+            8,
+            1196,
+            21,
+            8
+          ],
+          [
+            18,
+            64,
+            57,
+            24,
+            29,
+            12,
+            28,
+            1162,
+            5
+          ],
+          [
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            443
+          ]
+        ]
+      }
+    },
+    "val": {
+      "n": 2280,
+      "clases_presentes": 9,
+      "f1_macro": 0.5058,
+      "f1_micro": 0.5325,
+      "precision_macro": 0.5056,
+      "recall_macro": 0.5143,
+      "f1_por_clase": {
+        "Application": 0.5735,
+        "Background": 0.4765,
+        "Basis": 0.5504,
+        "Comparison": 0.3849,
+        "Evidence": 0.7477,
+        "Further_Reading": 0.4925,
+        "Gap": 0.5637,
+        "Identification_of_the_Originator": 0.4805,
+        "Modification_Improvement": 0.2829
+      },
+      "soporte_por_clase": {
+        "Application": 282,
+        "Background": 308,
+        "Basis": 294,
+        "Comparison": 294,
+        "Evidence": 291,
+        "Further_Reading": 97,
+        "Gap": 292,
+        "Identification_of_the_Originator": 322,
+        "Modification_Improvement": 100
+      },
+      "matriz_confusion": {
+        "orden": [
+          "Application",
+          "Background",
+          "Basis",
+          "Comparison",
+          "Evidence",
+          "Further_Reading",
+          "Gap",
+          "Identification_of_the_Originator",
+          "Modification_Improvement"
+        ],
+        "valores": [
+          [
+            162,
+            8,
+            14,
+            18,
+            4,
+            8,
+            29,
+            11,
+            28
+          ],
+          [
+            10,
+            147,
+            62,
+            5,
+            4,
+            1,
+            14,
+            64,
+            1
+          ],
+          [
+            12,
+            58,
+            172,
+            5,
+            2,
+            2,
+            6,
+            33,
+            4
+          ],
+          [
+            37,
+            6,
+            8,
+            92,
+            78,
+            9,
+            40,
+            8,
+            16
+          ],
+          [
+            1,
+            2,
+            2,
+            26,
+            249,
+            8,
+            2,
+            1,
+            0
+          ],
+          [
+            14,
+            0,
+            1,
+            6,
+            3,
+            49,
+            14,
+            7,
+            3
+          ],
+          [
+            22,
+            12,
+            13,
+            17,
+            14,
+            13,
+            166,
+            15,
+            20
+          ],
+          [
+            5,
+            71,
+            53,
+            8,
+            17,
+            8,
+            8,
+            148,
+            4
+          ],
+          [
+            20,
+            5,
+            6,
+            7,
+            4,
+            4,
+            18,
+            7,
+            29
+          ]
+        ]
+      }
+    },
+    "test": {
+      "n": 2241,
+      "clases_presentes": 9,
+      "f1_macro": 0.523,
+      "f1_micro": 0.5471,
+      "precision_macro": 0.5282,
+      "recall_macro": 0.5295,
+      "f1_por_clase": {
+        "Application": 0.5546,
+        "Background": 0.508,
+        "Basis": 0.5619,
+        "Comparison": 0.4394,
+        "Evidence": 0.7663,
+        "Further_Reading": 0.4571,
+        "Gap": 0.6118,
+        "Identification_of_the_Originator": 0.4585,
+        "Modification_Improvement": 0.3496
+      },
+      "soporte_por_clase": {
+        "Application": 293,
+        "Background": 306,
+        "Basis": 299,
+        "Comparison": 301,
+        "Evidence": 269,
+        "Further_Reading": 96,
+        "Gap": 284,
+        "Identification_of_the_Originator": 279,
+        "Modification_Improvement": 114
+      },
+      "matriz_confusion": {
+        "orden": [
+          "Application",
+          "Background",
+          "Basis",
+          "Comparison",
+          "Evidence",
+          "Further_Reading",
+          "Gap",
+          "Identification_of_the_Originator",
+          "Modification_Improvement"
+        ],
+        "valores": [
+          [
+            155,
+            10,
+            10,
+            18,
+            6,
+            12,
+            40,
+            10,
+            32
+          ],
+          [
+            4,
+            159,
+            51,
+            3,
+            3,
+            3,
+            14,
+            65,
+            4
+          ],
+          [
+            8,
+            55,
+            168,
+            5,
+            2,
+            1,
+            8,
+            50,
+            2
+          ],
+          [
+            32,
+            8,
+            4,
+            107,
+            86,
+            4,
+            33,
+            5,
+            22
+          ],
+          [
+            4,
+            4,
+            1,
+            12,
+            241,
+            2,
+            1,
+            4,
+            0
+          ],
+          [
+            14,
+            3,
+            0,
+            10,
+            8,
+            40,
+            14,
+            1,
+            6
+          ],
+          [
+            18,
+            16,
+            5,
+            12,
+            9,
+            7,
+            186,
+            10,
+            21
+          ],
+          [
+            5,
+            64,
+            55,
+            10,
+            5,
+            5,
+            6,
+            127,
+            2
+          ],
+          [
+            26,
+            1,
+            5,
+            9,
+            0,
+            5,
+            22,
+            3,
+            43
+          ]
+        ]
+      }
+    }
+  }
+}

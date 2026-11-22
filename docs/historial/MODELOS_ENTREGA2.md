@@ -90,7 +90,7 @@ Es la mejor **de las probadas** y una elección sólida, pero no necesariamente
 modelos publicados alcanzan ~0.80 F1 en datasets *limpios* de citation intent
 (Cohan et al., 2019); aquí el ~0.57 se explica por: 48.7 % de contextos sin
 marcador de cita detectable, etiquetas de un juez-LLM con rescate (que cambia
-~28 % de las etiquetas donde se puede medir; ver `docs/EDA_ENTREGA2.md` §7),
+~28 % de las etiquetas donde se puede medir; ver `docs/historial/EDA_ENTREGA2.md` §7),
 balanceo artificial. La palanca principal de v3 es **mejores datos / etiquetas**,
 y sólo después el cambio de arquitectura.
 

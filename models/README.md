@@ -1,58 +1,70 @@
-# Modelos empaquetados (listos para servir)
+# Modelos
 
-Cada carpeta es un modelo autocontenido para la clasificación de la **función de
-cita** (9 clases). La API de inferencia (`api/`) solo tiene que apuntar a una de
-ellas — no requiere cambios de código, basta cargar el artefacto.
+Artefactos que sirve la API. Cada carpeta es autocontenida: la API solo necesita
+la ruta (`SCIF_MODELS_DIR`) y no hay que cambiar código para cargarlos.
 
-**Entrada esperada por todos los modelos:**
-`citation_context + " [SEC] " + <sección retórica canónica>`
-(la normalización de la sección está en `models/scif_predict.py::canon_section`).
-
-**Orden de las 9 clases** (usado en entrenamiento, alfabético):
+**Orden de las 9 clases** (alfabético, el mismo del entrenamiento):
 `Application, Background, Basis, Comparison, Evidence, Further_Reading, Gap,
 Identification_of_the_Originator, Modification_Improvement`.
 
----
+| Carpeta | Qué es | Tamaño | Versionado |
+|---|---|--:|---|
+| `scif-scibert-chunks/` | SciBERT configuración B (v4), el modelo recomendado | 440 MB | DVC |
+| `minilm-l6-v2/` | Codificador que elige las 3 oraciones clave del artículo citado | 87 MB | DVC |
+| `scif-v4-tfidf-logreg/` | TF-IDF + regresión logística (v4), la línea base liviana | 4,8 MB | git |
+| `archivo/` | Modelos de la entrega 2, que la API no sirve | | git y DVC |
 
-## `scif-v1-tfidf-logreg/`  — línea base (disponible)
+La evolución completa y las métricas están en `docs/HISTORIAL_MODELOS.md`.
 
-Pipeline **TF-IDF (1–2 gramas) + Regresión Logística** entrenado sobre el dataset
-v3 completo (14.461 ejemplos). Formato MLflow *sklearn* (`model.pkl`, cloudpickle;
-`scikit-learn==1.7.2`). ~5 MB, sin GPU.
+## `scif-scibert-chunks/`: SciBERT configuración B
 
-- F1-macro: validación **0.516**, prueba 0.518.
+`AutoModelForSequenceClassification` sobre `allenai/scibert_scivocab_uncased`, en
+formato estándar de Hugging Face (`model.safetensors`, tokenizer, `label_order.json`).
+Se obtuvo del checkpoint del entrenamiento con `scripts/convert_checkpoint.py`, que
+carga solo los pesos.
 
-## `scif-scibert/`  — encoder de dominio científico (mejor modelo, pendiente de empaquetar)
+Lee un **par de textos**, con un máximo de 512 tokens (`input_format.json`):
 
-`v3_scibert_finetune` alcanzó **F1-macro 0.640 / 0.634 (val / test)** y es el mejor
-modelo del proyecto (métricas, curvas y matrices en MLflow y en
-`docs/MODELOS_ENTREGA2.md`). Su **entrenamiento quedó registrado completo** pero los
-pesos no se serializaron en esa corrida (fallo al guardar el checkpoint; corregido
-en `scripts/train.py`, que ahora escribe la carpeta con `--model_out`).
-
-Para regenerarlo (deja la carpeta lista en `models/scif-scibert/`):
-
-```bash
-python scripts/train.py --stage v2 --data_dir data/raw --v2_method finetune \
-  --model allenai/scibert_scivocab_uncased \
-  --epochs 4 --batch 32 --max_len 256 --eval_steps 150 \
-  --model_out models/scif-scibert
+```text
+texto_a = <contexto de cita>
+texto_b = Section: <sección> | Cited passages: <oración 1> <oración 2> <oración 3>
 ```
 
-~20–35 min en una GPU `g5.xlarge`; ~1.5–3 h en CPU de 8+ vCPU. También se puede
-recuperar el checkpoint del *snapshot* EBS `snap-0e39c9347de9a4423`.
+- La sección va tal cual; si no se conoce, se omite esa parte.
+- Las oraciones clave son las 3 del abstract del artículo citado más parecidas al
+  contexto según `minilm-l6-v2` (`models/passages.py`).
+- Sin artículo citado, `texto_b` termina en `Passages unavailable`.
 
----
+La construcción del par está en `models/scif_predict.py::build_pair_config_b`, la
+misma función que usa la evaluación (`scripts/evaluate_v4.py`).
 
-## Cómo lo consume la API
+## `minilm-l6-v2/`: codificador de oraciones
 
-`models/scif_predict.py` es una implementación de referencia del cargador
-(autodetecta *sklearn* vs. *transformer*). La API puede importarla o replicar su
-lógica:
+`sentence-transformers/all-MiniLM-L6-v2` guardado para uso sin conexión con
+`scripts/download_encoder.py`. `models/passages.py` reproduce su cálculo de vectores
+(promedio de tokens y normalización L2, 256 tokens) sin depender de
+`sentence-transformers`. Sobre 300 filas de validación elige exactamente las mismas
+oraciones que el dataset de entrenamiento.
+
+## `scif-v4-tfidf-logreg/`: línea base
+
+Pipeline de scikit-learn (`model.pkl`, cloudpickle, `scikit-learn==1.7.2`) entrenado
+con `scripts/train_tfidf_v4.py`. Lee `contexto [SEC] sección normalizada`
+(`models/scif_predict.py::build_input`) y no usa el artículo citado. Responde en
+milisegundos y no necesita torch.
+
+## Uso fuera de la API
 
 ```python
+from models.passages import SentenceEncoder, select_passages
 from models.scif_predict import Predictor
-p = Predictor("models/scif-v1-tfidf-logreg")     # o "models/scif-scibert"
-p.predict("... citation context ...", rhetorical_section="Introduction")
-# -> {predicted_label, confidence, probabilities, ambiguous}
+
+clf = Predictor("models/scif-scibert-chunks")
+enc = SentenceEncoder("models/minilm-l6-v2")
+
+contexto = "We fine-tune SciBERT [4] on our citation corpus."
+abstract = "..."  # abstract del artículo citado
+oraciones = [p.text for p in select_passages(contexto, abstract, enc, k=3)]
+clf.predict(contexto, "Methods", passages=oraciones)
+# -> {predicted_label, confidence, probabilities, ambiguous, model_input}
 ```

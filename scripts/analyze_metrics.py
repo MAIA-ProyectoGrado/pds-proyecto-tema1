@@ -2,14 +2,14 @@
 Analisis de metricas de validacion, error y sobreajuste a partir de
 docs/model_results.json (generado por scripts/train.py).
 
-Produce docs/MODELOS_ENTREGA2.md con:
+Produce docs/historial/MODELOS_ENTREGA2.md con:
   * tabla comparativa v1 vs v2 (train / val / test)
   * brechas de generalizacion (train-val y val-test)
   * veredicto de sobreajuste por modelo
   * checklist de conclusiones para el reporte
 
 Uso:
-    python scripts/analyze_metrics.py --results docs/model_results.json --out docs/MODELOS_ENTREGA2.md
+    python scripts/analyze_metrics.py --results docs/model_results.json --out docs/historial/MODELOS_ENTREGA2.md
 """
 import argparse
 import json
@@ -32,7 +32,7 @@ def row(name, m):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="docs/model_results.json")
-    ap.add_argument("--out", default="docs/MODELOS_ENTREGA2.md")
+    ap.add_argument("--out", default="docs/historial/MODELOS_ENTREGA2.md")
     args = ap.parse_args()
 
     res = json.loads(Path(args.results).read_text())

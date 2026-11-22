@@ -2,13 +2,13 @@
 Evaluacion del baseline v1 (TF-IDF + Regresion Logistica) SIN MLflow.
 
 Reproduce las cifras de la seccion 3 del reporte y genera los artefactos:
-  docs/modelos_entrega2/v1_metricas.json          metricas train/val/test
-  docs/modelos_entrega2/v1_reporte_val.csv        precision/recall/F1 por clase (val)
-  docs/modelos_entrega2/v1_matriz_confusion_val.png
-  docs/modelos_entrega2/v1_sweep_regularizacion.png   F1 train vs val segun C
+  docs/historial/modelos_entrega2/v1_metricas.json          metricas train/val/test
+  docs/historial/modelos_entrega2/v1_reporte_val.csv        precision/recall/F1 por clase (val)
+  docs/historial/modelos_entrega2/v1_matriz_confusion_val.png
+  docs/historial/modelos_entrega2/v1_sweep_regularizacion.png   F1 train vs val segun C
 
 Uso:
-    python scripts/eval_baseline.py --data_dir dataset --out docs/modelos_entrega2
+    python scripts/eval_baseline.py --data_dir dataset --out docs/historial/modelos_entrega2
     # tambien acepta --data_dir data/raw (particiones estandarizadas)
 """
 import argparse
@@ -64,7 +64,7 @@ def metrics(y_true, y_pred):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_dir", default="dataset")
-    ap.add_argument("--out", default="docs/modelos_entrega2")
+    ap.add_argument("--out", default="docs/historial/modelos_entrega2")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     d = load(Path(args.data_dir))

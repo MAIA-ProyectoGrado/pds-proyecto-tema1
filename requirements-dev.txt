@@ -1,12 +1,15 @@
 -r requirements.txt
 pytest
-
-# API de inferencia (tests/test_api.py). Se instala solo lo necesario para probar
-# la línea base sklearn; los casos de SciBERT se omiten si no hay torch.
-fastapi==0.121.2
 httpx
+
+# API de inferencia (tests/). Mismas versiones que src/api/requirements.txt, sin
+# torch ni transformers: en el CI se prueba con el TF-IDF v4, que está en git.
+# Los casos que necesitan SciBERT o MiniLM se omiten si faltan torch o los pesos.
+fastapi==0.121.2
+pydantic==2.13.5
 scikit-learn==1.7.2
-cloudpickle>=3.0
-requests>=2.31
-certifi>=2024.2
-pdfplumber>=0.11
+cloudpickle==3.1.2
+numpy==2.5.3
+requests==2.34.2
+certifi==2026.7.22
+pdfplumber==0.11.10

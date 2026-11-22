@@ -36,7 +36,7 @@ dvc pull -r s2 dataset.dvc data/raw.dvc
 python scripts/prepare_dataset.py --src dataset --out_raw data/raw --out_proc data/processed
 
 # EDA v3
-python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/eda_entrega2
+python scripts/eda_entrega2.py --data_dir dataset --out_dir docs/historial/eda_entrega2
 
 # --- Modelos ---------------------------------------------------------------
 # v1 (baseline sobre datos v3, referencia)
@@ -52,7 +52,7 @@ python scripts/train.py --stage v2 --data_dir data/raw --v2_method finetune \
   --model allenai/specter2_base \
   --epochs 4 --batch 32 --lr 2e-5 --max_len 256 --eval_steps 100 || true
 
-python scripts/analyze_metrics.py --results docs/model_results.json --out docs/MODELOS_ENTREGA2.md
+python scripts/analyze_metrics.py --results docs/model_results.json --out docs/historial/MODELOS_ENTREGA2.md
 touch "$HOME/V3_DONE"
 echo ">> v3 OK. Revisa MLflow, toma pantallazos y baja docs/ + mlflow.db."
 echo ">> Al terminar: aws ec2 stop-instances --instance-ids <ID>   (detener, NO terminar)."

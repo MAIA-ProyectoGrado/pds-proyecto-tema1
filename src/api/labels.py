@@ -3,7 +3,7 @@
 """
 from __future__ import annotations
 
-# Orden alfabético usado en entrenamiento (label_order.json / dataset_manifest.json)
+# Orden alfabético usado en entrenamiento (label_order.json del modelo)
 CANONICAL_LABELS: list[str] = [
     "Application",
     "Background",
@@ -28,17 +28,20 @@ DISPLAY_NAMES: dict[str, str] = {
     "Modification_Improvement": "Modification / Improvement",
 }
 
-# Secciones retóricas canónicas que reconoce `models.scif_predict.canon_section`.
+# Secciones que ofrece el tablero. Son valores que aparecen en el entrenamiento
+# (SciBERT es "uncased": "Methods" y "METHODS" le llegan igual). "Abstract" no
+# aparece nunca en los datos de entrenamiento, por eso no se ofrece. Si la sección
+# no se conoce, se envía null y el modelo recibe la entrada sin sección, como las
+# citas de entrenamiento que no la tenían. Por la API se puede enviar cualquier
+# texto: se pasa tal cual al modelo, igual que en el entrenamiento.
 SECTION_OPTIONS: list[str] = [
-    "Abstract",
     "Introduction",
     "Related Work",
-    "Method",
+    "Methods",
     "Experiments",
     "Results",
     "Discussion",
     "Conclusion",
-    "Other",
 ]
 
 
