@@ -1,4 +1,3 @@
-
 # SCIF: clasificación de la función retórica de citas y recuperación de pasajes
 
 SCIF clasifica el **contexto de una cita** en una de **9 funciones retóricas**
