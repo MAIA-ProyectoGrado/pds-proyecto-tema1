@@ -125,8 +125,9 @@ def test_pasted_text_without_headings_has_no_abstract():
 # ── arXiv: errores de red, caché de metadatos y tope del PDF (sin red) ──────
 
 class _FakeResponse:
-    def __init__(self, content=b"", headers=None, text=""):
+    def __init__(self, content=b"", headers=None, text="", status_code=200):
         self.content, self.headers, self.text = content, headers or {}, text
+        self.status_code = status_code
 
     def __enter__(self):
         return self
@@ -135,7 +136,9 @@ class _FakeResponse:
         return False
 
     def raise_for_status(self):
-        pass
+        import requests
+        if self.status_code >= 400:
+            raise requests.HTTPError(f"{self.status_code} Client Error", response=self)
 
     def iter_content(self, chunk_size=1):
         for i in range(0, len(self.content), chunk_size):
@@ -172,6 +175,74 @@ def test_arxiv_metadata_includes_normalized_abstract(monkeypatch):
     assert meta["title"] == "SciBERT: A Pretrained Language Model"
     assert meta["abstract"] == "We release SciBERT. It is trained on papers."
     assert meta["authors"] == ["Iz Beltagy"] and meta["year"] == "2019"
+
+
+ABS_PAGE = """<html><head>
+<meta name="citation_title" content="SciBERT: A Pretrained Language Model for Scientific Text" />
+<meta name="citation_author" content="Beltagy, Iz" />
+<meta name="citation_author" content="Lo, Kyle" />
+<meta name="citation_date" content="2019/03/26" />
+<meta name="citation_online_date" content="2019/09/10" />
+<meta name="citation_abstract" content="We release SciBERT.
+  It is trained on papers &amp; data." />
+</head></html>"""
+
+
+class _ArxivSession:
+    """arXiv simulado: una respuesta (o excepción) para la API y otra para la página."""
+
+    def __init__(self, api, page=None):
+        self.api, self.page, self.urls = api, page, []
+
+    def get(self, url, *_a, **_k):
+        self.urls.append(url)
+        answer = self.api if url == R.ARXIV_API else self.page
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+
+def _arxiv(monkeypatch, api, page=None):
+    session = _ArxivSession(api, page)
+    monkeypatch.setattr(R, "_session", lambda: session)
+    return session
+
+
+def test_api_rejected_reads_the_abs_page(monkeypatch):
+    session = _arxiv(monkeypatch, api=_FakeResponse(status_code=429),
+                     page=_FakeResponse(text=ABS_PAGE))
+    meta = R.fetch_arxiv_metadata("1903.10676")
+    assert meta["title"] == "SciBERT: A Pretrained Language Model for Scientific Text"
+    assert meta["authors"] == ["Iz Beltagy", "Kyle Lo"]
+    assert meta["year"] == "2019"
+    assert meta["abstract"] == "We release SciBERT. It is trained on papers & data."
+    assert session.urls == [R.ARXIV_API, R.ARXIV_ABS.format(id="1903.10676")]
+
+
+def test_api_timeout_reads_the_abs_page(monkeypatch):
+    import requests
+    _arxiv(monkeypatch, api=requests.Timeout("lenta"), page=_FakeResponse(text=ABS_PAGE))
+    assert R.fetch_arxiv_metadata("1903.10676")["authors"] == ["Iz Beltagy", "Kyle Lo"]
+
+
+def test_api_ok_does_not_open_the_abs_page(monkeypatch):
+    session = _arxiv(monkeypatch, api=_FakeResponse(text=ATOM_ENTRY))
+    R.fetch_arxiv_metadata("1903.10676")
+    assert session.urls == [R.ARXIV_API]
+
+
+def test_abs_page_404_means_paper_not_found(monkeypatch):
+    _arxiv(monkeypatch, api=_FakeResponse(status_code=429), page=_FakeResponse(status_code=404))
+    with pytest.raises(R.PaperNotFound):
+        R.fetch_arxiv_metadata("2501.99999")
+
+
+def test_both_sources_failing_explain_both(monkeypatch):
+    _arxiv(monkeypatch, api=_FakeResponse(status_code=429), page=_FakeResponse(status_code=503))
+    with pytest.raises(R.DownloadError) as err:
+        R.fetch_arxiv_metadata("1903.10676")
+    assert str(err.value) == ("No se pudo consultar arXiv: la API respondió 429 y la "
+                              "página del artículo respondió 503.")
 
 
 def test_metadata_is_cached(monkeypatch):

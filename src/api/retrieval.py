@@ -7,6 +7,7 @@ y devuelve los k más similares por coseno.
 """
 from __future__ import annotations
 
+import html
 import io
 import re
 import sys
@@ -30,6 +31,7 @@ from models.scif_predict import canon_section  # noqa: E402
 from src.api import config, model_loader  # noqa: E402
 
 ARXIV_API = "https://export.arxiv.org/api/query"
+ARXIV_ABS = "https://arxiv.org/abs/{id}"
 ARXIV_PDF = "https://arxiv.org/pdf/{id}"
 ATOM = {"a": "http://www.w3.org/2005/Atom"}
 
@@ -42,6 +44,10 @@ MAX_LEN_TOKENS = 256
 MIN_WORDS_PER_CHUNK = 20      # descarta residuos: marca de agua de arXiv, pies de figura sueltos
 X_TOLERANCE = 2               # pdfplumber pega palabras con el valor por defecto (3)
 HTTP_TIMEOUT = config.HTTP_TIMEOUT
+# Los datos del artículo bloquean la clasificación: si la API de arXiv no responde
+# pronto, se pasa a la página del artículo. La descarga del PDF usa HTTP_TIMEOUT.
+ARXIV_API_TIMEOUT = min(5, HTTP_TIMEOUT)
+ARXIV_PAGE_TIMEOUT = min(10, HTTP_TIMEOUT)
 USER_AGENT = "scif-citation-dashboard/1.0 (academic project)"
 
 
@@ -91,15 +97,39 @@ def _session() -> requests.Session:
 
 
 def fetch_arxiv_metadata(arxiv_id: str) -> dict[str, Any]:
-    """Título, autores, año y abstract desde la API de arXiv."""
+    """Título, autores, año y abstract del artículo.
+
+    Primero consulta la API de arXiv. Si la API rechaza la consulta (por ejemplo,
+    429 por límite de uso), falla o no responde, lee los mismos datos de la página
+    del artículo (arxiv.org/abs/<id>), que los publica en etiquetas `citation_*`.
+    """
     try:
-        r = _session().get(ARXIV_API, params={"id_list": arxiv_id}, timeout=HTTP_TIMEOUT)
+        return _metadata_from_api(arxiv_id)
+    except DownloadError as api_error:
+        try:
+            return _metadata_from_abs_page(arxiv_id)
+        except DownloadError as page_error:
+            raise DownloadError(f"No se pudo consultar arXiv: la API {api_error} y la "
+                                f"página del artículo {page_error}.") from page_error
+
+
+def _failure(exc: requests.RequestException, timeout: float) -> str:
+    """Motivo breve de una consulta fallida, para el mensaje al usuario."""
+    if isinstance(exc, requests.Timeout):
+        return f"no respondió en {timeout:g} s"
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    return f"respondió {status}" if status else "no respondió"
+
+
+def _metadata_from_api(arxiv_id: str) -> dict[str, Any]:
+    try:
+        r = _session().get(ARXIV_API, params={"id_list": arxiv_id}, timeout=ARXIV_API_TIMEOUT)
         r.raise_for_status()
         root = ET.fromstring(r.text)
     except requests.RequestException as exc:
-        raise DownloadError(f"No se pudo consultar arXiv: {exc}") from exc
+        raise DownloadError(_failure(exc, ARXIV_API_TIMEOUT)) from exc
     except ET.ParseError as exc:
-        raise DownloadError(f"arXiv devolvió una respuesta ilegible: {exc}") from exc
+        raise DownloadError("devolvió una respuesta ilegible") from exc
     entry = root.find("a:entry", ATOM)
     # arXiv responde con una entrada de error, no con 404, cuando el id no existe
     if entry is None or entry.find("a:title", ATOM) is None or (entry.find("a:title", ATOM).text or "").strip() == "Error":
@@ -114,6 +144,40 @@ def fetch_arxiv_metadata(arxiv_id: str) -> dict[str, Any]:
     abstract = re.sub(r"\s+", " ", entry.findtext("a:summary", default="", namespaces=ATOM) or "").strip()
     return {"id": arxiv_id, "title": title, "authors": authors, "year": published,
             "abstract": abstract, "source": "arxiv-pdf"}
+
+
+_CITATION_TAG = re.compile(
+    r'<meta\s+name="citation_(title|author|date|abstract)"\s+content="([^"]*)"', re.I)
+
+
+def _metadata_from_abs_page(arxiv_id: str) -> dict[str, Any]:
+    try:
+        r = _session().get(ARXIV_ABS.format(id=arxiv_id), timeout=ARXIV_PAGE_TIMEOUT)
+    except requests.RequestException as exc:
+        raise DownloadError(_failure(exc, ARXIV_PAGE_TIMEOUT)) from exc
+    if r.status_code == 404:
+        raise PaperNotFound(arxiv_id)
+    if r.status_code >= 400:
+        raise DownloadError(f"respondió {r.status_code}")
+    tags: dict[str, list[str]] = {}
+    for name, value in _CITATION_TAG.findall(r.text):
+        tags.setdefault(name.lower(), []).append(re.sub(r"\s+", " ", html.unescape(value)).strip())
+    if not tags.get("title"):
+        raise DownloadError("no trae los datos del artículo")
+    return {
+        "id": arxiv_id,
+        "title": tags["title"][0],
+        "authors": [_first_last(a) for a in tags.get("author", [])],
+        "year": tags.get("date", [""])[0][:4],          # primera versión, como `published` de la API
+        "abstract": tags.get("abstract", [""])[0],
+        "source": "arxiv-pdf",
+    }
+
+
+def _first_last(name: str) -> str:
+    """La página escribe "Beltagy, Iz"; la API, "Iz Beltagy"."""
+    last, _, first = name.partition(", ")
+    return f"{first} {last}" if first else name
 
 
 #: metadatos ya consultados. El tablero pide /predict y /retrieve a la vez para el
