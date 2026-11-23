@@ -1,18 +1,11 @@
-# Recomendación local de citas y clasificación de funciones de cita
 
-## Novedades de la Entrega 2 (rama `feature/entrega2-eda-modelos`)
+# SCIF: clasificación de la función retórica de citas y recuperación de pasajes
 
-- **Datos:** se reemplaza el corpus de abstracts por el **dataset enriquecido de
-  intención de cita** con contextos de cita reales y 9 clases balanceadas
-  (`dataset/`, versionado con DVC vía `scripts/prepare_dataset.py`).
-- **EDA:** `scripts/eda_entrega2.py` → `docs/EDA_ENTREGA2.md` (explora la variable
-  objetivo y su balance, y documenta la inconsistencia del Top-3 de *chunks*).
-- **Modelos:** `scripts/train.py` entrena **v1** (TF-IDF + LogReg) y **v2**
-  (SciBERT fine-tune) con **MLflow**; `scripts/analyze_metrics.py` genera
-  `docs/MODELOS_ENTREGA2.md` (comparativa + sobreajuste).
-- **Infra:** `infra/` levanta una EC2 con MLflow (`launch_ec2.sh`, `stop_ec2.sh`).
-- **Handoff:** `PROMPT_AUTONOMO_ENTREGA2.md` (ejecuta partes 2 y 3) y
-  `MEJORAS_ENTREGA2.md` (mapa feedback Entrega 1 → cambios, con página/párrafo).
+SCIF clasifica el **contexto de una cita** en una de **9 funciones retóricas**
+(*Application, Background, Basis, Comparison, Evidence, Further_Reading, Gap,
+Identification_of_the_Originator, Modification_Improvement*) y recupera los
+**pasajes más afines (Top-3 chunks)** del artículo citado. Se sirve como una API
+(FastAPI) con un tablero web, empaquetados en Docker.
 
 ## Problema y contexto
 
@@ -24,73 +17,104 @@ distribuida en secciones específicas.
 
 ## Pregunta de negocio
 
-¿Es posible, a partir de artículos científicos en inglés extraídos de arXiv,
-recuperar automáticamente los fragmentos más relevantes de un artículo citado
-y clasificar el propósito de cada cita (función de cita) para apoyar tareas
-como la revisión de literatura y el análisis de impacto bibliométrico?
+¿Es posible, a partir de artículos científicos en inglés, recuperar
+automáticamente los fragmentos más relevantes de un artículo citado y clasificar
+el propósito de cada cita (función de cita) para apoyar tareas como la revisión
+de literatura y el análisis de impacto bibliométrico?
 
 ## Alcance
 
-Extracción de un corpus de artículos de arXiv (área de computación),
-identificación de contextos de cita, y construcción de un dataset balanceado
-de al menos 2.000 ejemplos por categoría de función de cita, para entrenar
-clasificadores y evaluar modelos de lenguaje.
+Construcción de un dataset de intención de cita con 9 clases (contextos de cita
+reales, partición sin fuga entre artículos citantes), entrenamiento y comparación
+de clasificadores (línea base léxica, embeddings congelados, ajuste fino de
+SciBERT y SPECTER2) y despliegue del mejor modelo como servicio.
 
 ## Conjunto de datos
 
-Artículos científicos en inglés extraídos del repositorio público arXiv
-(formato PDF), procesados con `scripts/extract_arxiv_data.py`.
+- **Dataset de intención de cita** (`dataset/`, versionado con DVC, ver `dataset.dvc`):
+  9 clases aproximadamente balanceadas. Partición actual (ver
+  `data/processed/dataset_manifest.json`): **14.461** ejemplos de entrenamiento,
+  **3.098** de validación y **3.096** de prueba. La partición es agrupada por
+  artículo citante para evitar fuga de información.
+- **Corpus crudo de arXiv** (`data/raw/`, versionado con DVC, ver `data/raw.dvc`):
+  artículos en inglés extraídos con `scripts/extract_arxiv_data.py`.
 
-Por defecto, el script descarga todos los artículos que coincidan con la
-consulta de búsqueda (sin límite fijo). El proceso es incremental (cada
-artículo se guarda apenas se procesa) y reanudable: si se interrumpe, al
-volver a ejecutarlo continúa donde quedó sin repetir descargas. Existe un
-parámetro opcional `--max_results` para limitar la cantidad de artículos en
-pruebas rápidas.
+El script de extracción descarga por defecto todos los artículos que coincidan
+con la consulta (sin límite fijo). Es incremental (guarda cada artículo apenas
+se procesa) y reanudable: si se interrumpe, al volver a ejecutarlo continúa donde
+quedó. El parámetro opcional `--max_results` limita la cantidad en pruebas
+rápidas. Descargar el corpus completo puede tardar horas y ocupar varios GB:
+córrelo en segundo plano (por ejemplo con `nohup`) y vigila el espacio en disco.
 
-Descargar el corpus completo puede tardar horas y ocupar varios GB, por lo
-que se recomienda correrlo en segundo plano (por ejemplo con `nohup`) y
-vigilar el espacio en disco disponible.
+## Resultados de los modelos
+
+Métricas en la partición de prueba (detalle, curvas y matrices en
+[`docs/MODELOS_ENTREGA2.md`](docs/MODELOS_ENTREGA2.md) y en MLflow):
+
+| Modelo | Tipo | F1-macro (prueba) |
+|---|---|:---:|
+| v1: TF-IDF + Regresión Logística | Léxico (línea base) | 0,518 |
+| v2: embeddings congelados + Regresión Logística | Semántico estático | 0,445 |
+| v3: SciBERT ajustado (**modelo recomendado**) | Encoder científico | **0,634** |
+
+> Las cifras del artículo (informe IEEE) deben coincidir con estas tablas o
+> explicar de qué corrida provienen.
 
 ## Estructura del repositorio
 
 ```
 .
-├── data/
-│   ├── raw/            # datos crudos descargados de arXiv (versionados con DVC)
-│   └── processed/      # datos ya limpios/estructurados (versionados con DVC)
-├── models/             # modelos empaquetados listos para servir + cargador de referencia
+├── data/                 # datos crudos y procesados (versionados con DVC)
+├── models/               # modelos empaquetados + cargador de referencia (scif_predict.py)
 ├── src/
-│   ├── api/            # servicio de inferencia (FastAPI)
-│   └── dashboard/      # tablero que consume la API
-├── scripts/            # extracción, preparación de datos, entrenamiento y métricas
-├── tests/              # pruebas automatizadas
-├── notebooks/          # exploración de datos
-├── infra/              # aprovisionamiento de EC2 y MLflow
-├── docs/               # EDA, resultados de modelos y soportes
-└── .github/workflows/  # pipeline de integración continua
+│   ├── api/              # servicio de inferencia (FastAPI)
+│   └── dashboard/        # tablero web estático (HTML/JS) que consume la API
+├── scripts/              # extracción, preparación de datos, entrenamiento y métricas
+├── tests/                # pruebas automatizadas (pytest)
+├── notebooks/            # exploración y procesamiento de datos
+├── docker/               # Dockerfiles, nginx y configuración del tablero
+├── docker-compose.yml    # despliegue de API + tablero
+├── infra/                # aprovisionamiento de EC2 y MLflow
+├── docs/                 # EDA, resultados de modelos, manuales y soportes
+├── .env.example          # plantilla de variables de entorno
+└── .github/workflows/    # integración continua
 ```
+
+## Variables de entorno
+
+Copia la plantilla y rellénala (el archivo `.env` **no** se sube a Git):
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Para qué sirve | Valor por defecto |
+|---|---|---|
+| `SCIF_PORT` | Puerto publicado del tablero con `docker compose` | `8080` |
+| `SCIF_MODELS_DIR` | Carpeta de modelos de la API (sin Docker) | `<repo>/models` (`/models` en Docker) |
+| `SCIF_ALLOWED_ORIGINS` | Orígenes CORS permitidos (separados por coma) | `http://localhost:8080,http://127.0.0.1:8080` |
+| `MLFLOW_TRACKING_URI` | Servidor MLflow para `scripts/train.py` | `file:./mlruns` |
+| `SCIF_SKIP_MODEL_LOGGING` | `1` evita guardar el modelo en MLflow | no definida |
+| `AWS_ACESS_KEY` y `AWS_SECRET_ACCESS_KEY` | Credenciales AWS para DVC (S3) y `infra/`; las carga `source scripts/awsenv.sh` | vacías |
+
+Nota: `AWS_ACESS_KEY` se escribe con una sola «C» en «ACESS» porque así la lee
+`scripts/awsenv.sh`.
 
 ## Instrucciones de uso
 
-1. Activar el entorno virtual del proyecto (ya creado por `setup_repo.sh`
-   junto con las dependencias instaladas). En Windows (Git Bash):
+1. Crear el entorno virtual del proyecto (Python 3.12). En Windows (Git Bash):
 
    ```bash
+   python -m venv env-proj
    source env-proj/Scripts/activate
+   pip install -r requirements-dev.txt
    ```
 
    En Linux/macOS:
 
    ```bash
+   python3.12 -m venv env-proj
    source env-proj/bin/activate
-   ```
-
-   Si necesitas recrearlo desde cero:
-
-   ```bash
-   python -m venv env-proj
-   source env-proj/Scripts/activate   # o env-proj/bin/activate en Linux/macOS
    pip install -r requirements-dev.txt
    ```
 
@@ -104,7 +128,8 @@ vigilar el espacio en disco disponible.
    nohup python scripts/extract_arxiv_data.py --query "cat:cs.CL" --out_dir data/raw > log.txt 2>&1 &
    ```
 
-3. Versionar los datos con DVC y subirlos al remoto en S3:
+3. Versionar los datos con DVC y subirlos al remoto en S3 (necesitas las
+   credenciales AWS: `source scripts/awsenv.sh`):
 
    ```bash
    dvc add data/raw
@@ -115,10 +140,19 @@ vigilar el espacio en disco disponible.
    ```
 
    Si el comando `dvc` no se reconoce en la terminal, usa `python -m dvc`
-   en su lugar (por ejemplo `python -m dvc push`).
+   (por ejemplo `python -m dvc push`).
 
+4. Entrenamiento (entorno aparte, con las dependencias de entrenamiento):
+
+   ```bash
+   python -m venv .venv-train && source .venv-train/bin/activate   # en Windows: .venv-train/Scripts/activate
+   pip install -r requirements-train.txt
+   export MLFLOW_TRACKING_URI=http://localhost:5000     # opcional
+   python scripts/train.py --help
    ```
-   ```
+
+   El procedimiento completo para regenerar SciBERT está en
+   [`models/README.md`](models/README.md).
 
 ## Despliegue con Docker
 
@@ -128,24 +162,21 @@ Forma recomendada de levantar el prototipo: un solo comando y un solo puerto.
 docker compose up -d --build     # tablero en http://localhost:8080
 ```
 
-Arquitectura de los contenedores:
-
 | Servicio | Imagen | Puerto | Función |
 |---|---|---|---|
-| `api` | `scif-api` (~410 MB) | interno | FastAPI con los modelos; no se publica al exterior |
+| `api` | `scif-api` (~410 MB) | interno (8000) | FastAPI con los modelos; no se publica al exterior |
 | `dashboard` | `scif-dashboard` (~76 MB) | `8080` | nginx sirve el tablero y hace proxy de `/api/` hacia `api:8000` |
 
-El navegador habla con un único origen, así que **no interviene CORS** y en la nube
-basta abrir un puerto. Los pesos se montan desde `./models` en modo solo lectura:
-no se copian a la imagen, siguen viniendo de DVC. Si falta `models/scif-scibert/`,
-la API arranca igual y sirve la línea base; la recuperación de pasajes responde
-`503` y el tablero lo indica.
+El navegador habla con un único origen, así que **no interviene CORS** y en la
+nube basta abrir un puerto. Los pesos se montan desde `./models` en modo solo
+lectura: no se copian a la imagen y siguen viniendo de DVC.
 
 ```bash
-docker compose logs -f api     # registros
-docker compose ps              # estado y healthcheck
-docker compose down            # detener
-SCIF_PORT=9000 docker compose up -d   # otro puerto
+dvc pull models/scif-scibert.dvc       # pesos de SciBERT (~440 MB), antes de levantar
+docker compose logs -f api             # registros
+docker compose ps                      # estado y healthcheck
+docker compose down                    # detener
+SCIF_PORT=9000 docker compose up -d    # otro puerto
 ```
 
 ### Despliegue en EC2
@@ -161,13 +192,15 @@ El script instala Docker si falta, construye las imágenes **en la propia
 instancia** (es x86_64; construirlas en un equipo arm64 daría una arquitectura
 incompatible), levanta los servicios y espera al healthcheck. Hay que abrir el
 puerto 8080/tcp en el grupo de seguridad. La API necesita salida a internet hacia
-`arxiv.org` para la recuperación de pasajes.
+`arxiv.org` para la recuperación de pasajes. Más detalles en
+[`infra/README.md`](infra/README.md) y [`docs/MANUAL_INSTALACION.md`](docs/MANUAL_INSTALACION.md).
 
 ## API de inferencia y tablero
 
-El clasificador de función de cita y la recuperación de pasajes del artículo citado
-se sirven con FastAPI y se operan desde un tablero web. El tablero **solo muestra
-información devuelta por la API**: no incorpora datos simulados.
+El clasificador de función de cita y la recuperación de pasajes se sirven con
+FastAPI y se operan desde un tablero web. El tablero **solo muestra información
+devuelta por la API**: no incorpora datos simulados. Guía de uso del tablero:
+[`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md).
 
 Para desarrollo sin contenedores:
 
@@ -176,53 +209,107 @@ Para desarrollo sin contenedores:
 python3.12 -m venv .venv-api && source .venv-api/bin/activate
 pip install -r src/api/requirements.txt
 
-# 1) API — desde la raíz del repo
+# 1) API: desde la raíz del repo
 uvicorn src.api.main:app --port 8000
 
-# 2) Tablero — en otra terminal
+# 2) Tablero: en otra terminal
 python src/dashboard/serve.py        # http://127.0.0.1:8080
 ```
 
-Endpoints:
+### Endpoints
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/` | Estado del servicio |
-| `GET` | `/models` | Modelos servibles, sus métricas y las 9 etiquetas canónicas |
+| `GET` | `/` | Estado del servicio (úsalo como *health check*) |
+| `GET` | `/models` | Modelos servibles, su disponibilidad y las 9 etiquetas canónicas |
 | `POST` | `/predict` | Clasifica un `citation_context` + `rhetorical_section` |
 | `POST` | `/retrieve` | Top-k pasajes del artículo citado (por `arxiv_id` o `cited_text`) más similares al contexto |
 
+Documentación interactiva (Swagger): `http://localhost:8000/docs` en desarrollo.
+
+### Ejemplos con `curl`
+
+Con Docker, la API se alcanza a través del tablero: usa `http://localhost:8080/api`.
+En desarrollo sin contenedores usa `http://localhost:8000`.
+
+```bash
+# 1) Estado del servicio
+curl http://localhost:8080/api/
+
+# 2) Modelos disponibles
+curl http://localhost:8080/api/models
+
+# 3) Clasificar una cita
+curl -X POST http://localhost:8080/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+        "citation_context": "In contrast to previous approaches that rely solely on surface lexical cues, our framework models discourse-level rhetorical intent.",
+        "rhetorical_section": "Introduction",
+        "model": "scibert"
+      }'
+
+# 4) Recuperar los 3 pasajes más afines del artículo citado
+curl -X POST http://localhost:8080/api/retrieve \
+  -H "Content-Type: application/json" \
+  -d '{
+        "citation_context": "We build our citation encoder on top of SciBERT and keep its in-domain vocabulary unchanged.",
+        "arxiv_id": "1903.10676",
+        "top_k": 3
+      }'
+```
+
+Respuesta de `/predict` (valores ilustrativos):
+
+```json
+{
+  "predicted_label": "Comparison",
+  "predicted_label_display": "Comparison",
+  "confidence": 0.84,
+  "probabilities": { "Comparison": 0.84, "Gap": 0.08, "...": 0.0 },
+  "ambiguous": false,
+  "model_id": "scibert",
+  "input_text": "<contexto> [SEC] <sección canónica>",
+  "latency_ms": 88.4,
+  "status": "success"
+}
+```
+
+`ambiguous` vale `true` cuando la diferencia entre las dos probabilidades más
+altas es menor a `0.10`.
+
 La recuperación descarga el PDF de arXiv, lo segmenta en fragmentos de hasta 300
 palabras respetando oraciones y secciones, y los compara con el contexto de cita
-usando el mismo encoder SciBERT del clasificador (mean pooling + coseno). Los
+usando el mismo encoder SciBERT del clasificador (*mean pooling* + coseno). Los
 documentos ya procesados quedan en caché en memoria. Requiere salida a internet
 hacia `arxiv.org` y los pesos de SciBERT.
 
-Los pesos se buscan en `models/` (o en la ruta que indique la variable
-`SCIF_MODELS_DIR`). `scif-v1-tfidf-logreg` está versionado en Git;
-`scif-scibert` se obtiene con `dvc pull`. Si SciBERT no está presente, la API
-arranca igual y sirve la línea base.
+## Modelos y línea base léxica
+
+La API conoce dos modelos (ver `src/api/model_loader.py`):
+
+| `id` (campo `model`) | Carpeta | Origen de los pesos |
+|---|---|---|
+| `scibert` (por defecto, recomendado) | `models/scif-scibert/` | `dvc pull models/scif-scibert.dvc` |
+| `tfidf-logreg` (línea base, ~5 MB) | `models/scif-v1-tfidf-logreg/` | versionado en Git |
+
+Los pesos se buscan en `models/` o en la ruta de `SCIF_MODELS_DIR`.
+
+Si los pesos de SciBERT no están en disco, **la API arranca igual**, pero:
+
+- `/predict` con `"model": "scibert"` responde `503` (indica que falta `dvc pull`).
+- La línea base sigue disponible: se elige con `"model": "tfidf-logreg"` (o en el
+  tablero, donde los modelos sin pesos aparecen deshabilitados).
+- `/retrieve` responde `503`, porque usa el encoder de SciBERT.
+
+> Hoy **no** existe conmutación automática de SciBERT hacia la línea base: la
+> elección del modelo es explícita. Si el informe describe una conmutación
+> automática, debe ajustarse o implementarse en `src/api/model_loader.py`.
 
 ## Pruebas
-
-Las pruebas automatizadas se ejecutan con:
 
 ```bash
 pytest
 ```
 
-y corren automáticamente en cada push mediante el pipeline definido en
-`.github/workflows/tests.yml`.
-
-## Respaldo Léxico Autónomo (Fallback Operativo)
-
-Para garantizar alta disponibilidad y continuidad del servicio de inferencia sin depender estrictamente de la descarga o carga en memoria de los pesos pesados de Transformers (`SciBERT` / `SPECTER2`, >400 MB), la API de FastAPI implementa un mecanismo automático de **degradación elegante (graceful fallback)** hacia la línea base léxica (`TF-IDF + Regresión Logística`).
-
-### Funcionamiento del Mecanismo
-1. **Verificación al arranque y en inferencia:** Al iniciar el contenedor o recibir una solicitud en `/predict`, el gestor de modelos verifica la existencia e integridad de los artefactos densos en `MODEL_DIR` (`models/scibert_finetuned`).
-2. **Activación automática del respaldo:** Si los pesos pesados no están presentes (por ejemplo, en despliegues ligeros sin descarga previa desde AWS S3/DVC, entornos con restricciones de RAM o fallos de carga), el sistema redirecciona automáticamente la inferencia al artefacto liviano definido en `FALLBACK_MODEL_PATH` (`models/tfidf_logreg.joblib`, <5 MB).
-3. **Transparencia en la respuesta JSON:** El endpoint `/predict` mantiene exactamente el mismo contrato de salida (categoría predicha, distribución probabilística de 9 clases, alerta de ambigüedad si la brecha es `< 0.10` y latencia en ms), indicando explícitamente en los metadatos de respuesta (`model_used: "tfidf-fallback"`) que la predicción fue atendida en modo autónomo ligero.
-
-### Ventajas Operativas
-* **Cero tiempo de inactividad (Zero-Downtime):** Permite levantar y probar el microservicio y el tablero Dash en segundos tras clonar el repositorio, incluso sin credenciales activas de S3/DVC.
-* **Bajo consumo de recursos:** Opera en instancias CPU mínimas con latencias inferiores a 5 ms por consulta.
+Las pruebas corren automáticamente en cada push y pull request a `main` mediante
+`.github/workflows/tests.yml` (Python 3.12).
