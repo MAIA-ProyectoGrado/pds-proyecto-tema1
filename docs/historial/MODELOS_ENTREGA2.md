@@ -11,7 +11,7 @@ Restricción de cómputo: AWS Academy Learner Lab → **sin GPU**, máx. `t3.lar
 > **Versión de datos.** v1 / v2a / v2b se entrenaron sobre el *snapshot* de 18 000
 > registros. El dataset entregado y versionado con DVC es **v3 (20 655)**; el
 > reentrenamiento sobre v3 con encoder de dominio científico (SciBERT / SPECTER2)
-> está preparado en `infra/train_v3_gpu.sh` y pendiente de una instancia con GPU
+> está preparado en `infra/historial/train_v3_gpu.sh` y pendiente de una instancia con GPU
 > (la cuenta AWS propia está en «Free Plan» y no permite instancias de pago hasta
 > actualizarla; ver §5).
 
@@ -96,10 +96,10 @@ y sólo después el cambio de arquitectura.
 
 ### Plan v3 (preparado, pendiente de GPU)
 
-`infra/train_v3_gpu.sh` ejecuta sobre una `g5.xlarge` (A10G): `dvc pull` de la v3
+`infra/historial/train_v3_gpu.sh` ejecuta sobre una `g5.xlarge` (A10G): `dvc pull` de la v3
 (20 655), fine-tune de **SciBERT** y **SPECTER2** con los 14 461 de entrenamiento,
 4 épocas, `max_len 256`, validación cada 100 pasos, registro en MLflow.
-`infra/launch_gpu_ec2.sh` aprovisiona la instancia (requiere cuenta AWS en plan de
+`infra/historial/launch_gpu_ec2.sh` aprovisiona la instancia (requiere cuenta AWS en plan de
 pago y cuota G > 0). Estimado: ~20–35 min de entrenamiento por modelo, < USD 3.
 
 ## 6. Trazabilidad MLflow

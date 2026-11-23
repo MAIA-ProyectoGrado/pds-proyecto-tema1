@@ -1,214 +1,448 @@
-# Recomendación local de citas y clasificación de funciones de cita
+# SCIF: clasificación de la función de las citas científicas
 
-## Problema y contexto
+Proyecto de grado de la Maestría en Inteligencia Artificial (MAIA) de la
+Universidad de los Andes, Tema 1. SCIF recibe una cita de un artículo científico
+en inglés y predice cuál de 9 funciones retóricas cumple (por ejemplo, si la cita
+da antecedentes, sirve de base, se compara o aporta evidencia). También muestra
+en qué pasajes del artículo citado se sustenta la cita.
 
-La identificación de la función retórica que cumple una cita dentro de un
-artículo científico (por ejemplo, si sirve de base, comparación o evidencia)
-es una tarea compleja porque los contextos de cita suelen ser breves o
-ambiguos, y la información relevante del artículo citado suele estar
-distribuida en secciones específicas.
+| | |
+|---|---|
+| Aplicación desplegada | http://3.141.245.118:8080 |
+| Documentación de la API | http://3.141.245.118:8080/api/docs |
+| Manual de usuario | [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md) |
+| Modelos y descarga | [Sección «Modelos»](#modelos) |
 
-## Pregunta de negocio
+## Contenido
 
-¿Es posible, a partir de artículos científicos en inglés extraídos de arXiv,
-recuperar automáticamente los fragmentos más relevantes de un artículo citado
-y clasificar el propósito de cada cita (función de cita) para apoyar tareas
-como la revisión de literatura y el análisis de impacto bibliométrico?
+- [Problema](#problema)
+- [Solución](#solución)
+- [Arquitectura](#arquitectura)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Modelos](#modelos)
+- [Ejecutar con Docker](#ejecutar-con-docker)
+- [Despliegue en AWS](#despliegue-en-aws)
+- [Configuración](#configuración)
+- [API](#api)
+- [Tamaño, hardware y tiempos](#tamaño-hardware-y-tiempos)
+- [Datos y entrenamiento](#datos-y-entrenamiento)
+- [Desarrollo sin contenedores](#desarrollo-sin-contenedores)
+- [Pruebas](#pruebas)
+- [Documentación adicional](#documentación-adicional)
 
-## Alcance
+## Problema
 
-Extracción de un corpus de artículos de arXiv (área de computación),
-identificación de contextos de cita, y construcción de un dataset balanceado
-de al menos 2.000 ejemplos por categoría de función de cita, para entrenar
-clasificadores y evaluar modelos de lenguaje.
+Identificar la función de una cita (para qué la usa el autor) apoya la revisión
+de literatura y el análisis de impacto, pero es difícil de automatizar: los
+contextos de cita son breves y ambiguos, y la información que aclara la función
+suele estar en el artículo citado, no en la frase que lo cita.
 
-## Conjunto de datos
+## Solución
 
-Artículos científicos en inglés extraídos del repositorio público arXiv
-(formato PDF), procesados con `scripts/extract_arxiv_data.py`.
+Un clasificador SciBERT ajustado (configuración B) lee la cita junto con la
+sección donde aparece y 3 oraciones clave del abstract del artículo citado, y
+asigna una de 9 funciones:
 
-Por defecto, el script descarga todos los artículos que coincidan con la
-consulta de búsqueda (sin límite fijo). El proceso es incremental (cada
-artículo se guarda apenas se procesa) y reanudable: si se interrumpe, al
-volver a ejecutarlo continúa donde quedó sin repetir descargas. Existe un
-parámetro opcional `--max_results` para limitar la cantidad de artículos en
-pruebas rápidas.
+`Application`, `Background`, `Basis`, `Comparison`, `Evidence`,
+`Further_Reading`, `Gap`, `Identification_of_the_Originator`,
+`Modification_Improvement`.
 
-Descargar el corpus completo puede tardar horas y ocupar varios GB, por lo
-que se recomienda correrlo en segundo plano (por ejemplo con `nohup`) y
-vigilar el espacio en disco disponible.
+Resultados en el conjunto de prueba revisado por humanos (2.241 citas):
+
+| Modelo | F1 macro | Exactitud |
+|---|--:|--:|
+| SciBERT configuración B (recomendado) | 0,667 | 0,688 |
+| TF-IDF + regresión logística (línea base) | 0,523 | 0,547 |
+
+El tablero web permite clasificar una cita, ver lo que leyó el modelo, la
+probabilidad de cada función y, aparte, los pasajes del artículo citado completo
+más parecidos a la cita. El detalle de las métricas está en
+[`docs/modelos_v4/`](docs/modelos_v4/) y la evolución de los modelos en
+[`docs/HISTORIAL_MODELOS.md`](docs/HISTORIAL_MODELOS.md).
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+  U["Usuario<br/>(navegador)"]
+  subgraph AWS["AWS, región us-east-2"]
+    subgraph EC2["EC2 c7i-flex.large · Ubuntu 24.04 · Docker Compose"]
+      N["scif-dashboard<br/>nginx: tablero estático<br/>y proxy /api/"]
+      A["scif-api<br/>FastAPI + uvicorn<br/>SciBERT B · MiniLM · TF-IDF v4 en memoria"]
+      V["Carpeta models/<br/>archivos de pesos, solo lectura"]
+    end
+    S["Bucket S3 privado<br/>remoto de DVC"]
+  end
+  X["arXiv<br/>abstract y PDF"]
+
+  U -->|"HTTP, puerto 8080"| N
+  N -->|"/api/ hacia :8000 (red interna)"| A
+  V -->|"carga al arrancar"| A
+  A -->|"metadatos y PDF"| X
+  S -.->|"dvc pull con rol IAM, al desplegar"| V
+```
+
+- Solo el puerto 8080 es público. La API no se expone: el tablero y la API
+  comparten origen a través de nginx, así que no interviene CORS.
+- Los modelos son archivos de pesos. La API los carga en memoria al arrancar y
+  responde desde ahí; la carpeta se monta en modo solo lectura y no forma parte
+  de la imagen.
+- La instancia descarga los pesos con un rol IAM de solo lectura: en la máquina
+  no hay llaves de AWS.
+
+### Flujo de una consulta
+
+Una consulta son dos peticiones a la API. La primera clasifica; la segunda,
+que el tablero lanza cuando el resultado ya está en pantalla, busca los pasajes
+del artículo completo.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor U as Usuario
+  participant T as Tablero
+  participant A as API
+  participant X as arXiv
+  participant M as MiniLM
+  participant B as SciBERT B
+
+  U->>T: Contexto, sección e id de arXiv
+  T->>A: POST /api/predict
+  A->>X: Pide el abstract (queda en caché)
+  X-->>A: Abstract
+  A->>M: Contexto y oraciones del abstract
+  M-->>A: Las 3 oraciones más parecidas al contexto
+  A->>B: Contexto [SEP] sección y las 3 oraciones
+  B-->>A: Probabilidad de las 9 funciones
+  A-->>T: Función, probabilidades, texto leído y latencias (unos 0,4 s)
+  T-->>U: Resultado
+  Note over T,B: Segunda petición, solo si se indicó el artículo citado
+  T->>A: POST /api/retrieve
+  A->>X: Pide el PDF completo (queda en caché)
+  X-->>A: PDF
+  A->>B: Solo el codificador: vector del contexto y de cada fragmento de hasta 300 palabras
+  B-->>A: Similitud de cada fragmento con el contexto
+  A-->>T: Los 3 fragmentos más parecidos y el mapa del documento (5 a 12 s la primera vez)
+  T-->>U: Pasajes y mapa
+```
+
+| Modelo | Qué hace en la consulta | ¿Cambia la predicción? |
+|---|---|---|
+| MiniLM | Elige las 3 oraciones del abstract más parecidas al contexto. No clasifica | Sí, porque decide qué lee SciBERT |
+| SciBERT B, completo | Lee el contexto, la sección y las 3 oraciones, y asigna la función | Es la predicción |
+| SciBERT B, solo el codificador | Compara el contexto con cada fragmento del PDF para mostrar los pasajes | No: es una explicación para el usuario |
+| TF-IDF | Alternativa liviana que se elige en el tablero. Clasifica solo con el contexto y la sección, sin arXiv ni MiniLM. Los pasajes se muestran igual si se indicó el artículo | Es la predicción, si se elige |
+
+Los datos del artículo se piden primero a la API de arXiv. Si la API rechaza la
+consulta (por ejemplo, con el error 429 por límite de uso) o no responde en 5 s,
+se leen de la página del artículo en arxiv.org, que publica el mismo título y
+abstract. Si no se indica el artículo citado o arXiv no responde por ninguna de
+las dos vías, la API omite los pasos 3 a 6: SciBERT clasifica solo con el
+contexto y la sección, y la respuesta explica por qué.
+
+### Pasajes del artículo completo
+
+```mermaid
+flowchart TB
+  R["POST /api/retrieve<br/>contexto + id de arXiv"] --> C{"¿Artículo en caché?<br/>(últimos 32)"}
+  C -->|"no"| D["1. Descarga<br/>título y autores + PDF de arxiv.org<br/>máximo 25 MB"]
+  D --> P["2. Texto<br/>pdfplumber, primeras 40 páginas<br/>separa las 2 columnas"]
+  P --> F["3. Fragmentos<br/>detecta secciones, corta en References<br/>hasta 300 palabras sin partir oraciones"]
+  F --> E["4. Vectores<br/>codificador de SciBERT B, sin capa de clasificación<br/>un vector por fragmento"]
+  E --> G["Se guarda en caché"]
+  C -->|"sí"| Q
+  G --> Q["5. Vector del contexto<br/>con el mismo codificador"]
+  Q --> S["6. Similitud coseno<br/>contexto contra cada fragmento"]
+  S --> O["Respuesta<br/>3 fragmentos más parecidos + similitud de todos para el mapa"]
+```
+
+El paso 4 es el más lento: 4,5 de los 5,8 s que tarda un artículo la primera vez.
+Con el artículo en caché, la respuesta toma unos 0,1 s.
+
+Limitaciones conocidas:
+
+- El codificador lee hasta 256 tokens por fragmento, y un fragmento de 300
+  palabras tiene unos 400. En los fragmentos largos, la similitud se calcula con
+  aproximadamente sus dos primeros tercios; el tablero muestra el texto completo.
+- El codificador se ajustó para clasificar la función de la cita, no para medir
+  similitud. Los pasajes son una ayuda aproximada para el usuario, no una prueba
+  de dónde se sustenta la cita.
+- La clasificación y la búsqueda de pasajes comparten el modelo en memoria.
+  Mientras se procesa un PDF nuevo, una clasificación simultánea espera hasta
+  unos 4,5 s.
 
 ## Estructura del repositorio
 
 ```
 .
-├── data/
-│   ├── raw/            # datos crudos descargados de arXiv (versionados con DVC)
-│   └── processed/      # datos ya limpios/estructurados (versionados con DVC)
-├── models/             # modelos empaquetados listos para servir + cargador de referencia
 ├── src/
-│   ├── api/            # servicio de inferencia (FastAPI)
-│   └── dashboard/      # tablero que consume la API
-├── scripts/            # extracción, preparación de datos, entrenamiento y métricas
-├── tests/              # pruebas automatizadas
-├── notebooks/          # exploración de datos
-├── infra/              # aprovisionamiento de EC2 y MLflow
-├── docs/               # EDA, resultados de modelos y soportes
-└── .github/workflows/  # pipeline de integración continua
+│   ├── api/          # API de inferencia (FastAPI)
+│   └── dashboard/    # tablero web (HTML, CSS y JavaScript)
+├── models/           # modelos servidos (SciBERT y MiniLM por DVC, TF-IDF en git) y código de inferencia
+├── notebooks/        # construcción del dataset y entrenamiento (Colab)
+├── dataset/          # particiones train, val y test (DVC)
+├── scripts/          # conversión del checkpoint, evaluación, línea base y scripts de la entrega 2
+├── docker/           # Dockerfiles y configuración de nginx
+├── infra/            # despliegue en AWS (infra/historial/: scripts de la entrega 2)
+├── tests/            # pruebas automatizadas (pytest)
+├── docs/             # manual de usuario, métricas e historial
+├── docker-compose.yml
+└── .env.example      # variables de configuración
 ```
 
-## Instrucciones de uso
+## Modelos
 
-1. Activar el entorno virtual del proyecto (ya creado por `setup_repo.sh`
-   junto con las dependencias instaladas). En Windows (Git Bash):
+| Carpeta | Qué es | Tamaño | Cómo se obtiene |
+|---|---|--:|---|
+| `models/scif-scibert-chunks/` | SciBERT configuración B, el modelo recomendado (110 M de parámetros) | 421 MB | DVC |
+| `models/minilm-l6-v2/` | `all-MiniLM-L6-v2`, elige las 3 oraciones clave del abstract (22 M de parámetros) | 88 MB | DVC |
+| `models/scif-v4-tfidf-logreg/` | TF-IDF + regresión logística, línea base | 4,7 MB | Incluido en git |
 
-   ```bash
-   source env-proj/Scripts/activate
-   ```
-
-   En Linux/macOS:
-
-   ```bash
-   source env-proj/bin/activate
-   ```
-
-   Si necesitas recrearlo desde cero:
-
-   ```bash
-   python -m venv env-proj
-   source env-proj/Scripts/activate   # o env-proj/bin/activate en Linux/macOS
-   pip install -r requirements-dev.txt
-   ```
-
-2. Ejecutar el script de extracción:
-
-   ```bash
-   # Prueba rápida
-   python scripts/extract_arxiv_data.py --query "cat:cs.CL" --max_results 100 --out_dir data/raw
-
-   # Descarga completa (recomendado en segundo plano)
-   nohup python scripts/extract_arxiv_data.py --query "cat:cs.CL" --out_dir data/raw > log.txt 2>&1 &
-   ```
-
-3. Versionar los datos con DVC y subirlos al remoto en S3:
-
-   ```bash
-   dvc add data/raw
-   git add data/raw.dvc data/.gitignore
-   git commit -m "Datos extraídos de arXiv para citation contexts"
-   dvc push
-   git push
-   ```
-
-   Si el comando `dvc` no se reconoce en la terminal, usa `python -m dvc`
-   en su lugar (por ejemplo `python -m dvc push`).
-
-   ```
-   ```
-
-## Despliegue con Docker
-
-Forma recomendada de levantar el prototipo: un solo comando y un solo puerto.
+SciBERT y MiniLM están versionados con DVC en el bucket S3 del proyecto
+(`.dvc/config`). Para descargarlos se necesitan credenciales de la cuenta de AWS
+del proyecto, configuradas con `aws configure` o `aws login`; nunca se escriben
+en el repositorio.
 
 ```bash
-docker compose up -d --build     # tablero en http://localhost:8080
+pip install "dvc[s3]==3.67.1" "botocore[crt]"   # botocore[crt]: necesario con `aws login`
+dvc pull models/scif-scibert-chunks.dvc models/minilm-l6-v2.dvc
 ```
 
-Arquitectura de los contenedores:
+**Sin descargar nada**, la aplicación arranca con el TF-IDF. El tablero marca
+SciBERT como no disponible e indica qué falta.
 
-| Servicio | Imagen | Puerto | Función |
-|---|---|---|---|
-| `api` | `scif-api` (~410 MB) | interno | FastAPI con los modelos; no se publica al exterior |
-| `dashboard` | `scif-dashboard` (~76 MB) | `8080` | nginx sirve el tablero y hace proxy de `/api/` hacia `api:8000` |
+El formato de entrada del modelo y la selección de las oraciones clave están
+documentados en [`models/README.md`](models/README.md).
 
-El navegador habla con un único origen, así que **no interviene CORS** y en la nube
-basta abrir un puerto. Los pesos se montan desde `./models` en modo solo lectura:
-no se copian a la imagen, siguen viniendo de DVC. Si falta `models/scif-scibert/`,
-la API arranca igual y sirve la línea base; la recuperación de pasajes responde
-`503` y el tablero lo indica.
+## Ejecutar con Docker
+
+Requisitos: Docker con Docker Compose y unos 4 GB de RAM.
 
 ```bash
-docker compose logs -f api     # registros
+git clone https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1.git
+cd pds-proyecto-tema1
+# Modelos: sección «Modelos» (opcional; sin ellos sirve el TF-IDF)
+docker compose up -d --build
+```
+
+El tablero queda en http://localhost:8080 y la documentación de la API en
+http://localhost:8080/api/docs. Las imágenes se construyen en el equipo, así que
+la arquitectura (x86_64 o arm64) siempre coincide.
+
+```bash
 docker compose ps              # estado y healthcheck
+docker compose logs -f api     # registros de la API
 docker compose down            # detener
-SCIF_PORT=9000 docker compose up -d   # otro puerto
 ```
 
-### Despliegue en EC2
+| Contenedor | Imagen | Puerto | Función |
+|---|--:|---|---|
+| `scif-api` | 2,06 GB | 8000, solo red interna | FastAPI con los modelos |
+| `scif-dashboard` | 74 MB | 8080 | nginx: sirve el tablero y reenvía `/api/` a la API |
+
+## Despliegue en AWS
+
+La aplicación pública corre en una instancia EC2 `c7i-flex.large` (2 vCPU, 4 GB,
+Ubuntu 24.04) en `us-east-2`, con IP elástica. Dos scripts la reproducen:
 
 ```bash
-ssh -i <llave>.pem ubuntu@<IP>
-git clone <repo> && cd pds-proyecto-tema1
-dvc pull models/scif-scibert.dvc      # pesos de SciBERT
-bash infra/deploy_ec2.sh
+# En el equipo local, con la AWS CLI conectada
+REGION=us-east-2 ./infra/launch_inference_ec2.sh
+
+# En la instancia
+git clone https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1.git
+cd pds-proyecto-tema1 && bash infra/deploy_ec2.sh
 ```
 
-El script instala Docker si falta, construye las imágenes **en la propia
-instancia** (es x86_64; construirlas en un equipo arm64 daría una arquitectura
-incompatible), levanta los servicios y espera al healthcheck. Hay que abrir el
-puerto 8080/tcp en el grupo de seguridad. La API necesita salida a internet hacia
-`arxiv.org` para la recuperación de pasajes.
+`launch_inference_ec2.sh` crea el rol IAM, la llave SSH, el grupo de seguridad,
+la instancia y la IP elástica. `deploy_ec2.sh` instala Docker y DVC, descarga los
+pesos y levanta los servicios. El detalle, el costo y cómo borrar los recursos
+están en [`infra/README.md`](infra/README.md).
 
-## API de inferencia y tablero
+## Configuración
 
-El clasificador de función de cita y la recuperación de pasajes del artículo citado
-se sirven con FastAPI y se operan desde un tablero web. El tablero **solo muestra
-información devuelta por la API**: no incorpora datos simulados.
+La aplicación se configura con variables de entorno. Para cambiarlas, copia
+[`.env.example`](.env.example) como `.env` junto a `docker-compose.yml`. Ese
+archivo documenta las 18 variables con su valor por defecto. Las principales:
 
-Para desarrollo sin contenedores:
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `SCIF_PORT` | `8080` | Puerto público del tablero y de la API |
+| `SCIF_DEFAULT_MODEL` | `scibert` | Modelo cuando la petición no indica uno (`scibert` o `tfidf-logreg`) |
+| `SCIF_WORKERS` | `1` | Procesos de la API; cada uno carga su copia de los modelos |
+| `SCIF_TORCH_THREADS` | `min(4, núcleos)` | Hilos de PyTorch por proceso |
+| `SCIF_RATE_LIMIT_PER_MIN` | `30` | Peticiones por minuto y por IP a `/predict` y `/retrieve` |
+| `SCIF_MAX_CONTEXT_CHARS` | `3000` | Largo máximo del contexto de cita |
+| `SCIF_MAX_PDF_MB` / `SCIF_MAX_PDF_PAGES` | `25` / `40` | Límites del PDF del artículo citado |
+
+Un valor inválido detiene el arranque de la API con un mensaje que nombra la
+variable. La configuración activa se puede consultar en `GET /api/health`.
+
+La aplicación no tiene usuarios ni contraseñas. Las únicas credenciales son las
+de AWS para DVC y el despliegue, y se configuran con la AWS CLI, fuera del
+repositorio.
+
+## API
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `GET` | `/health` | Estado, modelos cargados y configuración activa |
+| `GET` | `/models` | Modelos disponibles, qué lee cada uno y las 9 funciones |
+| `POST` | `/predict` | Clasifica una cita |
+| `POST` | `/retrieve` | Pasajes del artículo citado más parecidos a la cita |
+
+Detrás de nginx, las rutas llevan el prefijo `/api` (por ejemplo,
+`/api/predict`). La documentación interactiva está en `/api/docs`.
+
+### Ejemplo: clasificar una cita
 
 ```bash
-# Entorno del servicio (torch todavía no publica ruedas para Python 3.14)
+curl -X POST http://3.141.245.118:8080/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+        "citation_context": "We extend SciBERT [4] with an additional classification head and fine-tune it on our corpus to improve accuracy.",
+        "rhetorical_section": "Methods",
+        "arxiv_id": "1903.10676"
+      }'
+```
+
+Respuesta (resumida):
+
+```json
+{
+  "predicted_label": "Modification_Improvement",
+  "confidence": 0.983,
+  "probabilities": {"Modification_Improvement": 0.983, "Application": 0.0081, "Gap": 0.0023, "...": "..."},
+  "ambiguous": false,
+  "model_id": "scibert",
+  "model_version": "v4-config-b",
+  "key_sentences": {
+    "status": "used",
+    "source": "arxiv-abstract",
+    "cited_paper": {"id": "1903.10676", "title": "SciBERT: A Pretrained Language Model for Scientific Text"},
+    "sentences": [
+      {"rank": 1, "text": "We release SciBERT, a pretrained language model based on BERT (Devlin et al., 2018) to address ...", "similarity": 0.6465},
+      "..."
+    ]
+  },
+  "input_text": "We extend SciBERT [4] ... [SEP] Section: Methods | Cited passages: We release SciBERT, ...",
+  "latency_ms": {"cited_paper": 0.0, "key_sentences": 61.7, "inference": 214.0, "total": 275.8},
+  "status": "success"
+}
+```
+
+Campos de la petición: `citation_context` (obligatorio), `rhetorical_section`,
+`model` (`scibert` o `tfidf-logreg`) y el artículo citado como `arxiv_id` (id o
+URL) o `cited_text` (texto pegado).
+
+### Ejemplo: pasajes del artículo completo
+
+```bash
+curl -X POST http://3.141.245.118:8080/api/retrieve \
+  -H "Content-Type: application/json" \
+  -d '{"citation_context": "We extend SciBERT [4] with an additional classification head ...", "arxiv_id": "1903.10676", "top_k": 3}'
+```
+
+Devuelve los datos del artículo, los `top_k` fragmentos más parecidos (con su
+sección y similitud coseno), la similitud de todos los fragmentos para el mapa
+del documento y la latencia de cada etapa.
+
+### Errores
+
+| Código | Cuándo |
+|---|---|
+| `413` | La petición supera 1 MB |
+| `422` | Faltan campos o no son válidos; el mensaje dice cuál |
+| `429` | Se superó el límite de peticiones por minuto |
+| `503` | Faltan los pesos del modelo pedido; el mensaje explica cómo obtenerlos |
+
+## Tamaño, hardware y tiempos
+
+Medido en la instancia de producción (`c7i-flex.large`: 2 vCPU Intel Xeon
+Platinum 8488C, 3,7 GB de RAM, sin GPU).
+
+| Recurso | Valor |
+|---|--:|
+| Memoria de la API con SciBERT y MiniLM cargados | ~0,8 GB |
+| Memoria del sistema completo | 1,4 de 3,7 GB |
+| Imagen de la API / del tablero | 2,06 GB / 74 MB |
+| Disco recomendado | 30 GB |
+
+| Escenario (60 citas del test, una a la vez) | Mediana | Percentil 95 |
+|---|--:|--:|
+| SciBERT sin artículo citado: inferencia | 135 ms | 197 ms |
+| SciBERT con abstract: total de la API | 383 ms | 518 ms |
+| TF-IDF: inferencia | 1 ms | 1 ms |
+| Pasajes del artículo completo, primera vez | 5,8 s | |
+
+Con 2 vCPU la API atiende unas 2,5 clasificaciones por segundo. Con 4 peticiones
+simultáneas cada una tarda en promedio 1,5 s. Para atender más usuarios hacen
+falta más núcleos o varias instancias detrás de un balanceador; el número de
+procesos se ajusta con `SCIF_WORKERS`.
+
+**Estrategia de despliegue.** El modelo se sirve en CPU tal como se evaluó, sin
+cuantizar: la clasificación completa responde por debajo de 1 s. La lectura del
+artículo completo, que es lo más lento, va en una petición aparte, para no
+retrasar la clasificación. Si faltan los pesos de SciBERT, la aplicación sigue
+funcionando con el TF-IDF, que ocupa 4,7 MB y responde en 1 ms.
+
+## Datos y entrenamiento
+
+El dataset tiene 14.937 citas en 9 clases, tomadas de SciCite, SciTail, Semantic
+Scholar y ACL-ARC, y particionadas por artículo citante sin fugas entre
+particiones: 10.416 de entrenamiento, 2.280 de validación y 2.241 de prueba. Las
+citas de prueba fueron revisadas por el equipo. Las particiones están versionadas
+con DVC en `dataset/` (`dvc pull dataset.dvc`).
+
+| Notebook | Qué hace |
+|---|---|
+| [`Obtener_dataset.ipynb`](notebooks/Obtener_dataset.ipynb) | Construye el dataset final: ingesta de las fuentes, etiquetado con Llama 3.1 8B, balanceo, partición sin fugas y selección de las 3 oraciones clave con MiniLM |
+| [`Entrenamiento_clasificadores_scibert_mlflow.ipynb`](notebooks/Entrenamiento_clasificadores_scibert_mlflow.ipynb) | Entrena y compara 5 configuraciones (SciBERT A y B, SPECTER, encoder congelado y pérdida sin ponderar) con seguimiento en MLflow, en una GPU L4 de Colab |
+| [`procesamiento.ipynb`](notebooks/procesamiento.ipynb) | Versión anterior del corpus (entrega 2), conservada como referencia |
+
+Los notebooks corren en Google Colab y leen las llaves de Hugging Face y Semantic
+Scholar desde los secretos de Colab.
+
+Scripts de la versión final:
+
+| Script | Qué hace |
+|---|---|
+| `scripts/convert_checkpoint.py` | Convierte el checkpoint `.pt` al formato de Hugging Face |
+| `scripts/download_encoder.py` | Descarga MiniLM para uso sin conexión |
+| `scripts/evaluate_v4.py` | Evalúa SciBERT en validación y prueba y escribe `docs/modelos_v4/` |
+| `scripts/train_tfidf_v4.py` | Entrena la línea base TF-IDF |
+
+Los demás scripts de `scripts/` (`train.py`, `eval_v2.py`, `extract_arxiv_data.py`
+y otros) corresponden a los modelos v1 a v3 de la entrega 2.
+
+## Desarrollo sin contenedores
+
+```bash
 python3.12 -m venv .venv-api && source .venv-api/bin/activate
 pip install -r src/api/requirements.txt
 
-# 1) API — desde la raíz del repo
-uvicorn src.api.main:app --port 8000
-
-# 2) Tablero — en otra terminal
-python src/dashboard/serve.py        # http://127.0.0.1:8080
+uvicorn src.api.main:app --port 8000      # API
+python src/dashboard/serve.py             # tablero en http://127.0.0.1:8080 (otra terminal)
 ```
-
-Endpoints:
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/` | Estado del servicio |
-| `GET` | `/models` | Modelos servibles, sus métricas y las 9 etiquetas canónicas |
-| `POST` | `/predict` | Clasifica un `citation_context` + `rhetorical_section` |
-| `POST` | `/retrieve` | Top-k pasajes del artículo citado (por `arxiv_id` o `cited_text`) más similares al contexto |
-
-La recuperación descarga el PDF de arXiv, lo segmenta en fragmentos de hasta 300
-palabras respetando oraciones y secciones, y los compara con el contexto de cita
-usando el mismo encoder SciBERT del clasificador (mean pooling + coseno). Los
-documentos ya procesados quedan en caché en memoria. Requiere salida a internet
-hacia `arxiv.org` y los pesos de SciBERT.
-
-Los pesos se buscan en `models/` (o en la ruta que indique la variable
-`SCIF_MODELS_DIR`). `scif-v1-tfidf-logreg` está versionado en Git;
-`scif-scibert` se obtiene con `dvc pull`. Si SciBERT no está presente, la API
-arranca igual y sirve la línea base.
 
 ## Pruebas
 
-Las pruebas automatizadas se ejecutan con:
-
 ```bash
+pip install -r requirements-dev.txt
 pytest
 ```
 
-y corren automáticamente en cada push mediante el pipeline definido en
-`.github/workflows/tests.yml`.
+`requirements-dev.txt` no incluye PyTorch: así corre el flujo de GitHub Actions
+([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) en cada push y
+pull request a `main`, con 67 pruebas que pasan y 10 omitidas, las que necesitan
+SciBERT o MiniLM. Con el entorno de la API (`src/api/requirements.txt`) y los
+pesos descargados corren las 77. Si están los pesos pero falta PyTorch, una
+prueba falla e indica qué instalar.
 
-## Respaldo Léxico Autónomo (Fallback Operativo)
+## Documentación adicional
 
-Para garantizar alta disponibilidad y continuidad del servicio de inferencia sin depender estrictamente de la descarga o carga en memoria de los pesos pesados de Transformers (`SciBERT` / `SPECTER2`, >400 MB), la API de FastAPI implementa un mecanismo automático de **degradación elegante (graceful fallback)** hacia la línea base léxica (`TF-IDF + Regresión Logística`).
-
-### Funcionamiento del Mecanismo
-1. **Verificación al arranque y en inferencia:** Al iniciar el contenedor o recibir una solicitud en `/predict`, el gestor de modelos verifica la existencia e integridad de los artefactos densos en `MODEL_DIR` (`models/scibert_finetuned`).
-2. **Activación automática del respaldo:** Si los pesos pesados no están presentes (por ejemplo, en despliegues ligeros sin descarga previa desde AWS S3/DVC, entornos con restricciones de RAM o fallos de carga), el sistema redirecciona automáticamente la inferencia al artefacto liviano definido en `FALLBACK_MODEL_PATH` (`models/tfidf_logreg.joblib`, <5 MB).
-3. **Transparencia en la respuesta JSON:** El endpoint `/predict` mantiene exactamente el mismo contrato de salida (categoría predicha, distribución probabilística de 9 clases, alerta de ambigüedad si la brecha es `< 0.10` y latencia en ms), indicando explícitamente en los metadatos de respuesta (`model_used: "tfidf-fallback"`) que la predicción fue atendida en modo autónomo ligero.
-
-### Ventajas Operativas
-* **Cero tiempo de inactividad (Zero-Downtime):** Permite levantar y probar el microservicio y el tablero Dash en segundos tras clonar el repositorio, incluso sin credenciales activas de S3/DVC.
-* **Bajo consumo de recursos:** Opera en instancias CPU mínimas con latencias inferiores a 5 ms por consulta.
+- [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md): uso del tablero paso a paso.
+- [`models/README.md`](models/README.md): formato de entrada y artefactos de cada modelo.
+- [`docs/HISTORIAL_MODELOS.md`](docs/HISTORIAL_MODELOS.md): todas las versiones del modelo y sus métricas.
+- [`infra/README.md`](infra/README.md): despliegue en AWS y borrado de recursos.
+- [`docs/historial/`](docs/historial/): EDA y modelos de la entrega 2.

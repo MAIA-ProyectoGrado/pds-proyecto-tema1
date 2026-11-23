@@ -257,11 +257,11 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
   border-left:2px solid var(--rule);padding-left:9px}
 .ks-note.warn{border-left-color:var(--warn);color:var(--ink-2)!important}
 details.raw{margin-top:12px}
-details.raw summary, details.glossary summary{
+details.raw summary, details.glossary summary, details.guide summary{
   cursor:pointer;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ink-3);
 }
-details.raw summary:focus-visible, details.glossary summary:focus-visible{outline:2px solid var(--retr);outline-offset:2px}
+details.raw summary:focus-visible, details.glossary summary:focus-visible, details.guide summary:focus-visible{outline:2px solid var(--retr);outline-offset:2px}
 details.raw pre{margin-top:9px}
 pre.io{
   margin:0;padding:12px 13px;background:var(--sunken);border:1px solid var(--rule);
@@ -269,6 +269,14 @@ pre.io{
   overflow-x:auto;white-space:pre-wrap;word-break:break-word;
 }
 pre.io .sep{color:var(--retr);font-weight:500}
+
+/* instrucciones de uso */
+details.guide{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--retr);padding:10px 16px}
+details.guide ol{margin:10px 0 4px;padding-left:20px}
+details.guide li + li{margin-top:6px}
+details.guide li{font-size:12.5px;line-height:1.5;color:var(--ink-2);padding-left:2px}
+details.guide li::marker{font-family:var(--f-mono);font-size:11px;color:var(--retr)}
+details.guide strong{color:var(--ink);font-weight:600}
 
 /* glosario */
 details.glossary{background:var(--surface);border:1px solid var(--rule);padding:10px 16px}

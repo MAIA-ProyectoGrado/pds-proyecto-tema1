@@ -1,49 +1,70 @@
-# infra/ — Servidor de experimentos (Entrega 2)
+# infra/: despliegue en AWS
 
-Una sola EC2 hace de **servidor MLflow** y de **máquina de entrenamiento**.
-Región `us-east-1`. Presupuesto: ~USD 20, máx. 15 h de uso, **detener (no terminar)** al final.
+Dos scripts dejan la aplicación pública en una instancia EC2. Los pesos de los
+modelos se descargan del bucket de DVC con el rol de la instancia, así que en la
+máquina no hay llaves de AWS.
 
 | Script | Dónde se corre | Qué hace |
 |---|---|---|
-| `launch_ec2.sh` | local | crea key pair + Security Group (abre 22 y 5000 a tu IP) y lanza la instancia con `mlflow_user_data.sh`. Escribe `ec2_instance.env`. |
-| `mlflow_user_data.sh` | (user-data, dentro de la EC2) | instala MLflow 3.15.2 como servicio systemd (`sqlite` + artefactos locales) en `:5000` + cron de auto-stop a las 14 h. |
-| `remote_setup.sh` | dentro de la EC2 (ssh) | clona la rama, venv, `requirements-train.txt`, `dvc pull`, EDA, `train.py` v1 y v2, `analyze_metrics.py`. |
-| `stop_ec2.sh` | local | `aws ec2 stop-instances` (no terminate) + verifica estado. |
+| `launch_inference_ec2.sh` | Equipo local, con la AWS CLI conectada (`aws login` o `aws configure`) | Crea o reutiliza el rol IAM de solo lectura sobre el bucket de `.dvc/config`, el par de llaves `scif-key`, el grupo de seguridad `scif-sg` (8080 abierto, 22 solo para tu IP), la instancia Ubuntu 24.04 con IMDSv2 y disco cifrado, y una IP elástica. Escribe `infra/ec2_inference.env` (no se versiona). |
+| `deploy_ec2.sh` | Dentro de la instancia, desde la raíz del repositorio | Instala Docker y DVC, descarga SciBERT y MiniLM con `dvc pull`, construye las imágenes, levanta la API y el tablero y espera a que la API quede sana. |
 
-## Uso rápido
+## Pasos
 
 ```bash
-# 1. lanzar (elige tipo segun cuota de GPU)
-INSTANCE_TYPE=g4dn.xlarge ./infra/launch_ec2.sh        # GPU T4, ~USD 0.53/h
-# INSTANCE_TYPE=c7i.2xlarge USE_GPU_AMI=0 ./infra/launch_ec2.sh   # fallback CPU
+# 1. En el equipo local
+REGION=us-east-2 ./infra/launch_inference_ec2.sh
+source infra/ec2_inference.env
 
-source infra/ec2_instance.env
-curl -sf "$MLFLOW_TRACKING_URI/health" && echo OK       # esperar 3-5 min
-
-# 2. pantallazos (docs/historial/soportes/01_ec2_consola.png, 02_security_group.png, 03_mlflow_ui.png)
-
-# 3. entrenar
-ssh -i infra/scif-entrega2.pem ubuntu@$PUBLIC_IP
-#   dentro: bash <(curl -sL .../infra/remote_setup.sh)
-
-# 4. cerrar
-./infra/stop_ec2.sh
+# 2. En la instancia
+ssh -i "$KEY_PEM" "$SSH_USER@$PUBLIC_IP"
+git clone https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1.git
+cd pds-proyecto-tema1 && bash infra/deploy_ec2.sh
 ```
 
-## Costos (on-demand, us-east-1, aprox.)
+Para desplegar una copia local que aún no está en GitHub, el paso 2 puede
+reemplazarse por un `rsync` del repositorio (con `.git`, que DVC necesita), sin
+los entornos virtuales, los pesos ni `.dvc/cache/`.
 
-| Tipo | GPU | USD/h | 15 h (techo) | uso real esperado (~5 h) |
-|---|---|--:|--:|--:|
-| g5.xlarge | A10G 24 GB | 1.006 | 15.1 | ~5 |
-| g4dn.xlarge | T4 16 GB | 0.526 | 7.9 | ~2.6 |
-| c7i.2xlarge | — (CPU) | 0.357 | 5.4 | ~1.8 |
+El tablero queda en `http://<PUBLIC_IP>:8080` y la documentación de la API en
+`http://<PUBLIC_IP>:8080/api/docs`.
 
-+ EBS gp3 120 GB ≈ USD 0.08/GB-mes → ~USD 0.32 mientras exista el volumen.
-Pon una alerta en **AWS Budgets** a USD 15.
+Variables opcionales de `launch_inference_ec2.sh`: `REGION`, `INSTANCE_TYPE`
+(por defecto `c7i-flex.large`) y `VOLUME_GB` (por defecto 30). De
+`deploy_ec2.sh`: `SCIF_PORT` y `SKIP_DVC=1`, para cuando los pesos se copiaron a
+mano en `models/`.
 
-## Guardarraíles de presupuesto
+## Instancia
 
-- `run-instances --instance-initiated-shutdown-behavior stop` → un `shutdown` no destruye nada.
-- cron `auto-stop` a las 14 h de uptime (en `mlflow_user_data.sh`).
-- `stop_ec2.sh` al terminar; el enunciado exige **stopped, no terminated**.
-- Nunca lanzar más de 1 instancia a la vez.
+`c7i-flex.large`: 2 vCPU y 4 GB. Es la única de 4 GB que admite el plan
+gratuito de AWS. La API ocupa unos 0,8 GB con los modelos cargados. Precio de
+lista en `us-east-2`: USD 0,085 por hora, unos USD 2,2 al día con el disco y la
+IP elástica.
+
+## Apagar y borrar los recursos
+
+```bash
+source infra/ec2_inference.env
+export AWS_DEFAULT_REGION=$REGION
+
+# Detener la instancia (conserva el disco; la IP elástica sigue cobrándose)
+aws ec2 stop-instances --instance-ids "$INSTANCE_ID"
+
+# Borrar todo
+aws ec2 terminate-instances --instance-ids "$INSTANCE_ID"
+aws ec2 wait instance-terminated --instance-ids "$INSTANCE_ID"
+aws ec2 release-address --allocation-id "$ALLOCATION_ID"
+aws ec2 delete-security-group --group-name scif-sg
+aws ec2 delete-key-pair --key-name scif-key
+aws iam remove-role-from-instance-profile --instance-profile-name scif-ec2-dvc-read --role-name scif-ec2-dvc-read
+aws iam delete-instance-profile --instance-profile-name scif-ec2-dvc-read
+aws iam delete-role-policy --role-name scif-ec2-dvc-read --policy-name scif-s3-read
+aws iam delete-role --role-name scif-ec2-dvc-read
+```
+
+El bucket de DVC no se borra con estos comandos: guarda el dataset y los modelos.
+
+## Historial
+
+Los scripts de la entrega 2 (servidor de MLflow y entrenamiento en GPU en el
+AWS Academy Learner Lab) están en [`historial/`](historial/README.md).

@@ -93,6 +93,22 @@
     <div class="notice" id="notice" role="status" hidden></div>
     <div class="banner" id="banner" role="alert" hidden></div>
 
+    <details class="guide" open>
+      <summary>Cómo usar el tablero</summary>
+      <ol>
+        <li>Pega en <strong>Contexto de cita</strong> una o dos oraciones en inglés donde aparezca
+            la cita, o carga uno de los ejemplos.</li>
+        <li>Elige la <strong>sección</strong> del artículo donde aparece la cita. Si no la sabes,
+            elige <em>Otra / no sé</em>.</li>
+        <li>Recomendado: escribe el <strong>id de arXiv del artículo citado</strong> o pega su texto.
+            SciBERT lee 3 oraciones clave de su abstract.</li>
+        <li>Deja <strong>SciBERT</strong> como clasificador (TF-IDF es la línea base) y pulsa
+            <strong>Clasificar</strong>. Verás la función predicha y la probabilidad de las 9
+            funciones. Si indicaste el artículo, unos segundos después aparecen los pasajes del
+            artículo completo más parecidos a la cita.</li>
+      </ol>
+    </details>
+
     <details class="glossary">
       <summary>Las 9 funciones de cita</summary>
       <dl id="glossary"></dl>

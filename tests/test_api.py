@@ -5,6 +5,7 @@ SciBERT y MiniLM se omiten si faltan torch o los pesos (vienen de DVC).
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -28,9 +29,18 @@ baseline_required = pytest.mark.skipif(
     reason="faltan los pesos de la línea base (models/scif-v4-tfidf-logreg)",
 )
 scibert_required = pytest.mark.skipif(
-    not (model_loader.is_available("scibert") and model_loader.encoder_available()),
-    reason="faltan los pesos de SciBERT o de MiniLM (DVC)",
+    importlib.util.find_spec("torch") is None
+    or not (model_loader.is_available("scibert") and model_loader.encoder_available()),
+    reason="faltan torch o los pesos de SciBERT o de MiniLM (DVC)",
 )
+
+
+@pytest.mark.skipif(not model_loader.is_available("scibert"),
+                    reason="sin los pesos de SciBERT no hace falta PyTorch")
+def test_torch_is_installed_when_scibert_weights_are_present():
+    assert importlib.util.find_spec("torch") is not None, (
+        "Los pesos de SciBERT están descargados pero falta PyTorch: "
+        "instala src/api/requirements.txt")
 
 
 @pytest.fixture(scope="module")

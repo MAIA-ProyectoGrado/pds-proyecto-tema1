@@ -1,5 +1,8 @@
 # Manual de instalación del tablero
 
+> Manual de la entrega 2. Las instrucciones vigentes de instalación y despliegue
+> están en el [README](../../README.md) y en [`infra/README.md`](../../infra/README.md).
+
 Prototipo de clasificación de la función retórica de citas científicas y recuperación
 de pasajes del artículo citado. Consta de dos servicios:
 
