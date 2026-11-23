@@ -47,12 +47,14 @@ asigna una de 9 funciones:
 `Further_Reading`, `Gap`, `Identification_of_the_Originator`,
 `Modification_Improvement`.
 
-Resultados en el conjunto de prueba revisado por humanos (2.241 citas):
+Resultados en el conjunto de prueba (2.241 citas). Cada cita tiene dos etiquetas:
+la **revisión humana** del test y la **etiqueta automática** (pre-etiquetado con Llama) con la
+que se entrenó y se eligió el modelo. Las dos coinciden en el 73,9 % de las citas.
 
-| Modelo | F1 macro | Exactitud |
-|---|--:|--:|
-| SciBERT configuración B (recomendado) | 0,667 | 0,688 |
-| TF-IDF + regresión logística (línea base) | 0,523 | 0,547 |
+| Modelo | F1 macro (revisión humana) | Exactitud (revisión humana) | F1 macro (etiqueta automática) | Exactitud (etiqueta automática) |
+|---|--:|--:|--:|--:|
+| SciBERT configuración B (recomendado) | 0,532 | 0,572 | 0,667 | 0,688 |
+| TF-IDF + regresión logística (línea base) | 0,469 | 0,509 | 0,523 | 0,547 |
 
 El tablero web permite clasificar una cita, ver lo que leyó el modelo, la
 probabilidad de cada función y, aparte, los pasajes del artículo citado completo
@@ -390,9 +392,11 @@ funcionando con el TF-IDF, que ocupa 4,7 MB y responde en 1 ms.
 
 El dataset tiene 14.937 citas en 9 clases, tomadas de SciCite, SciTail, Semantic
 Scholar y ACL-ARC, y particionadas por artículo citante sin fugas entre
-particiones: 10.416 de entrenamiento, 2.280 de validación y 2.241 de prueba. Las
-citas de prueba fueron revisadas por el equipo. Las particiones están versionadas
-con DVC en `dataset/` (`dvc pull dataset.dvc`).
+particiones: 10.416 de entrenamiento, 2.280 de validación y 2.241 de prueba. Un
+integrante del equipo revisó a mano las 2.241 citas de prueba: su etiqueta está en
+la columna `human_label`, con su grado de certeza (`certeza_evaluacion`), junto a
+la etiqueta automática (`label`). Las particiones están versionadas con DVC en
+`dataset/` (`dvc pull dataset.dvc`).
 
 | Notebook | Qué hace |
 |---|---|
@@ -410,6 +414,7 @@ Scripts de la versión final:
 | `scripts/convert_checkpoint.py` | Convierte el checkpoint `.pt` al formato de Hugging Face |
 | `scripts/download_encoder.py` | Descarga MiniLM para uso sin conexión |
 | `scripts/evaluate_v4.py` | Evalúa SciBERT en validación y prueba y escribe `docs/modelos_v4/` |
+| `scripts/evaluate_test_humano.py` | Compara SciBERT y TF-IDF contra las dos etiquetas del test, por certeza y con y sin SciTail (`docs/modelos_v4/test_referencias_metricas.json`) |
 | `scripts/train_tfidf_v4.py` | Entrena la línea base TF-IDF |
 
 Los demás scripts de `scripts/` (`train.py`, `eval_v2.py`, `extract_arxiv_data.py`
@@ -434,9 +439,9 @@ pytest
 
 `requirements-dev.txt` no incluye PyTorch: así corre el flujo de GitHub Actions
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) en cada push y
-pull request a `main`, con 67 pruebas que pasan y 10 omitidas, las que necesitan
+pull request a `main`, con 70 pruebas que pasan y 10 omitidas, las que necesitan
 SciBERT o MiniLM. Con el entorno de la API (`src/api/requirements.txt`) y los
-pesos descargados corren las 77. Si están los pesos pero falta PyTorch, una
+pesos descargados corren las 80. Si están los pesos pero falta PyTorch, una
 prueba falla e indica qué instalar.
 
 ## Documentación adicional

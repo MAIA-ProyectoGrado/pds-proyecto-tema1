@@ -1,10 +1,12 @@
 """Evalúa el clasificador v4 (SciBERT, configuración B) sobre las particiones finales.
 
 Reconstruye la entrada exactamente como el notebook de entrenamiento
-(`models.scif_predict.build_pair_config_b`) y reporta, por partición:
-F1 macro y micro, precisión y exhaustividad macro, F1 por clase y matriz de
-confusión. En la prueba humana separa además las citas con y sin pasajes del
-artículo citado.
+(`models.scif_predict.build_pair_config_b`) y reporta, por partición y contra la
+etiqueta automática (`label`): F1 macro y micro, precisión y exhaustividad macro,
+F1 por clase y matriz de confusión. En el test separa además las citas con y sin
+pasajes del artículo citado. La comparación del test contra la revisión humana
+(`human_label`) está en `scripts/evaluate_test_humano.py`, que parte de las
+predicciones que guarda este script.
 
 Uso:
     python scripts/evaluate_v4.py --data-dir <carpeta con los CSV> \

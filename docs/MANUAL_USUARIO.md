@@ -162,13 +162,16 @@ clasifica sin él y el panel lo indica.
 
 ## Qué esperar del sistema
 
-- **El modelo se equivoca.** En las 2.241 citas de prueba revisadas por el equipo
-  acierta el 69 % (F1 macro de 0,667): aproximadamente una de cada tres
-  predicciones es incorrecta. Es una ayuda para revisar literatura, no un
-  veredicto; la distribución y el aviso de ambigüedad sirven para juzgar cuánto
-  confiar en cada resultado.
-- **Las funciones más difíciles** son *Modification / Improvement* (F1 de 0,52) y
-  *Further Reading* (0,56). Las más fiables son *Evidence* (0,83) y *Gap* (0,74).
+- **El modelo se equivoca.** En las 2.241 citas de prueba, frente a la revisión
+  humana, acierta el 57 % (F1 macro de 0,532): más de una de cada tres
+  predicciones es incorrecta. Frente a la etiqueta automática con la que se
+  entrenó, acierta el 69 % (F1 macro de 0,667). Es una ayuda para revisar
+  literatura, no un veredicto; la distribución y el aviso de ambigüedad sirven
+  para juzgar cuánto confiar en cada resultado.
+- **Las funciones más difíciles**, frente a la revisión humana, son
+  *Identification of the Originator* (F1 de 0,14), *Modification / Improvement*
+  (0,40) y *Further Reading* (0,49). Las más fiables son *Evidence* (0,79) y
+  *Basis* (0,66).
 - **Solo funciona en inglés.**
 - **La lectura del PDF no es perfecta.** En tablas, fórmulas y notas al pie los
   fragmentos pueden traer texto mezclado.

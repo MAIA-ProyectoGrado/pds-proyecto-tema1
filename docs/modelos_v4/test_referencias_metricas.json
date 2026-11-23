@@ -1,0 +1,1317 @@
+{
+  "descripcion": "Test de 2.241 citas evaluado contra la revisión humana (human_label) y contra la etiqueta automática (label).",
+  "fecha_utc": "2026-11-23T03:12:18+00:00",
+  "tamanos_subconjuntos": {
+    "alta_certeza": 1252,
+    "duda": 989,
+    "sin_scitail": 1342,
+    "solo_scitail": 899,
+    "con_pasajes": 1790,
+    "sin_pasajes": 451
+  },
+  "acuerdo_label_vs_human_label": {
+    "n": 2241,
+    "coincidencia": 0.739,
+    "kappa_cohen": 0.7016,
+    "por_certeza": {
+      "alta_certeza": {
+        "n": 1252,
+        "coincidencia": 0.9209,
+        "kappa_cohen": 0.903
+      },
+      "duda": {
+        "n": 989,
+        "coincidencia": 0.5086,
+        "kappa_cohen": 0.4516
+      }
+    }
+  },
+  "modelos": {
+    "scibert": {
+      "human_label": {
+        "n": 2241,
+        "clases_presentes": 9,
+        "f1_macro": 0.532,
+        "f1_micro": 0.5716,
+        "precision_macro": 0.5385,
+        "recall_macro": 0.5788,
+        "f1_por_clase": {
+          "Application": 0.601,
+          "Background": 0.5104,
+          "Basis": 0.6571,
+          "Comparison": 0.6151,
+          "Evidence": 0.7933,
+          "Further_Reading": 0.4884,
+          "Gap": 0.581,
+          "Identification_of_the_Originator": 0.1418,
+          "Modification_Improvement": 0.4
+        },
+        "soporte_por_clase": {
+          "Application": 316,
+          "Background": 662,
+          "Basis": 301,
+          "Comparison": 279,
+          "Evidence": 259,
+          "Further_Reading": 88,
+          "Gap": 210,
+          "Identification_of_the_Originator": 45,
+          "Modification_Improvement": 81
+        },
+        "matriz_confusion": {
+          "orden": [
+            "Application",
+            "Background",
+            "Basis",
+            "Comparison",
+            "Evidence",
+            "Further_Reading",
+            "Gap",
+            "Identification_of_the_Originator",
+            "Modification_Improvement"
+          ],
+          "valores": [
+            [
+              183,
+              4,
+              3,
+              35,
+              2,
+              9,
+              50,
+              1,
+              29
+            ],
+            [
+              43,
+              245,
+              110,
+              17,
+              6,
+              10,
+              48,
+              173,
+              10
+            ],
+            [
+              14,
+              44,
+              206,
+              4,
+              2,
+              3,
+              5,
+              22,
+              1
+            ],
+            [
+              11,
+              1,
+              3,
+              179,
+              34,
+              7,
+              28,
+              3,
+              13
+            ],
+            [
+              6,
+              1,
+              0,
+              28,
+              213,
+              2,
+              5,
+              2,
+              2
+            ],
+            [
+              14,
+              1,
+              0,
+              5,
+              6,
+              42,
+              13,
+              1,
+              6
+            ],
+            [
+              6,
+              0,
+              3,
+              17,
+              13,
+              5,
+              156,
+              2,
+              8
+            ],
+            [
+              4,
+              2,
+              1,
+              5,
+              1,
+              3,
+              8,
+              19,
+              2
+            ],
+            [
+              12,
+              0,
+              0,
+              13,
+              1,
+              3,
+              14,
+              0,
+              38
+            ]
+          ]
+        },
+        "subconjuntos": {
+          "alta_certeza": {
+            "n": 1252,
+            "clases_presentes": 9,
+            "f1_macro": 0.5374,
+            "f1_micro": 0.7053,
+            "precision_macro": 0.538,
+            "recall_macro": 0.5792,
+            "f1_por_clase": {
+              "Application": 0.7649,
+              "Background": 0.7154,
+              "Basis": 0.7491,
+              "Comparison": 0.6828,
+              "Evidence": 0.8224,
+              "Further_Reading": 0.48,
+              "Gap": 0.4889,
+              "Identification_of_the_Originator": 0.0,
+              "Modification_Improvement": 0.1333
+            },
+            "soporte_por_clase": {
+              "Application": 133,
+              "Background": 292,
+              "Basis": 276,
+              "Comparison": 206,
+              "Evidence": 252,
+              "Further_Reading": 20,
+              "Gap": 66,
+              "Identification_of_the_Originator": 3,
+              "Modification_Improvement": 4
+            }
+          },
+          "duda": {
+            "n": 989,
+            "clases_presentes": 9,
+            "f1_macro": 0.3404,
+            "f1_micro": 0.4024,
+            "precision_macro": 0.3778,
+            "recall_macro": 0.4012,
+            "f1_por_clase": {
+              "Application": 0.486,
+              "Background": 0.2682,
+              "Basis": 0.129,
+              "Comparison": 0.4497,
+              "Evidence": 0.0,
+              "Further_Reading": 0.4918,
+              "Gap": 0.6119,
+              "Identification_of_the_Originator": 0.1767,
+              "Modification_Improvement": 0.45
+            },
+            "soporte_por_clase": {
+              "Application": 183,
+              "Background": 370,
+              "Basis": 25,
+              "Comparison": 73,
+              "Evidence": 7,
+              "Further_Reading": 68,
+              "Gap": 144,
+              "Identification_of_the_Originator": 42,
+              "Modification_Improvement": 77
+            }
+          },
+          "sin_scitail": {
+            "n": 1342,
+            "clases_presentes": 9,
+            "f1_macro": 0.5164,
+            "f1_micro": 0.6274,
+            "precision_macro": 0.5529,
+            "recall_macro": 0.5077,
+            "f1_por_clase": {
+              "Application": 0.6512,
+              "Background": 0.2295,
+              "Basis": 0.2778,
+              "Comparison": 0.6314,
+              "Evidence": 0.8008,
+              "Further_Reading": 0.506,
+              "Gap": 0.6178,
+              "Identification_of_the_Originator": 0.5135,
+              "Modification_Improvement": 0.4199
+            },
+            "soporte_por_clase": {
+              "Application": 316,
+              "Background": 45,
+              "Basis": 20,
+              "Comparison": 279,
+              "Evidence": 259,
+              "Further_Reading": 88,
+              "Gap": 210,
+              "Identification_of_the_Originator": 44,
+              "Modification_Improvement": 81
+            }
+          },
+          "solo_scitail": {
+            "n": 899,
+            "clases_presentes": 3,
+            "f1_macro": 0.4032,
+            "f1_micro": 0.5214,
+            "precision_macro": 0.4975,
+            "recall_macro": 0.367,
+            "f1_por_clase": {
+              "Background": 0.5295,
+              "Basis": 0.6802,
+              "Identification_of_the_Originator": 0.0
+            },
+            "soporte_por_clase": {
+              "Application": 0,
+              "Background": 617,
+              "Basis": 281,
+              "Comparison": 0,
+              "Evidence": 0,
+              "Further_Reading": 0,
+              "Gap": 0,
+              "Identification_of_the_Originator": 1,
+              "Modification_Improvement": 0
+            }
+          },
+          "con_pasajes": {
+            "n": 1790,
+            "clases_presentes": 9,
+            "f1_macro": 0.503,
+            "f1_micro": 0.5291,
+            "precision_macro": 0.5098,
+            "recall_macro": 0.5561,
+            "f1_por_clase": {
+              "Application": 0.5551,
+              "Background": 0.512,
+              "Basis": 0.6571,
+              "Comparison": 0.4865,
+              "Evidence": 0.7059,
+              "Further_Reading": 0.4779,
+              "Gap": 0.5966,
+              "Identification_of_the_Originator": 0.1439,
+              "Modification_Improvement": 0.3924
+            },
+            "soporte_por_clase": {
+              "Application": 244,
+              "Background": 659,
+              "Basis": 301,
+              "Comparison": 139,
+              "Evidence": 84,
+              "Further_Reading": 59,
+              "Gap": 196,
+              "Identification_of_the_Originator": 41,
+              "Modification_Improvement": 67
+            }
+          },
+          "sin_pasajes": {
+            "n": 451,
+            "clases_presentes": 8,
+            "f1_macro": 0.4109,
+            "f1_micro": 0.7406,
+            "precision_macro": 0.4023,
+            "recall_macro": 0.4223,
+            "f1_por_clase": {
+              "Application": 0.7591,
+              "Background": 0.0,
+              "Comparison": 0.7483,
+              "Evidence": 0.8338,
+              "Further_Reading": 0.5085,
+              "Gap": 0.0,
+              "Identification_of_the_Originator": 0.0,
+              "Modification_Improvement": 0.4375
+            },
+            "soporte_por_clase": {
+              "Application": 72,
+              "Background": 3,
+              "Basis": 0,
+              "Comparison": 140,
+              "Evidence": 175,
+              "Further_Reading": 29,
+              "Gap": 14,
+              "Identification_of_the_Originator": 4,
+              "Modification_Improvement": 14
+            }
+          }
+        }
+      },
+      "label": {
+        "n": 2241,
+        "clases_presentes": 9,
+        "f1_macro": 0.6665,
+        "f1_micro": 0.6876,
+        "precision_macro": 0.6722,
+        "recall_macro": 0.6645,
+        "f1_por_clase": {
+          "Application": 0.6894,
+          "Background": 0.6358,
+          "Basis": 0.656,
+          "Comparison": 0.7152,
+          "Evidence": 0.8263,
+          "Further_Reading": 0.5556,
+          "Gap": 0.743,
+          "Identification_of_the_Originator": 0.6574,
+          "Modification_Improvement": 0.5202
+        },
+        "soporte_por_clase": {
+          "Application": 293,
+          "Background": 306,
+          "Basis": 299,
+          "Comparison": 301,
+          "Evidence": 269,
+          "Further_Reading": 96,
+          "Gap": 284,
+          "Identification_of_the_Originator": 279,
+          "Modification_Improvement": 114
+        },
+        "matriz_confusion": {
+          "orden": [
+            "Application",
+            "Background",
+            "Basis",
+            "Comparison",
+            "Evidence",
+            "Further_Reading",
+            "Gap",
+            "Identification_of_the_Originator",
+            "Modification_Improvement"
+          ],
+          "valores": [
+            [
+              202,
+              7,
+              6,
+              22,
+              2,
+              6,
+              25,
+              4,
+              19
+            ],
+            [
+              4,
+              192,
+              53,
+              2,
+              3,
+              8,
+              19,
+              24,
+              1
+            ],
+            [
+              15,
+              41,
+              205,
+              5,
+              2,
+              3,
+              5,
+              22,
+              1
+            ],
+            [
+              14,
+              5,
+              4,
+              216,
+              32,
+              5,
+              14,
+              1,
+              10
+            ],
+            [
+              4,
+              3,
+              0,
+              22,
+              226,
+              1,
+              8,
+              3,
+              2
+            ],
+            [
+              18,
+              0,
+              0,
+              4,
+              7,
+              50,
+              9,
+              2,
+              6
+            ],
+            [
+              8,
+              6,
+              6,
+              16,
+              3,
+              7,
+              227,
+              2,
+              9
+            ],
+            [
+              6,
+              44,
+              48,
+              4,
+              2,
+              2,
+              5,
+              165,
+              3
+            ],
+            [
+              22,
+              0,
+              4,
+              12,
+              1,
+              2,
+              15,
+              0,
+              58
+            ]
+          ]
+        },
+        "subconjuntos": {
+          "alta_certeza": {
+            "n": 1252,
+            "clases_presentes": 9,
+            "f1_macro": 0.6008,
+            "f1_micro": 0.7428,
+            "precision_macro": 0.5899,
+            "recall_macro": 0.6806,
+            "f1_por_clase": {
+              "Application": 0.7819,
+              "Background": 0.7209,
+              "Basis": 0.7491,
+              "Comparison": 0.7791,
+              "Evidence": 0.8566,
+              "Further_Reading": 0.52,
+              "Gap": 0.6457,
+              "Identification_of_the_Originator": 0.0385,
+              "Modification_Improvement": 0.3158
+            },
+            "soporte_por_clase": {
+              "Application": 125,
+              "Background": 288,
+              "Basis": 276,
+              "Comparison": 214,
+              "Evidence": 257,
+              "Further_Reading": 20,
+              "Gap": 58,
+              "Identification_of_the_Originator": 2,
+              "Modification_Improvement": 12
+            }
+          },
+          "duda": {
+            "n": 989,
+            "clases_presentes": 9,
+            "f1_macro": 0.4704,
+            "f1_micro": 0.6178,
+            "precision_macro": 0.4955,
+            "recall_macro": 0.4849,
+            "f1_por_clase": {
+              "Application": 0.6239,
+              "Background": 0.1364,
+              "Basis": 0.1099,
+              "Comparison": 0.5683,
+              "Evidence": 0.1667,
+              "Further_Reading": 0.5692,
+              "Gap": 0.7686,
+              "Identification_of_the_Originator": 0.7289,
+              "Modification_Improvement": 0.5622
+            },
+            "soporte_por_clase": {
+              "Application": 168,
+              "Background": 18,
+              "Basis": 23,
+              "Comparison": 87,
+              "Evidence": 12,
+              "Further_Reading": 76,
+              "Gap": 226,
+              "Identification_of_the_Originator": 277,
+              "Modification_Improvement": 102
+            }
+          },
+          "sin_scitail": {
+            "n": 1342,
+            "clases_presentes": 9,
+            "f1_macro": 0.6176,
+            "f1_micro": 0.7213,
+            "precision_macro": 0.6527,
+            "recall_macro": 0.5967,
+            "f1_por_clase": {
+              "Application": 0.7106,
+              "Background": 0.4444,
+              "Basis": 0.2564,
+              "Comparison": 0.7241,
+              "Evidence": 0.8405,
+              "Further_Reading": 0.5799,
+              "Gap": 0.7864,
+              "Identification_of_the_Originator": 0.6866,
+              "Modification_Improvement": 0.5294
+            },
+            "soporte_por_clase": {
+              "Application": 255,
+              "Background": 29,
+              "Basis": 23,
+              "Comparison": 281,
+              "Evidence": 260,
+              "Further_Reading": 91,
+              "Gap": 262,
+              "Identification_of_the_Originator": 37,
+              "Modification_Improvement": 104
+            }
+          },
+          "solo_scitail": {
+            "n": 899,
+            "clases_presentes": 9,
+            "f1_macro": 0.4786,
+            "f1_micro": 0.6374,
+            "precision_macro": 0.4961,
+            "recall_macro": 0.4762,
+            "f1_por_clase": {
+              "Application": 0.5647,
+              "Background": 0.6512,
+              "Basis": 0.6826,
+              "Comparison": 0.5714,
+              "Evidence": 0.2857,
+              "Further_Reading": 0.1818,
+              "Gap": 0.2963,
+              "Identification_of_the_Originator": 0.6529,
+              "Modification_Improvement": 0.4211
+            },
+            "soporte_por_clase": {
+              "Application": 38,
+              "Background": 277,
+              "Basis": 276,
+              "Comparison": 20,
+              "Evidence": 9,
+              "Further_Reading": 5,
+              "Gap": 22,
+              "Identification_of_the_Originator": 242,
+              "Modification_Improvement": 10
+            }
+          },
+          "con_pasajes": {
+            "n": 1790,
+            "clases_presentes": 9,
+            "f1_macro": 0.6397,
+            "f1_micro": 0.6609,
+            "precision_macro": 0.6433,
+            "recall_macro": 0.6393,
+            "f1_por_clase": {
+              "Application": 0.6811,
+              "Background": 0.6358,
+              "Basis": 0.656,
+              "Comparison": 0.6299,
+              "Evidence": 0.7558,
+              "Further_Reading": 0.4771,
+              "Gap": 0.743,
+              "Identification_of_the_Originator": 0.6574,
+              "Modification_Improvement": 0.5213
+            },
+            "soporte_por_clase": {
+              "Application": 233,
+              "Background": 306,
+              "Basis": 299,
+              "Comparison": 151,
+              "Evidence": 86,
+              "Further_Reading": 55,
+              "Gap": 284,
+              "Identification_of_the_Originator": 279,
+              "Modification_Improvement": 97
+            }
+          },
+          "sin_pasajes": {
+            "n": 451,
+            "clases_presentes": 5,
+            "f1_macro": 0.7146,
+            "f1_micro": 0.7938,
+            "precision_macro": 0.7292,
+            "recall_macro": 0.7076,
+            "f1_por_clase": {
+              "Application": 0.72,
+              "Comparison": 0.8041,
+              "Evidence": 0.8587,
+              "Further_Reading": 0.6761,
+              "Modification_Improvement": 0.5143
+            },
+            "soporte_por_clase": {
+              "Application": 60,
+              "Background": 0,
+              "Basis": 0,
+              "Comparison": 150,
+              "Evidence": 183,
+              "Further_Reading": 41,
+              "Gap": 0,
+              "Identification_of_the_Originator": 0,
+              "Modification_Improvement": 17
+            }
+          }
+        }
+      }
+    },
+    "tfidf-logreg": {
+      "human_label": {
+        "n": 2241,
+        "clases_presentes": 9,
+        "f1_macro": 0.4687,
+        "f1_micro": 0.5091,
+        "precision_macro": 0.489,
+        "recall_macro": 0.4942,
+        "f1_por_clase": {
+          "Application": 0.5979,
+          "Background": 0.5071,
+          "Basis": 0.5667,
+          "Comparison": 0.4301,
+          "Evidence": 0.7561,
+          "Further_Reading": 0.4671,
+          "Gap": 0.4831,
+          "Identification_of_the_Originator": 0.0437,
+          "Modification_Improvement": 0.3662
+        },
+        "soporte_por_clase": {
+          "Application": 316,
+          "Background": 662,
+          "Basis": 301,
+          "Comparison": 279,
+          "Evidence": 259,
+          "Further_Reading": 88,
+          "Gap": 210,
+          "Identification_of_the_Originator": 45,
+          "Modification_Improvement": 81
+        },
+        "matriz_confusion": {
+          "orden": [
+            "Application",
+            "Background",
+            "Basis",
+            "Comparison",
+            "Evidence",
+            "Further_Reading",
+            "Gap",
+            "Identification_of_the_Originator",
+            "Modification_Improvement"
+          ],
+          "valores": [
+            [
+              174,
+              1,
+              0,
+              25,
+              6,
+              11,
+              56,
+              1,
+              42
+            ],
+            [
+              20,
+              249,
+              124,
+              7,
+              3,
+              5,
+              40,
+              211,
+              3
+            ],
+            [
+              8,
+              58,
+              170,
+              4,
+              2,
+              1,
+              6,
+              50,
+              2
+            ],
+            [
+              25,
+              1,
+              1,
+              100,
+              79,
+              6,
+              42,
+              1,
+              24
+            ],
+            [
+              6,
+              1,
+              0,
+              15,
+              234,
+              2,
+              1,
+              0,
+              0
+            ],
+            [
+              6,
+              0,
+              1,
+              9,
+              7,
+              39,
+              21,
+              1,
+              4
+            ],
+            [
+              11,
+              9,
+              1,
+              11,
+              24,
+              5,
+              129,
+              4,
+              16
+            ],
+            [
+              4,
+              1,
+              1,
+              8,
+              5,
+              6,
+              11,
+              7,
+              2
+            ],
+            [
+              12,
+              0,
+              1,
+              7,
+              0,
+              4,
+              18,
+              0,
+              39
+            ]
+          ]
+        },
+        "subconjuntos": {
+          "alta_certeza": {
+            "n": 1252,
+            "clases_presentes": 9,
+            "f1_macro": 0.4845,
+            "f1_micro": 0.6142,
+            "precision_macro": 0.509,
+            "recall_macro": 0.5384,
+            "f1_por_clase": {
+              "Application": 0.6966,
+              "Background": 0.6245,
+              "Basis": 0.6788,
+              "Comparison": 0.4863,
+              "Evidence": 0.778,
+              "Further_Reading": 0.5106,
+              "Gap": 0.4037,
+              "Identification_of_the_Originator": 0.0,
+              "Modification_Improvement": 0.1818
+            },
+            "soporte_por_clase": {
+              "Application": 133,
+              "Background": 292,
+              "Basis": 276,
+              "Comparison": 206,
+              "Evidence": 252,
+              "Further_Reading": 20,
+              "Gap": 66,
+              "Identification_of_the_Originator": 3,
+              "Modification_Improvement": 4
+            }
+          },
+          "duda": {
+            "n": 989,
+            "clases_presentes": 9,
+            "f1_macro": 0.3058,
+            "f1_micro": 0.3761,
+            "precision_macro": 0.3539,
+            "recall_macro": 0.3289,
+            "f1_por_clase": {
+              "Application": 0.5143,
+              "Background": 0.3824,
+              "Basis": 0.0381,
+              "Comparison": 0.2941,
+              "Evidence": 0.1,
+              "Further_Reading": 0.45,
+              "Gap": 0.5035,
+              "Identification_of_the_Originator": 0.0697,
+              "Modification_Improvement": 0.4
+            },
+            "soporte_por_clase": {
+              "Application": 183,
+              "Background": 370,
+              "Basis": 25,
+              "Comparison": 73,
+              "Evidence": 7,
+              "Further_Reading": 68,
+              "Gap": 144,
+              "Identification_of_the_Originator": 42,
+              "Modification_Improvement": 77
+            }
+          },
+          "sin_scitail": {
+            "n": 1342,
+            "clases_presentes": 9,
+            "f1_macro": 0.3787,
+            "f1_micro": 0.5387,
+            "precision_macro": 0.3976,
+            "recall_macro": 0.3925,
+            "f1_por_clase": {
+              "Application": 0.6192,
+              "Background": 0.0339,
+              "Basis": 0.0,
+              "Comparison": 0.4329,
+              "Evidence": 0.7561,
+              "Further_Reading": 0.4785,
+              "Gap": 0.4971,
+              "Identification_of_the_Originator": 0.2222,
+              "Modification_Improvement": 0.3679
+            },
+            "soporte_por_clase": {
+              "Application": 316,
+              "Background": 45,
+              "Basis": 20,
+              "Comparison": 279,
+              "Evidence": 259,
+              "Further_Reading": 88,
+              "Gap": 210,
+              "Identification_of_the_Originator": 44,
+              "Modification_Improvement": 81
+            }
+          },
+          "solo_scitail": {
+            "n": 899,
+            "clases_presentes": 3,
+            "f1_macro": 0.3762,
+            "f1_micro": 0.4764,
+            "precision_macro": 0.4629,
+            "recall_macro": 0.3356,
+            "f1_por_clase": {
+              "Background": 0.5374,
+              "Basis": 0.5913,
+              "Identification_of_the_Originator": 0.0
+            },
+            "soporte_por_clase": {
+              "Application": 0,
+              "Background": 617,
+              "Basis": 281,
+              "Comparison": 0,
+              "Evidence": 0,
+              "Further_Reading": 0,
+              "Gap": 0,
+              "Identification_of_the_Originator": 1,
+              "Modification_Improvement": 0
+            }
+          },
+          "con_pasajes": {
+            "n": 1790,
+            "clases_presentes": 9,
+            "f1_macro": 0.4565,
+            "f1_micro": 0.4793,
+            "precision_macro": 0.4737,
+            "recall_macro": 0.4915,
+            "f1_por_clase": {
+              "Application": 0.5953,
+              "Background": 0.5087,
+              "Basis": 0.5667,
+              "Comparison": 0.3675,
+              "Evidence": 0.6893,
+              "Further_Reading": 0.4522,
+              "Gap": 0.4971,
+              "Identification_of_the_Originator": 0.0444,
+              "Modification_Improvement": 0.3871
+            },
+            "soporte_por_clase": {
+              "Application": 244,
+              "Background": 659,
+              "Basis": 301,
+              "Comparison": 139,
+              "Evidence": 84,
+              "Further_Reading": 59,
+              "Gap": 196,
+              "Identification_of_the_Originator": 41,
+              "Modification_Improvement": 67
+            }
+          },
+          "sin_pasajes": {
+            "n": 451,
+            "clases_presentes": 8,
+            "f1_macro": 0.3395,
+            "f1_micro": 0.6275,
+            "precision_macro": 0.3603,
+            "recall_macro": 0.3389,
+            "f1_por_clase": {
+              "Application": 0.6053,
+              "Background": 0.0,
+              "Comparison": 0.4935,
+              "Evidence": 0.7893,
+              "Further_Reading": 0.5,
+              "Gap": 0.1053,
+              "Identification_of_the_Originator": 0.0,
+              "Modification_Improvement": 0.2222
+            },
+            "soporte_por_clase": {
+              "Application": 72,
+              "Background": 3,
+              "Basis": 0,
+              "Comparison": 140,
+              "Evidence": 175,
+              "Further_Reading": 29,
+              "Gap": 14,
+              "Identification_of_the_Originator": 4,
+              "Modification_Improvement": 14
+            }
+          }
+        }
+      },
+      "label": {
+        "n": 2241,
+        "clases_presentes": 9,
+        "f1_macro": 0.523,
+        "f1_micro": 0.5471,
+        "precision_macro": 0.5282,
+        "recall_macro": 0.5295,
+        "f1_por_clase": {
+          "Application": 0.5546,
+          "Background": 0.508,
+          "Basis": 0.5619,
+          "Comparison": 0.4394,
+          "Evidence": 0.7663,
+          "Further_Reading": 0.4571,
+          "Gap": 0.6118,
+          "Identification_of_the_Originator": 0.4585,
+          "Modification_Improvement": 0.3496
+        },
+        "soporte_por_clase": {
+          "Application": 293,
+          "Background": 306,
+          "Basis": 299,
+          "Comparison": 301,
+          "Evidence": 269,
+          "Further_Reading": 96,
+          "Gap": 284,
+          "Identification_of_the_Originator": 279,
+          "Modification_Improvement": 114
+        },
+        "matriz_confusion": {
+          "orden": [
+            "Application",
+            "Background",
+            "Basis",
+            "Comparison",
+            "Evidence",
+            "Further_Reading",
+            "Gap",
+            "Identification_of_the_Originator",
+            "Modification_Improvement"
+          ],
+          "valores": [
+            [
+              155,
+              10,
+              10,
+              18,
+              6,
+              12,
+              40,
+              10,
+              32
+            ],
+            [
+              4,
+              159,
+              51,
+              3,
+              3,
+              3,
+              14,
+              65,
+              4
+            ],
+            [
+              8,
+              55,
+              168,
+              5,
+              2,
+              1,
+              8,
+              50,
+              2
+            ],
+            [
+              32,
+              8,
+              4,
+              107,
+              86,
+              4,
+              33,
+              5,
+              22
+            ],
+            [
+              4,
+              4,
+              1,
+              12,
+              241,
+              2,
+              1,
+              4,
+              0
+            ],
+            [
+              14,
+              3,
+              0,
+              10,
+              8,
+              40,
+              14,
+              1,
+              6
+            ],
+            [
+              18,
+              16,
+              5,
+              12,
+              9,
+              7,
+              186,
+              10,
+              21
+            ],
+            [
+              5,
+              64,
+              55,
+              10,
+              5,
+              5,
+              6,
+              127,
+              2
+            ],
+            [
+              26,
+              1,
+              5,
+              9,
+              0,
+              5,
+              22,
+              3,
+              43
+            ]
+          ]
+        },
+        "subconjuntos": {
+          "alta_certeza": {
+            "n": 1252,
+            "clases_presentes": 9,
+            "f1_macro": 0.4951,
+            "f1_micro": 0.6222,
+            "precision_macro": 0.5184,
+            "recall_macro": 0.5587,
+            "f1_por_clase": {
+              "Application": 0.6641,
+              "Background": 0.6295,
+              "Basis": 0.6788,
+              "Comparison": 0.5045,
+              "Evidence": 0.798,
+              "Further_Reading": 0.4255,
+              "Gap": 0.495,
+              "Identification_of_the_Originator": 0.0169,
+              "Modification_Improvement": 0.2439
+            },
+            "soporte_por_clase": {
+              "Application": 125,
+              "Background": 288,
+              "Basis": 276,
+              "Comparison": 214,
+              "Evidence": 257,
+              "Further_Reading": 20,
+              "Gap": 58,
+              "Identification_of_the_Originator": 2,
+              "Modification_Improvement": 12
+            }
+          },
+          "duda": {
+            "n": 989,
+            "clases_presentes": 9,
+            "f1_macro": 0.3136,
+            "f1_micro": 0.452,
+            "precision_macro": 0.3547,
+            "recall_macro": 0.2949,
+            "f1_por_clase": {
+              "Application": 0.46,
+              "Background": 0.0161,
+              "Basis": 0.0,
+              "Comparison": 0.2933,
+              "Evidence": 0.0,
+              "Further_Reading": 0.4688,
+              "Gap": 0.6351,
+              "Identification_of_the_Originator": 0.578,
+              "Modification_Improvement": 0.3707
+            },
+            "soporte_por_clase": {
+              "Application": 168,
+              "Background": 18,
+              "Basis": 23,
+              "Comparison": 87,
+              "Evidence": 12,
+              "Further_Reading": 76,
+              "Gap": 226,
+              "Identification_of_the_Originator": 277,
+              "Modification_Improvement": 102
+            }
+          },
+          "sin_scitail": {
+            "n": 1342,
+            "clases_presentes": 9,
+            "f1_macro": 0.4129,
+            "f1_micro": 0.573,
+            "precision_macro": 0.434,
+            "recall_macro": 0.4152,
+            "f1_por_clase": {
+              "Application": 0.5868,
+              "Background": 0.093,
+              "Basis": 0.0,
+              "Comparison": 0.4483,
+              "Evidence": 0.7774,
+              "Further_Reading": 0.4819,
+              "Gap": 0.641,
+              "Identification_of_the_Originator": 0.3214,
+              "Modification_Improvement": 0.366
+            },
+            "soporte_por_clase": {
+              "Application": 255,
+              "Background": 29,
+              "Basis": 23,
+              "Comparison": 281,
+              "Evidence": 260,
+              "Further_Reading": 91,
+              "Gap": 262,
+              "Identification_of_the_Originator": 37,
+              "Modification_Improvement": 104
+            }
+          },
+          "solo_scitail": {
+            "n": 899,
+            "clases_presentes": 9,
+            "f1_macro": 0.2557,
+            "f1_micro": 0.5083,
+            "precision_macro": 0.3495,
+            "recall_macro": 0.24,
+            "f1_por_clase": {
+              "Application": 0.2759,
+              "Background": 0.5386,
+              "Basis": 0.5895,
+              "Comparison": 0.2609,
+              "Evidence": 0.0,
+              "Further_Reading": 0.0,
+              "Gap": 0.1622,
+              "Identification_of_the_Originator": 0.4739,
+              "Modification_Improvement": 0.0
+            },
+            "soporte_por_clase": {
+              "Application": 38,
+              "Background": 277,
+              "Basis": 276,
+              "Comparison": 20,
+              "Evidence": 9,
+              "Further_Reading": 5,
+              "Gap": 22,
+              "Identification_of_the_Originator": 242,
+              "Modification_Improvement": 10
+            }
+          },
+          "con_pasajes": {
+            "n": 1790,
+            "clases_presentes": 9,
+            "f1_macro": 0.5031,
+            "f1_micro": 0.5229,
+            "precision_macro": 0.5033,
+            "recall_macro": 0.515,
+            "f1_por_clase": {
+              "Application": 0.5585,
+              "Background": 0.508,
+              "Basis": 0.5619,
+              "Comparison": 0.374,
+              "Evidence": 0.6731,
+              "Further_Reading": 0.3964,
+              "Gap": 0.6169,
+              "Identification_of_the_Originator": 0.4593,
+              "Modification_Improvement": 0.3796
+            },
+            "soporte_por_clase": {
+              "Application": 233,
+              "Background": 306,
+              "Basis": 299,
+              "Comparison": 151,
+              "Evidence": 86,
+              "Further_Reading": 55,
+              "Gap": 284,
+              "Identification_of_the_Originator": 279,
+              "Modification_Improvement": 97
+            }
+          },
+          "sin_pasajes": {
+            "n": 451,
+            "clases_presentes": 5,
+            "f1_macro": 0.5115,
+            "f1_micro": 0.6473,
+            "precision_macro": 0.5601,
+            "recall_macro": 0.5062,
+            "f1_por_clase": {
+              "Application": 0.5429,
+              "Comparison": 0.5062,
+              "Evidence": 0.8124,
+              "Further_Reading": 0.5625,
+              "Modification_Improvement": 0.1333
+            },
+            "soporte_por_clase": {
+              "Application": 60,
+              "Background": 0,
+              "Basis": 0,
+              "Comparison": 150,
+              "Evidence": 183,
+              "Further_Reading": 41,
+              "Gap": 0,
+              "Identification_of_the_Originator": 0,
+              "Modification_Improvement": 17
+            }
+          }
+        }
+      }
+    }
+  }
+}
