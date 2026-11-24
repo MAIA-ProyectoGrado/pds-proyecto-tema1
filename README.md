@@ -1,6 +1,6 @@
-# SCIF: clasificación de la función retórica de citas y recuperación de pasajes
+# Clasificación de la función retórica de citas y recuperación de pasajes
 
-SCIF clasifica el **contexto de una cita** en una de **9 funciones retóricas**
+El proyecto clasifica el **contexto de una cita** en una de **9 funciones retóricas**
 (*Application, Background, Basis, Comparison, Evidence, Further_Reading, Gap,
 Identification_of_the_Originator, Modification_Improvement*) y recupera los
 **pasajes más afines (Top-3 chunks)** del artículo citado. Se sirve como una API
