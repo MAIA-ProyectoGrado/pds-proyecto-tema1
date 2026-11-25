@@ -112,6 +112,14 @@ function hideBanner() { $("banner").hidden = true; }
 
 /** Retira el resultado anterior. Se llama en cada fallo: dejar en pantalla una
  *  predicción vieja junto a un texto nuevo la haría pasar por la respuesta actual. */
+/** Últimos pasajes recibidos. No dependen del clasificador: con la misma cita y el
+ *  mismo artículo se muestran de nuevo sin volver a pedirlos. */
+let lastPassages = null;
+
+function passagesKey(text, doc) {
+  return JSON.stringify([text, doc]);
+}
+
 function invalidate() {
   $("results").hidden = true;
   $("empty").hidden = false;
@@ -349,10 +357,12 @@ async function classify() {
   const section = $("section").value || null;
   const sent = { context: text, section, doc };
   const wantsPassages = Boolean(doc) && META.retrieval_available;
+  const key = wantsPassages ? passagesKey(text, doc) : null;
+  const reuse = wantsPassages && lastPassages !== null && lastPassages.key === key;
 
   if (!doc) hideRetrieval();
   else if (!META.retrieval_available) showRetrievalUnavailable();
-  else showRetrievalLoading(doc);
+  else if (!reuse) showRetrievalLoading(doc);
 
   // Primero la clasificación, que espera solo al abstract. Los pasajes se piden
   // cuando ella termina: leer el PDF en paralelo le resta CPU al modelo y alarga
@@ -375,7 +385,7 @@ async function classify() {
       }
       return;
     }
-    render(body, sent, wantsPassages ? "en curso…" : (doc ? "no disponible" : "no aplica"));
+    render(body, sent, reuse ? "reutilizados" : wantsPassages ? "en curso…" : (doc ? "no disponible" : "no aplica"));
   } catch (err) {
     invalidate();
     setApiState("API no disponible", "down");
@@ -390,12 +400,13 @@ async function classify() {
     $("run").lastChild.textContent = " Clasificar";
   }
 
-  if (wantsPassages) await loadPassages(run, text, doc);
+  if (reuse) renderRetrieval(lastPassages.res, true);
+  else if (wantsPassages) await loadPassages(run, text, doc, key);
 }
 
 /** Pasajes del artículo completo. Si mientras tanto se lanzó otra consulta, el
  *  resultado se descarta para no mezclarlo con la clasificación nueva. */
-async function loadPassages(run, text, doc) {
+async function loadPassages(run, text, doc, key) {
   let r, body;
   try {
     r = await fetch(`${API}/retrieve`, {
@@ -417,6 +428,7 @@ async function loadPassages(run, text, doc) {
   // Un fallo al pintar no es un fallo de red: se informa como lo que es.
   try {
     renderRetrieval(body);
+    lastPassages = { key, res: body };
   } catch (err) {
     console.error("renderRetrieval:", err);
     showRetrievalError("No se pudieron mostrar los pasajes del artículo.", String(err));
@@ -625,7 +637,7 @@ function showRetrievalError(title, detail) {
   setRetrievalTelemetry("falló");
 }
 
-function renderRetrieval(res) {
+function renderRetrieval(res, reused = false) {
   $("rstate").hidden = true;
   $("pChunks").hidden = false;
 
@@ -660,7 +672,8 @@ function renderRetrieval(res) {
 
   $("pMap").hidden = false;
   drawMap(res);
-  setRetrievalTelemetry(res.cached ? `${fmtMs(res.latency_ms.total)} (en caché)` : fmtMs(res.latency_ms.total));
+  setRetrievalTelemetry(reused ? "ya calculados"
+    : res.cached ? `${fmtMs(res.latency_ms.total)} (en caché)` : fmtMs(res.latency_ms.total));
 }
 
 function drawMap(res) {
@@ -702,4 +715,14 @@ function drawMap(res) {
 }
 
 updateCounter();
+/** Parte visible del encabezado: el panel izquierdo ocupa el resto de la ventana, así
+ *  el botón Clasificar, fijo al pie del panel, siempre está a la vista. */
+function syncHeaderHeight() {
+  const visible = Math.max(0, document.querySelector("header.top").offsetHeight - window.scrollY);
+  document.documentElement.style.setProperty("--top-h", `${visible}px`);
+}
+window.addEventListener("resize", syncHeaderHeight);
+window.addEventListener("scroll", syncHeaderHeight, { passive: true });
+syncHeaderHeight();
+
 boot();

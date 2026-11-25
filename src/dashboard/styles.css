@@ -101,12 +101,12 @@ header.top{
 .shell{display:grid;grid-template-columns:minmax(330px,382px) 1fr;min-height:calc(100vh - 120px)}
 .rail{
   border-right:1px solid var(--rule); background:var(--surface);
-  padding:0 20px 22px; position:sticky; top:0; max-height:100vh; overflow-y:auto;
+  padding:0 20px; position:sticky; top:0; max-height:calc(100vh - var(--top-h, 0px)); overflow-y:auto;
 }
 .stage{padding:20px 24px 60px;display:flex;flex-direction:column;gap:18px;min-width:0}
 @media (max-width:1000px){
   .shell{grid-template-columns:1fr}
-  .rail{position:static;max-height:none;border-right:none;border-bottom:2px solid var(--ink)}
+  .rail{position:static;max-height:none;overflow:visible;border-right:none;border-bottom:2px solid var(--ink)}
 }
 
 .blk{padding:18px 0;border-bottom:1px solid var(--rule-soft)}
@@ -145,7 +145,7 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
 .models{display:flex;flex-direction:column;border:1px solid var(--rule)}
 .model{
   display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;
-  padding:10px 12px;background:var(--surface-2);cursor:pointer;
+  padding:7px 12px;background:var(--surface-2);cursor:pointer;
 }
 .model + .model{border-top:1px solid var(--rule)}
 .model:hover{background:var(--surface)}
@@ -166,8 +166,8 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
   text-transform:uppercase;padding:1px 5px;margin-left:6px;vertical-align:2px;
   border:1px solid var(--rhet);color:var(--rhet);
 }
-.model .reads{font-size:11.5px;color:var(--ink-3);line-height:1.4;margin-top:2px}
-.model .cost{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-4);margin-top:2px}
+.model .reads{font-size:11.5px;color:var(--ink-3);line-height:1.35;margin-top:1px}
+.model .cost{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-4);margin-top:1px}
 .ks-abstract{font-size:13px;line-height:1.5;color:var(--ink-2);max-height:9.5em;overflow:auto;
   margin:2px 0 0;padding-right:4px}
 .model .missing{
@@ -177,8 +177,9 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
 .model .missing b{color:var(--warn);font-weight:600}
 .model .missing a, .notice a, .banner a, .rstate a{color:var(--retr);text-underline-offset:2px}
 
+.rail-foot{position:sticky;bottom:0;z-index:2;background:var(--surface);padding:12px 0 20px;margin-top:8px}
 .run{
-  width:100%;margin-top:20px;border:none;border-radius:0;
+  width:100%;border:none;border-radius:0;
   background:var(--rhet);color:var(--surface);font-family:var(--f-body);
   font-size:13.5px;font-weight:600;letter-spacing:.03em;padding:13px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:9px;
@@ -190,6 +191,8 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
   :root:not([data-theme="light"]) .run{color:var(--sunken)}
 }
 :root[data-theme="dark"] .run{color:var(--sunken)}
+
+.rnote{margin:0 0 12px;font-family:var(--f-mono);font-size:10px;line-height:1.5;color:var(--ink-4)}
 
 #results{display:flex;flex-direction:column;gap:18px}
 #results[hidden]{display:none}

@@ -11,7 +11,8 @@ en qué pasajes del artículo citado se sustenta la cita.
 | Aplicación desplegada | http://3.141.245.118:8080 |
 | Documentación de la API | http://3.141.245.118:8080/api/docs |
 | Manual de usuario | [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md) |
-| Modelos y descarga | [Sección «Modelos»](#modelos) |
+| Descarga de los modelos (SciBERT y MiniLM, 492 MB) | [modelos.zip](https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/modelos.zip) · instrucciones en [«Modelos»](#modelos) |
+| Descarga del dataset completo (15 MB comprimido) | [dataset.zip](https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/dataset.zip) · muestra y columnas en [`datos/`](datos/) |
 | Modelos de lenguaje (Bedrock) | [Sección «Modelos de lenguaje»](#modelos-de-lenguaje) |
 
 ## Contenido
@@ -20,6 +21,7 @@ en qué pasajes del artículo citado se sustenta la cita.
 - [Pregunta de negocio](#pregunta-de-negocio)
 - [Alcance](#alcance)
 - [Solución](#solución)
+- [Uso](#uso)
 - [Arquitectura](#arquitectura)
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Modelos](#modelos)
@@ -86,6 +88,27 @@ ver lo que leyó el modelo, la probabilidad de cada función y, aparte, los pasa
 del artículo citado completo más parecidos a la cita. El detalle de las métricas está en
 [`docs/modelos_v4/`](docs/modelos_v4/) y la evolución de los modelos en
 [`docs/HISTORIAL_MODELOS.md`](docs/HISTORIAL_MODELOS.md).
+
+## Uso
+
+En el tablero (http://3.141.245.118:8080):
+
+1. Pega en **Contexto de cita** una o dos oraciones en inglés donde aparezca la
+   cita, o carga uno de los ejemplos.
+2. Elige la **sección** del artículo donde aparece la cita. Si no la sabes, elige
+   *Otra / no sé*.
+3. Recomendado: escribe el **id de arXiv del artículo citado** (por ejemplo
+   `1903.10676`) o pega su texto.
+4. Deja **SciBERT** como clasificador y pulsa **Clasificar**. El tablero muestra la
+   función predicha, la probabilidad de las 9 funciones, un aviso si la predicción
+   es ambigua y las oraciones del artículo citado que leyó el modelo. Si indicaste
+   el artículo, unos segundos después aparecen los pasajes del artículo completo
+   más parecidos a la cita.
+5. Para comparar, elige TF-IDF, Nova Pro o Ministral 3 8B y vuelve a clasificar.
+
+La aplicación es abierta: no pide usuario ni contraseña. El paso a paso con
+capturas está en el [manual de usuario](docs/MANUAL_USUARIO.md), y el uso de la
+API con ejemplos de entrada y salida, en la sección [«API»](#api).
 
 ## Arquitectura
 
@@ -211,7 +234,8 @@ Limitaciones conocidas:
 │   └── dashboard/    # tablero web (HTML, CSS y JavaScript)
 ├── models/           # modelos servidos (SciBERT y MiniLM por DVC, TF-IDF en git) y código de inferencia
 ├── notebooks/        # construcción del dataset y entrenamiento (Colab)
-├── dataset/          # particiones train, val y test (DVC)
+├── dataset/          # dataset completo (DVC; se descarga con la sección «Modelos»)
+├── datos/            # muestra de 90 citas y descripción de las columnas
 ├── scripts/          # conversión del checkpoint, evaluación, línea base y scripts de la entrega 2
 ├── docker/           # Dockerfiles y configuración de nginx
 ├── infra/            # despliegue en AWS (infra/historial/: scripts de la entrega 2)
@@ -221,6 +245,16 @@ Limitaciones conocidas:
 └── .env.example      # variables de configuración
 ```
 
+Las tres carpetas que pide el enunciado corresponden a estas:
+
+| Carpeta pedida | Carpeta en el repositorio | Contenido |
+|---|---|---|
+| `Notebooks/` | [`notebooks/`](notebooks/) | Construcción del dataset y entrenamiento de los 5 clasificadores |
+| `Modelos/` | [`models/`](models/) | TF-IDF incluido en git; SciBERT y MiniLM por DVC o con [enlace directo](#modelos) |
+| `Datos/` | [`datos/`](datos/) | Muestra de 90 citas y estructura de las columnas; el dataset completo, por DVC o con enlace directo |
+
+`models/` conserva su nombre porque la API, Docker, DVC y las pruebas usan esa ruta.
+
 ## Modelos
 
 | Carpeta | Qué es | Tamaño | Cómo se obtiene |
@@ -229,15 +263,23 @@ Limitaciones conocidas:
 | `models/minilm-l6-v2/` | `all-MiniLM-L6-v2`, elige las 3 oraciones clave del abstract (22 M de parámetros) | 88 MB | DVC |
 | `models/scif-v4-tfidf-logreg/` | TF-IDF + regresión logística, línea base | 4,7 MB | Incluido en git |
 
-SciBERT y MiniLM están versionados con DVC en el bucket S3 del proyecto
-(`.dvc/config`). Para descargarlos se necesitan credenciales de la cuenta de AWS
-del proyecto, configuradas con `aws configure` o `aws login`; nunca se escriben
-en el repositorio.
+SciBERT y MiniLM están versionados con DVC en un bucket S3 de lectura pública.
+Se descargan sin credenciales, de cualquiera de estas dos formas, desde la raíz
+del repositorio:
 
 ```bash
-pip install "dvc[s3]==3.67.1" "botocore[crt]"   # botocore[crt]: necesario con `aws login`
-dvc pull models/scif-scibert-chunks.dvc models/minilm-l6-v2.dvc
+# Con enlace directo: crea models/scif-scibert-chunks/ y models/minilm-l6-v2/
+curl -O https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/modelos.zip
+unzip modelos.zip
+
+# Con DVC
+pip install dvc
+dvc pull -r publico models/scif-scibert-chunks.dvc models/minilm-l6-v2.dvc
 ```
+
+El dataset completo se descarga igual: [`dataset.zip`](https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/dataset.zip) o
+`dvc pull -r publico dataset.dvc`. Para subir versiones nuevas al bucket se usa el
+remoto por defecto (`scif`), que sí necesita credenciales de AWS del proyecto.
 
 **Sin descargar nada**, la aplicación arranca con el TF-IDF. El tablero marca
 SciBERT como no disponible e indica qué falta.
@@ -365,9 +407,12 @@ archivo documenta las 24 variables con su valor por defecto. Las principales:
 Un valor inválido detiene el arranque de la API con un mensaje que nombra la
 variable. La configuración activa se puede consultar en `GET /api/health`.
 
-La aplicación no tiene usuarios ni contraseñas. Las únicas credenciales son las
-de AWS para DVC, el despliegue y Bedrock. En el equipo local se configuran con la
-AWS CLI, y en la instancia las da su rol IAM; nunca se escriben en el repositorio.
+**Credenciales.** La aplicación no tiene usuarios ni contraseñas, así que no hay
+credenciales de prueba, y los modelos y el dataset se descargan sin credenciales.
+Solo necesitan credenciales de AWS el despliegue, los modelos de lenguaje en Bedrock
+y subir datos al bucket con DVC. En el equipo local se configuran con la AWS CLI
+(`aws login` o `aws configure`), y en la instancia las da su rol IAM; nunca se
+escriben en el repositorio ni en `.env`.
 
 ## API
 
@@ -507,7 +552,8 @@ la columna `human_label`, junto a la etiqueta automática (`label`) y a su certe
 de al menos 0,70, `DUDA` si no). Dos integrantes anotaron el test por separado
 siguiendo la [guía de anotación](docs/anotacion/GUIA_ANOTACION.md); el acuerdo
 entre ellos es kappa de Cohen 0,608 ([detalle](docs/anotacion/acuerdo_humano.md)). Las particiones están versionadas con DVC en
-`dataset/` (`dvc pull dataset.dvc`).
+`dataset/` (`dvc pull -r publico dataset.dvc`). La carpeta [`datos/`](datos/) trae una
+muestra de 90 citas y la descripción de cada columna.
 
 | Notebook | Qué hace |
 |---|---|

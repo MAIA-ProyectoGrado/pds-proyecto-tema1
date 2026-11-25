@@ -40,10 +40,41 @@ lenguaje.
 ## Instancia
 
 `c7i-flex.large`: 2 vCPU y 4 GB. Es la única de 4 GB que admite el plan
-gratuito de AWS. La API ocupa unos 0,8 GB con los modelos cargados. Precio de
-lista en `us-east-2`: USD 0,085 por hora, unos USD 2,2 al día con el disco y la
-IP elástica. Los modelos de lenguaje suman como máximo USD 5 al día, el tope de
-la API.
+gratuito de AWS. La API ocupa unos 0,8 GB con los modelos cargados.
+
+## Costos
+
+Precios de lista de `us-east-2`, consultados en la API de precios de AWS el 24 de
+noviembre de 2026. No incluyen créditos ni el plan gratuito.
+
+**Fijos, mientras la instancia está encendida**
+
+| Recurso | Precio | Por día | Por mes (730 h) |
+|---|---|--:|--:|
+| Instancia `c7i-flex.large` | USD 0,08479 por hora | USD 2,03 | USD 61,90 |
+| Disco gp3 de 30 GB | USD 0,08 por GB al mes | USD 0,08 | USD 2,40 |
+| IP elástica (IPv4 pública) | USD 0,005 por hora | USD 0,12 | USD 3,65 |
+| **Total** | | **USD 2,23** | **USD 67,95** |
+
+Con la instancia detenida solo se cobran el disco y la IP elástica: unos USD 0,20
+al día.
+
+**Variables, según el uso**
+
+| Recurso | Precio | Ejemplo |
+|---|---|---|
+| Nova Pro en Bedrock | USD 0,80 por millón de tokens de entrada y 3,20 de salida | ≈ USD 0,0025 por consulta |
+| Ministral 3 8B en Bedrock | USD 0,15 por millón de tokens de entrada y de salida | ≈ USD 0,00045 por consulta |
+| Almacenamiento del bucket (1,6 GB) | USD 0,023 por GB al mes | ≈ USD 0,04 al mes |
+| Descargas públicas del bucket | Gratis los primeros 100 GB al mes de la cuenta; después, USD 0,09 por GB | `modelos.zip` (0,49 GB): ≈ USD 0,04 por descarga pasados los 100 GB |
+
+Los modelos de lenguaje tienen un tope de USD 5 al día en total
+(`SCIF_LLM_DAILY_BUDGET_USD`) y 5 consultas por minuto por IP: el peor caso es
+USD 150 al mes. SciBERT y TF-IDF corren en la instancia y no suman costo por
+consulta.
+
+**Peor caso diario:** USD 2,23 de infraestructura más USD 5 de modelos de lenguaje,
+unos USD 7,2 al día.
 
 ## Apagar y borrar los recursos
 
@@ -68,6 +99,14 @@ aws iam delete-role --role-name scif-ec2-dvc-read
 ```
 
 El bucket de DVC no se borra con estos comandos: guarda el dataset y los modelos.
+Tiene lectura pública en `dvcstore/` (los archivos de DVC) y en `descargas/` (los
+zips del README), sin permiso para listar ni escribir. Para volverlo privado:
+
+```bash
+aws s3api delete-bucket-policy --bucket scif-dvc-e645d210
+aws s3api put-public-access-block --bucket scif-dvc-e645d210 --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+```
 
 ## Historial
 

@@ -73,6 +73,8 @@ palabras.
 | **Nova Pro** | El contexto, la sección y el título y el abstract del artículo citado | Para comparar con un modelo de lenguaje comercial, sin ajuste fino |
 | **Ministral 3 8B** | Lo mismo que Nova Pro | Para comparar con un modelo de lenguaje de pesos abiertos |
 
+![Selector de clasificador](tablero/12_selector_modelos.png)
+
 Nova Pro y Ministral 3 8B corren en Amazon Bedrock y cada consulta tiene un costo,
 que el selector muestra junto a su latencia típica. Por eso admiten 5 consultas
 por minuto y un gasto máximo diario para todo el sitio. En la evaluación con las
@@ -140,6 +142,9 @@ cita, con su sección y su similitud. Es una ayuda para ubicar la idea citada: l
 fragmentos más parecidos no garantizan que la cita se apoye justo ahí. Este paso
 **no cambia la predicción**.
 
+Los pasajes son los mismos con cualquier clasificador: dependen solo de la cita y
+del artículo citado.
+
 ![Pasajes del artículo](tablero/06_pasajes.png)
 
 ### Mapa del artículo citado
@@ -158,6 +163,26 @@ lenguaje muestra además el costo de la consulta y lo gastado en el día frente 
 tope.
 
 ![Ejecución](tablero/08_ejecucion.png)
+
+### Con un modelo de lenguaje
+
+Con Nova Pro o Ministral 3 8B los paneles cambian así:
+
+- **Función de cita predicha** muestra el **puntaje** de la función elegida, no una
+  probabilidad, y la etiqueta *Clasificado con el título y el abstract del artículo
+  citado*.
+
+  ![Función predicha con Nova Pro](tablero/13_llm_funcion.png)
+
+- **Lo que leyó el modelo** muestra el título y el abstract del artículo citado. Al
+  desplegar **Mensaje enviado al modelo** se ve el texto que recibió después de las
+  instrucciones del prompt.
+
+  ![Lo que leyó Nova Pro](tablero/14_llm_lo_que_leyo.png)
+
+- **Ejecución** agrega el costo de la consulta y lo gastado en el día frente al tope.
+
+  ![Ejecución con Nova Pro](tablero/15_llm_ejecucion.png)
 
 ## Si algo sale mal
 

@@ -81,10 +81,12 @@
       <div class="models" id="models" role="radiogroup" aria-label="Clasificador"></div>
     </div>
 
-    <button class="run" id="run" disabled>
-      <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M2.5 1.6v9.8l8.4-4.9z" fill="currentColor"/></svg>
-      Clasificar
-    </button>
+    <div class="rail-foot">
+      <button class="run" id="run" disabled>
+        <svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M2.5 1.6v9.8l8.4-4.9z" fill="currentColor"/></svg>
+        Clasificar
+      </button>
+    </div>
   </aside>
 
   <main class="stage">
@@ -183,6 +185,7 @@
           <span class="sp"></span><span class="eyebrow" id="chunksEyebrow">pasajes del artículo · SciBERT</span>
         </div>
         <div class="panel-body">
+          <p class="rnote">Son los mismos con cualquier clasificador: dependen solo de la cita y del artículo citado.</p>
           <div class="paper" id="paperMeta" hidden></div>
           <div class="rstate" id="rstate" hidden></div>
           <div class="chunks" id="chunks"></div>
