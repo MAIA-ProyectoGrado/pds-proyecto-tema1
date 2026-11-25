@@ -1,10 +1,12 @@
 """Métricas del test frente a sus dos etiquetas de referencia.
 
 Cada cita del test (2.241) trae dos etiquetas:
-  - `label`: la del etiquetado automático (Llama 3.1 8B con rescate probabilístico),
+  - `label`: la del etiquetado automático (Llama 3.2 3B con rescate probabilístico),
     la misma con la que se entrenó y se eligió el checkpoint;
-  - `human_label`: la revisión humana del test, con su `certeza_evaluacion`
-    (ALTA_CERTEZA o DUDA).
+  - `human_label`: la revisión humana del test.
+
+`certeza_evaluacion` es la certeza de la etiqueta automática: ALTA_CERTEZA si el
+puntaje de Llama para `label` es de al menos 0,70 y DUDA si no.
 
 Para SciBERT usa las predicciones de `evaluate_v4.py`
 (docs/modelos_v4/scibert_chunks_predicciones_test.csv), así que no carga el modelo.

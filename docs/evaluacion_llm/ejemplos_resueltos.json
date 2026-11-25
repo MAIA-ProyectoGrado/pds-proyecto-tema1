@@ -1,0 +1,86 @@
+{
+  "descripcion": "Ejemplos resueltos de los enfoques few-shot: uno por función, tomados del conjunto de entrenamiento y resueltos por el equipo con la guía de anotación (docs/anotacion/GUIA_ANOTACION.md). Se presentan en este orden.",
+  "ejemplos": [
+    {
+      "funcion": "Comparison",
+      "pair_id": "1f04912ae233859c4fdd29f49a72ce26003e9976__ec2ce4e38af8bc82f1b8928ba51a84911bad0cc6",
+      "etiqueta_automatica": "Comparison",
+      "citation_context": "In contrast, models such as Llama 3.1 [11], Gemma 2 [51], and Mistral [3] show lower computation accuracy, particularly on the Avatar dataset.",
+      "rhetorical_section": "Scientific Body (Targeted Ingestion)",
+      "cited_paper_title": "Gemma 2: Improving Open Language Models at a Practical Size",
+      "cited_paper_abstract": "In this work, we introduce Gemma 2, a new addition to the Gemma family of lightweight, state-of-the-art open models, ranging in scale from 2 billion to 27 billion parameters. In this new version, we apply several known technical modifications to the Transformer architecture, such as interleaving local-global attentions (Beltagy et al., 2020a) and group-query attention (Ainslie et al., 2023). We also train the 2B and 9B models with knowledge distillation (Hinton et al., 2015) instead of next token prediction. The resulting models deliver the best performance for their size, and even offer competitive alternatives to models that are 2-3 times bigger. We release all our models to the community."
+    },
+    {
+      "funcion": "Evidence",
+      "pair_id": "4f12eb6bf5a093bb711935a3406e29c30b1bae9a__814d505ea6d5fe86205093ae651050ffe4f76274",
+      "etiqueta_automatica": "Evidence",
+      "citation_context": "The results linking neutrophil ROS production with NETosis and subsequent bacterial killing are consistent with several prior reports (18, 35, 36).",
+      "rhetorical_section": "Discussion",
+      "cited_paper_title": null,
+      "cited_paper_abstract": null
+    },
+    {
+      "funcion": "Identification_of_the_Originator",
+      "pair_id": "081a585a6fac46f00489e307abc9d60f5dbfd458__81f1f784239455e35b18054a9303fa560c6f26c3",
+      "etiqueta_automatica": "Identification_of_the_Originator",
+      "citation_context": "Second, a novel role of endocytosis in turning on activation of the ERK/MAPK cascade by cell surface receptors was first reported for the EGF receptor [15].",
+      "rhetorical_section": "III. DISCUSSION",
+      "cited_paper_title": "Principles of MAP kinase signaling specificity in Saccharomyces cerevisiae.",
+      "cited_paper_abstract": null
+    },
+    {
+      "funcion": "Application",
+      "pair_id": "f7157f8169b620f0116bc2a4329107ef09c1bbe8__2099b15fe75c2e6addcb9a500214b490725b7d51",
+      "etiqueta_automatica": "Application",
+      "citation_context": "Gene function classification 48 We use single-variable slice sampling (Neal, 2003) to sample from the posterior distribution of hyperparameters.",
+      "rhetorical_section": "3.4.1 Implementation",
+      "cited_paper_title": "Slice Sampling",
+      "cited_paper_abstract": null
+    },
+    {
+      "funcion": "Further_Reading",
+      "pair_id": "47142548c8caf5e60e8e78a6d4f93511e00f3d96__d8d2e574965fe733eb1416e03df2b5c2914fc530",
+      "etiqueta_automatica": "Further_Reading",
+      "citation_context": "Since a detailed survey of the available ML algorithms is out of the scope of this paper, we refer interested readers to [113, 157, 116, 29].",
+      "rhetorical_section": "Scientific Body (Seminal: A Survey of Transformers)",
+      "cited_paper_title": "A Survey of Transformers",
+      "cited_paper_abstract": "Transformers have achieved great success in many artificial intelligence fields, such as natural language processing, computer vision, and audio processing. Therefore, it is natural to attract lots of interest from academic and industry researchers. Up to the present, a great variety of Transformer variants (a.k.a. X-formers) have been proposed, however, a systematic and comprehensive literature review on these Transformer variants is still missing. In this survey, we provide a comprehensive review of various X-formers. We first briefly introduce the vanilla Transformer and then propose a new taxonomy of X-formers. Next, we introduce the various X-formers from three perspectives: architectural modification, pre-training, and applications. Finally, we outline some potential directions for future research."
+    },
+    {
+      "funcion": "Basis",
+      "pair_id": "7bceecbed5513541ad5b4db76daff5e3a5d6b125__258e214522232a479b103d358969edf5a25d61ad",
+      "etiqueta_automatica": "Basis",
+      "citation_context": "The implemented deep learning model for real-time segmentation of iris and pupil is based on the MedFormer architecture described in 19 and is illustrated in Figure 1.",
+      "rhetorical_section": "Scientific Body (transformer architecture language model)",
+      "cited_paper_title": "A Data-scalable Transformer for Medical Image Segmentation: Architecture, Model Efficiency, and Benchmark",
+      "cited_paper_abstract": "Transformers have demonstrated remarkable performance in natural language processing and computer vision. However, existing vision Transformers struggle to learn from limited medical data and are unable to generalize on diverse medical image tasks. To tackle these challenges, we present MedFormer, a data-scalable Transformer designed for generalizable 3D medical image segmentation. Our approach incorporates three key elements: a desirable inductive bias, hierarchical modeling with linear-complexity attention, and multi-scale feature fusion that integrates spatial and semantic information globally. MedFormer can learn across tiny- to large-scale data without pre-training. Comprehensive experiments demonstrate MedFormer's potential as a versatile segmentation backbone, outperforming CNNs and vision Transformers on seven public datasets covering multiple modalities (e.g., CT and MRI) and various medical targets (e.g., healthy organs, diseased tissues, and tumors). We provide public access to our models and evaluation pipeline, offering solid baselines and unbiased comparisons to advance a wide range of downstream clinical applications."
+    },
+    {
+      "funcion": "Modification_Improvement",
+      "pair_id": "c67628c103b5da09db1dfe3c65664a881e34bb32__5fb952fd5bf7234f9419b04fd9d0fdd81a91379e",
+      "etiqueta_automatica": "Application",
+      "citation_context": "We use a modified directed message-passing neural network (D-MPNN) 35,36 to predict retention order indices.",
+      "rhetorical_section": "Scientific Body (Targeted Ingestion)",
+      "cited_paper_title": "Chemprop: A Machine Learning Package for Chemical Property Prediction",
+      "cited_paper_abstract": "Deep learning has become a powerful and frequently employed tool for the prediction of molecular properties, thus creating a need for open-source and versatile software solutions that can be operated by nonexperts. Among the current approaches, directed message-passing neural networks (D-MPNNs) have proven to perform well on a variety of property prediction tasks. The software package Chemprop implements the D-MPNN architecture and offers simple, easy, and fast access to machine-learned molecular properties. Compared to its initial version, we present a multitude of new Chemprop functionalities such as the support of multimolecule properties, reactions, atom/bond-level properties, and spectra. Further, we incorporate various uncertainty quantification and calibration methods along with related metrics as well as pretraining and transfer learning workflows, improved hyperparameter optimization, and other customization options concerning loss functions or atom/bond features. We benchmark D-MPNN models trained using Chemprop with the new reaction, atom-level, and spectra functionality on a variety of property prediction data sets, including MoleculeNet and SAMPL, and observe state-of-the-art performance on the prediction of water-octanol partition coefficients, reaction barrier heights, atomic partial charges, and absorption spectra. Chemprop enables out-of-the-box training of D-MPNN models for a variety of problem settings in fast, user-friendly, and open-source software."
+    },
+    {
+      "funcion": "Background",
+      "pair_id": "c6654b2f5460913cccd10627a090c254c5f67e5e__adb1293ae3e3fede5a91523d344a7fe4d85263f9",
+      "etiqueta_automatica": "Background",
+      "citation_context": "RSs are widely used in areas such as e-commerce, social networking, entertainment, online learning, and native application platforms [2], [8].",
+      "rhetorical_section": "Scientific Body (systematic review survey deep learning)",
+      "cited_paper_title": "Deep learning approaches to address cold start and long tail challenges in recommendation systems: a systematic review",
+      "cited_paper_abstract": null
+    },
+    {
+      "funcion": "Gap",
+      "pair_id": "36d02f79d5c03661ebb8ffcd88b02f5d86993087__a8a259dfc14cfb0d747746b23d97c2dc622a7b75",
+      "etiqueta_automatica": "Gap",
+      "citation_context": "However, there are still few studies about the application of deep learning approaches in piRNA prediction [14, 12].",
+      "rhetorical_section": "Scientific Body (computational biology genomics machine learning)",
+      "cited_paper_title": "Computational biology: deep learning",
+      "cited_paper_abstract": "Deep learning is the trendiest tool in a computational biologist's toolbox. This exciting class of methods, based on artificial neural networks, quickly became popular due to its competitive performance in prediction problems. In pioneering early work, applying simple network architectures to abundant data already provided gains over traditional counterparts in functional genomics, image analysis, and medical diagnostics. Now, ideas for constructing and training networks and even off-the-shelf models have been adapted from the rapidly developing machine learning subfield to improve performance in a range of computational biology tasks. Here, we review some of these advances in the last 2 years."
+    }
+  ]
+}

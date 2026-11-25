@@ -1,0 +1,514 @@
+{
+  "fuente": "notebooks/Entrenamiento_clasificadores_scibert_mlflow.ipynb",
+  "nota": "Métricas de validación (2.280 citas, etiqueta automática); el notebook no evalúa el test.",
+  "corridas": [
+    {
+      "corrida": "Run1_SciBERT_ConfigA_Metadata",
+      "nombre": "Run 1: SciBERT, config. A",
+      "epocas": [
+        {
+          "epoca": 1,
+          "segundos": 426.9,
+          "perdida_entrenamiento": 1.5386,
+          "perdida_validacion": 1.1791,
+          "f1_macro_validacion": 0.5351
+        },
+        {
+          "epoca": 2,
+          "segundos": 426.0,
+          "perdida_entrenamiento": 0.9889,
+          "perdida_validacion": 1.1056,
+          "f1_macro_validacion": 0.5904
+        },
+        {
+          "epoca": 3,
+          "segundos": 425.9,
+          "perdida_entrenamiento": 0.6843,
+          "perdida_validacion": 1.1293,
+          "f1_macro_validacion": 0.5944
+        },
+        {
+          "epoca": 4,
+          "segundos": 425.9,
+          "perdida_entrenamiento": 0.4635,
+          "perdida_validacion": 1.1908,
+          "f1_macro_validacion": 0.6083
+        }
+      ],
+      "validacion": {
+        "por_clase": {
+          "Application": {
+            "precision": 0.66,
+            "exhaustividad": 0.71,
+            "f1": 0.68,
+            "soporte": 282
+          },
+          "Background": {
+            "precision": 0.59,
+            "exhaustividad": 0.61,
+            "f1": 0.6,
+            "soporte": 308
+          },
+          "Basis": {
+            "precision": 0.59,
+            "exhaustividad": 0.65,
+            "f1": 0.62,
+            "soporte": 294
+          },
+          "Comparison": {
+            "precision": 0.55,
+            "exhaustividad": 0.5,
+            "f1": 0.53,
+            "soporte": 294
+          },
+          "Evidence": {
+            "precision": 0.69,
+            "exhaustividad": 0.78,
+            "f1": 0.73,
+            "soporte": 291
+          },
+          "Further_Reading": {
+            "precision": 0.6,
+            "exhaustividad": 0.61,
+            "f1": 0.61,
+            "soporte": 97
+          },
+          "Gap": {
+            "precision": 0.7,
+            "exhaustividad": 0.7,
+            "f1": 0.7,
+            "soporte": 292
+          },
+          "Identification_of_the_Originator": {
+            "precision": 0.64,
+            "exhaustividad": 0.5,
+            "f1": 0.56,
+            "soporte": 322
+          },
+          "Modification_Improvement": {
+            "precision": 0.46,
+            "exhaustividad": 0.44,
+            "f1": 0.45,
+            "soporte": 100
+          }
+        },
+        "exactitud": 0.62,
+        "macro_avg": {
+          "precision": 0.61,
+          "exhaustividad": 0.61,
+          "f1": 0.61
+        },
+        "weighted_avg": {
+          "precision": 0.62,
+          "exhaustividad": 0.62,
+          "f1": 0.62
+        }
+      }
+    },
+    {
+      "corrida": "Run2_SciBERT_ConfigB_Top3Chunks",
+      "nombre": "Run 2: SciBERT, config. B",
+      "epocas": [
+        {
+          "epoca": 1,
+          "segundos": 424.2,
+          "perdida_entrenamiento": 1.4694,
+          "perdida_validacion": 1.081,
+          "f1_macro_validacion": 0.5901
+        },
+        {
+          "epoca": 2,
+          "segundos": 424.2,
+          "perdida_entrenamiento": 0.9076,
+          "perdida_validacion": 0.9846,
+          "f1_macro_validacion": 0.6408
+        },
+        {
+          "epoca": 3,
+          "segundos": 424.0,
+          "perdida_entrenamiento": 0.6061,
+          "perdida_validacion": 0.9826,
+          "f1_macro_validacion": 0.6525
+        },
+        {
+          "epoca": 4,
+          "segundos": 424.5,
+          "perdida_entrenamiento": 0.3885,
+          "perdida_validacion": 1.0549,
+          "f1_macro_validacion": 0.6633
+        }
+      ],
+      "validacion": {
+        "por_clase": {
+          "Application": {
+            "precision": 0.72,
+            "exhaustividad": 0.71,
+            "f1": 0.71,
+            "soporte": 282
+          },
+          "Background": {
+            "precision": 0.59,
+            "exhaustividad": 0.63,
+            "f1": 0.61,
+            "soporte": 308
+          },
+          "Basis": {
+            "precision": 0.62,
+            "exhaustividad": 0.67,
+            "f1": 0.64,
+            "soporte": 294
+          },
+          "Comparison": {
+            "precision": 0.7,
+            "exhaustividad": 0.68,
+            "f1": 0.69,
+            "soporte": 294
+          },
+          "Evidence": {
+            "precision": 0.83,
+            "exhaustividad": 0.85,
+            "f1": 0.84,
+            "soporte": 291
+          },
+          "Further_Reading": {
+            "precision": 0.62,
+            "exhaustividad": 0.67,
+            "f1": 0.65,
+            "soporte": 97
+          },
+          "Gap": {
+            "precision": 0.69,
+            "exhaustividad": 0.77,
+            "f1": 0.73,
+            "soporte": 292
+          },
+          "Identification_of_the_Originator": {
+            "precision": 0.66,
+            "exhaustividad": 0.53,
+            "f1": 0.59,
+            "soporte": 322
+          },
+          "Modification_Improvement": {
+            "precision": 0.55,
+            "exhaustividad": 0.48,
+            "f1": 0.51,
+            "soporte": 100
+          }
+        },
+        "exactitud": 0.68,
+        "macro_avg": {
+          "precision": 0.67,
+          "exhaustividad": 0.66,
+          "f1": 0.66
+        },
+        "weighted_avg": {
+          "precision": 0.68,
+          "exhaustividad": 0.68,
+          "f1": 0.68
+        }
+      }
+    },
+    {
+      "corrida": "Run3_SPECTER_ConfigB",
+      "nombre": "Run 3: SPECTER, config. B",
+      "epocas": [
+        {
+          "epoca": 1,
+          "segundos": 450.5,
+          "perdida_entrenamiento": 1.4843,
+          "perdida_validacion": 1.1006,
+          "f1_macro_validacion": 0.5852
+        },
+        {
+          "epoca": 2,
+          "segundos": 450.6,
+          "perdida_entrenamiento": 0.8729,
+          "perdida_validacion": 1.0062,
+          "f1_macro_validacion": 0.6335
+        },
+        {
+          "epoca": 3,
+          "segundos": 450.5,
+          "perdida_entrenamiento": 0.5823,
+          "perdida_validacion": 1.0089,
+          "f1_macro_validacion": 0.643
+        },
+        {
+          "epoca": 4,
+          "segundos": 450.6,
+          "perdida_entrenamiento": 0.3871,
+          "perdida_validacion": 1.0759,
+          "f1_macro_validacion": 0.6533
+        }
+      ],
+      "validacion": {
+        "por_clase": {
+          "Application": {
+            "precision": 0.71,
+            "exhaustividad": 0.72,
+            "f1": 0.71,
+            "soporte": 282
+          },
+          "Background": {
+            "precision": 0.57,
+            "exhaustividad": 0.63,
+            "f1": 0.6,
+            "soporte": 308
+          },
+          "Basis": {
+            "precision": 0.63,
+            "exhaustividad": 0.69,
+            "f1": 0.66,
+            "soporte": 294
+          },
+          "Comparison": {
+            "precision": 0.68,
+            "exhaustividad": 0.66,
+            "f1": 0.67,
+            "soporte": 294
+          },
+          "Evidence": {
+            "precision": 0.84,
+            "exhaustividad": 0.85,
+            "f1": 0.85,
+            "soporte": 291
+          },
+          "Further_Reading": {
+            "precision": 0.64,
+            "exhaustividad": 0.7,
+            "f1": 0.67,
+            "soporte": 97
+          },
+          "Gap": {
+            "precision": 0.71,
+            "exhaustividad": 0.71,
+            "f1": 0.71,
+            "soporte": 292
+          },
+          "Identification_of_the_Originator": {
+            "precision": 0.61,
+            "exhaustividad": 0.48,
+            "f1": 0.54,
+            "soporte": 322
+          },
+          "Modification_Improvement": {
+            "precision": 0.49,
+            "exhaustividad": 0.45,
+            "f1": 0.47,
+            "soporte": 100
+          }
+        },
+        "exactitud": 0.67,
+        "macro_avg": {
+          "precision": 0.65,
+          "exhaustividad": 0.66,
+          "f1": 0.65
+        },
+        "weighted_avg": {
+          "precision": 0.67,
+          "exhaustividad": 0.67,
+          "f1": 0.67
+        }
+      }
+    },
+    {
+      "corrida": "Run4_SciBERT_Frozen_Control",
+      "nombre": "Run 4: SciBERT congelado, config. B",
+      "epocas": [
+        {
+          "epoca": 1,
+          "segundos": 156.8,
+          "perdida_entrenamiento": 2.0493,
+          "perdida_validacion": 1.8551,
+          "f1_macro_validacion": 0.328
+        },
+        {
+          "epoca": 2,
+          "segundos": 157.2,
+          "perdida_entrenamiento": 1.8193,
+          "perdida_validacion": 1.7405,
+          "f1_macro_validacion": 0.3524
+        },
+        {
+          "epoca": 3,
+          "segundos": 157.2,
+          "perdida_entrenamiento": 1.7601,
+          "perdida_validacion": 1.7138,
+          "f1_macro_validacion": 0.3674
+        }
+      ],
+      "validacion": {
+        "por_clase": {
+          "Application": {
+            "precision": 0.46,
+            "exhaustividad": 0.22,
+            "f1": 0.3,
+            "soporte": 282
+          },
+          "Background": {
+            "precision": 0.39,
+            "exhaustividad": 0.42,
+            "f1": 0.41,
+            "soporte": 308
+          },
+          "Basis": {
+            "precision": 0.41,
+            "exhaustividad": 0.57,
+            "f1": 0.48,
+            "soporte": 294
+          },
+          "Comparison": {
+            "precision": 0.42,
+            "exhaustividad": 0.26,
+            "f1": 0.32,
+            "soporte": 294
+          },
+          "Evidence": {
+            "precision": 0.48,
+            "exhaustividad": 0.88,
+            "f1": 0.62,
+            "soporte": 291
+          },
+          "Further_Reading": {
+            "precision": 0.33,
+            "exhaustividad": 0.05,
+            "f1": 0.09,
+            "soporte": 97
+          },
+          "Gap": {
+            "precision": 0.45,
+            "exhaustividad": 0.65,
+            "f1": 0.53,
+            "soporte": 292
+          },
+          "Identification_of_the_Originator": {
+            "precision": 0.52,
+            "exhaustividad": 0.34,
+            "f1": 0.41,
+            "soporte": 322
+          },
+          "Modification_Improvement": {
+            "precision": 0.23,
+            "exhaustividad": 0.11,
+            "f1": 0.15,
+            "soporte": 100
+          }
+        },
+        "exactitud": 0.44,
+        "macro_avg": {
+          "precision": 0.41,
+          "exhaustividad": 0.39,
+          "f1": 0.37
+        },
+        "weighted_avg": {
+          "precision": 0.43,
+          "exhaustividad": 0.44,
+          "f1": 0.41
+        }
+      }
+    },
+    {
+      "corrida": "Run5_SciBERT_ConfigB_UnweightedLoss",
+      "nombre": "Run 5: SciBERT sin pesos, config. B",
+      "epocas": [
+        {
+          "epoca": 1,
+          "segundos": 423.7,
+          "perdida_entrenamiento": 1.3754,
+          "perdida_validacion": 1.06,
+          "f1_macro_validacion": 0.5848
+        },
+        {
+          "epoca": 2,
+          "segundos": 423.8,
+          "perdida_entrenamiento": 0.8584,
+          "perdida_validacion": 0.9524,
+          "f1_macro_validacion": 0.6278
+        },
+        {
+          "epoca": 3,
+          "segundos": 423.9,
+          "perdida_entrenamiento": 0.5648,
+          "perdida_validacion": 0.9917,
+          "f1_macro_validacion": 0.6433
+        },
+        {
+          "epoca": 4,
+          "segundos": 423.9,
+          "perdida_entrenamiento": 0.3583,
+          "perdida_validacion": 1.0489,
+          "f1_macro_validacion": 0.6572
+        }
+      ],
+      "validacion": {
+        "por_clase": {
+          "Application": {
+            "precision": 0.7,
+            "exhaustividad": 0.74,
+            "f1": 0.72,
+            "soporte": 282
+          },
+          "Background": {
+            "precision": 0.58,
+            "exhaustividad": 0.66,
+            "f1": 0.62,
+            "soporte": 308
+          },
+          "Basis": {
+            "precision": 0.61,
+            "exhaustividad": 0.66,
+            "f1": 0.63,
+            "soporte": 294
+          },
+          "Comparison": {
+            "precision": 0.7,
+            "exhaustividad": 0.72,
+            "f1": 0.71,
+            "soporte": 294
+          },
+          "Evidence": {
+            "precision": 0.83,
+            "exhaustividad": 0.85,
+            "f1": 0.84,
+            "soporte": 291
+          },
+          "Further_Reading": {
+            "precision": 0.72,
+            "exhaustividad": 0.62,
+            "f1": 0.67,
+            "soporte": 97
+          },
+          "Gap": {
+            "precision": 0.69,
+            "exhaustividad": 0.73,
+            "f1": 0.71,
+            "soporte": 292
+          },
+          "Identification_of_the_Originator": {
+            "precision": 0.66,
+            "exhaustividad": 0.53,
+            "f1": 0.59,
+            "soporte": 322
+          },
+          "Modification_Improvement": {
+            "precision": 0.57,
+            "exhaustividad": 0.35,
+            "f1": 0.43,
+            "soporte": 100
+          }
+        },
+        "exactitud": 0.68,
+        "macro_avg": {
+          "precision": 0.67,
+          "exhaustividad": 0.65,
+          "f1": 0.66
+        },
+        "weighted_avg": {
+          "precision": 0.68,
+          "exhaustividad": 0.68,
+          "f1": 0.67
+        }
+      }
+    }
+  ]
+}

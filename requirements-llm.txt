@@ -1,0 +1,11 @@
+# Evaluación con modelos de lenguaje en Amazon Bedrock y en la API de OpenAI (scripts/evaluate_jueces.py,
+# scripts/evaluate_llm.py) y figuras (scripts/extraer_corridas_notebook.py).
+# Las credenciales de AWS se configuran con `aws login` o `aws configure`, y la llave de OpenAI en la variable
+# de entorno OPENAI_API_KEY, siempre fuera del repositorio.
+boto3==1.44.9
+botocore[crt]==1.44.9
+pandas==3.1.1
+scikit-learn==1.9.1
+matplotlib==3.11.2
+openai==3.57.0
+openpyxl==3.1.5
