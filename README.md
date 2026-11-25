@@ -1,7 +1,7 @@
-# SCIF: clasificación de la función de las citas científicas
+# Clasificación de la función retórica de citas académicas con recuperación de pasajes del documento citado
 
 Proyecto de grado de la Maestría en Inteligencia Artificial (MAIA) de la
-Universidad de los Andes, Tema 1. SCIF recibe una cita de un artículo científico
+Universidad de los Andes, Tema 1. El sistema recibe una cita de un artículo científico
 en inglés y predice cuál de 9 funciones retóricas cumple (por ejemplo, si la cita
 da antecedentes, sirve de base, se compara o aporta evidencia). También muestra
 en qué pasajes del artículo citado se sustenta la cita.

@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SCIF - API de Inferencia",
+    title="API de clasificación de la función retórica de citas académicas",
     description=(
         "Clasificación de la función retórica de citas científicas y recuperación "
         "local de los pasajes más relevantes del artículo citado.\n\n"
@@ -108,7 +108,7 @@ async def readable_validation_error(request: Request, exc: RequestValidationErro
 
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "SCIF Inference API is operational"}
+    return {"status": "ok", "message": "La API está en funcionamiento"}
 
 
 @app.get("/health", response_model=HealthResponse)

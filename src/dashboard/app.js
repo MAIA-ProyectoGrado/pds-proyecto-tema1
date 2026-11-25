@@ -1,4 +1,4 @@
-/* Tablero SCIF: lee el catálogo y el estado de la API y muestra solo lo que ella devuelve. */
+/* Tablero de clasificación de la función retórica de citas: lee el catálogo y el estado de la API y muestra solo lo que ella devuelve. */
 
 const API = (window.SCIF_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const README_MODELS_URL = "https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1#modelos";
