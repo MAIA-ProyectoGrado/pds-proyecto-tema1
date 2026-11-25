@@ -22,6 +22,12 @@ que nombra la variable, en lugar de ignorarse en silencio.
 | SCIF_MAX_CITED_TEXT_CHARS    | 200000                                      |
 | SCIF_MAX_BODY_KB             | 1024                                        |
 | SCIF_RATE_LIMIT_PER_MIN      | 30                                          |
+| SCIF_LLM_ENABLED             | false                                       |
+| SCIF_BEDROCK_REGION          | us-east-2                                   |
+| SCIF_LLM_DAILY_BUDGET_USD    | 5.0                                         |
+| SCIF_LLM_RATE_LIMIT_PER_MIN  | 5                                           |
+| SCIF_LLM_TIMEOUT             | 30                                          |
+| SCIF_LLM_SPEND_FILE          | <repo>/var/llm_gasto.json                   |
 | SCIF_ROOT_PATH               | (vacío)                                     |
 | SCIF_ALLOWED_ORIGINS         | http://localhost:8080,http://127.0.0.1:8080 |
 
@@ -118,6 +124,20 @@ MAX_BODY_KB = _int("SCIF_MAX_BODY_KB", 1024, 16, 16384)
 #: peticiones POST por minuto y por IP; 0 desactiva el límite
 RATE_LIMIT_PER_MIN = _int("SCIF_RATE_LIMIT_PER_MIN", 30, 0, 10000)
 
+# ── modelos de lenguaje en Amazon Bedrock ────────────────────────────────────
+#: ofrecer Nova Pro y Ministral 3 8B; requiere credenciales de AWS con permiso
+#: bedrock:InvokeModel (en EC2, el rol de la instancia)
+LLM_ENABLED = _bool("SCIF_LLM_ENABLED", False)
+BEDROCK_REGION = _raw("SCIF_BEDROCK_REGION") or "us-east-2"
+#: gasto máximo por día (UTC) sumando los dos modelos; 0 bloquea las consultas
+LLM_DAILY_BUDGET_USD = _float("SCIF_LLM_DAILY_BUDGET_USD", 5.0, 0.0, 1000.0)
+#: consultas por minuto y por IP a los modelos de lenguaje; 0 desactiva el límite
+LLM_RATE_LIMIT_PER_MIN = _int("SCIF_LLM_RATE_LIMIT_PER_MIN", 5, 0, 1000)
+#: tiempo máximo de cada respuesta de Bedrock, en segundos
+LLM_TIMEOUT = _int("SCIF_LLM_TIMEOUT", 30, 5, 300)
+#: archivo con el gasto acumulado del día; sobrevive a los reinicios
+LLM_SPEND_FILE = Path(_raw("SCIF_LLM_SPEND_FILE") or (REPO_ROOT / "var" / "llm_gasto.json"))
+
 # ── red ──────────────────────────────────────────────────────────────────────
 #: prefijo bajo el que un proxy publica la API (en Docker, /api); hace que /docs
 #: pida el esquema en la ruta correcta
@@ -148,5 +168,10 @@ def summary() -> dict:
         "max_cited_text_chars": MAX_CITED_TEXT_CHARS,
         "max_body_kb": MAX_BODY_KB,
         "rate_limit_per_min": RATE_LIMIT_PER_MIN,
+        "llm_enabled": LLM_ENABLED,
+        "bedrock_region": BEDROCK_REGION,
+        "llm_daily_budget_usd": LLM_DAILY_BUDGET_USD,
+        "llm_rate_limit_per_min": LLM_RATE_LIMIT_PER_MIN,
+        "llm_timeout_s": LLM_TIMEOUT,
         "root_path": ROOT_PATH,
     }

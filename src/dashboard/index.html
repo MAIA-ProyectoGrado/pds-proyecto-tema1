@@ -70,8 +70,8 @@
              aria-label="Identificador o URL de arXiv del artículo citado"
              placeholder="ID o URL de arXiv, p. ej. 1903.10676">
       <p class="help">SciBERT lee las <strong>3 oraciones clave</strong> de su abstract, las más
-      cercanas a la cita. El tablero además busca los 3 pasajes más parecidos en el artículo
-      completo. <button type="button" class="link" id="togglePaste">Pegar el texto en su lugar</button></p>
+      cercanas a la cita; los modelos de lenguaje leen el título y el abstract completos. El
+      tablero además busca los 3 pasajes más parecidos en el artículo completo. <button type="button" class="link" id="togglePaste">Pegar el texto en su lugar</button></p>
       <textarea class="field" id="citedText" spellcheck="false" hidden
                 aria-label="Abstract o texto completo del artículo citado"
                 placeholder="Pega aquí el abstract o el texto completo del artículo citado. Para buscar pasajes se necesitan al menos 50 palabras."></textarea>
@@ -102,10 +102,14 @@
             elige <em>Otra / no sé</em>.</li>
         <li>Recomendado: escribe el <strong>id de arXiv del artículo citado</strong> o pega su texto.
             SciBERT lee 3 oraciones clave de su abstract.</li>
-        <li>Deja <strong>SciBERT</strong> como clasificador (TF-IDF es la línea base) y pulsa
-            <strong>Clasificar</strong>. Verás la función predicha y la probabilidad de las 9
-            funciones. Si indicaste el artículo, unos segundos después aparecen los pasajes del
-            artículo completo más parecidos a la cita.</li>
+        <li>Deja <strong>SciBERT</strong> como clasificador y pulsa <strong>Clasificar</strong>.
+            Verás la función predicha y la probabilidad de las 9 funciones. Si indicaste el
+            artículo, unos segundos después aparecen los pasajes del artículo completo más
+            parecidos a la cita.</li>
+        <li>Para comparar, elige otro clasificador: TF-IDF es la línea base, y Nova Pro
+            (comercial) y Ministral 3 8B (pesos abiertos) son modelos de lenguaje que corren en
+            Amazon Bedrock. Estos dos tienen costo por consulta, así que admiten pocas consultas
+            por minuto y un gasto máximo por día.</li>
       </ol>
     </details>
 
@@ -124,7 +128,7 @@
         <div class="panel-body">
           <div class="verdict">
             <div class="v-l">
-              <span class="eyebrow">clase de mayor probabilidad</span>
+              <span class="eyebrow" id="vEyebrow">clase de mayor probabilidad</span>
               <span class="v-name" id="vName"></span>
               <span class="v-def" id="vDef"></span>
               <span class="readtag" id="readTag"></span>
@@ -137,7 +141,7 @@
                       style="transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.25,1)"/>
                 <text id="gTxt" x="52" y="52" text-anchor="middle" dominant-baseline="middle"
                       font-family="'DM Mono', monospace" font-size="24" font-weight="500" fill="var(--ink)"></text>
-                <text x="52" y="70" text-anchor="middle" font-family="'DM Mono', monospace"
+                <text id="gLbl" x="52" y="70" text-anchor="middle" font-family="'DM Mono', monospace"
                       font-size="8" letter-spacing="1.2" fill="var(--ink-4)">CONFIANZA</text>
               </svg>
             </div>
@@ -155,12 +159,12 @@
       <section class="panel">
         <div class="panel-head">
           <h3>Lo que leyó el modelo</h3>
-          <span class="sp"></span><span class="eyebrow">entrada del clasificador</span>
+          <span class="sp"></span><span class="eyebrow" id="readEyebrow">entrada del clasificador</span>
         </div>
         <div class="panel-body">
           <div class="read" id="readBody"></div>
           <details class="raw">
-            <summary>Entrada exacta enviada al modelo</summary>
+            <summary id="ioSummary">Entrada exacta enviada al modelo</summary>
             <pre class="io" id="ioText"></pre>
           </details>
         </div>
@@ -169,7 +173,7 @@
       <section class="panel">
         <div class="panel-head">
           <h3>Distribución sobre las 9 funciones</h3>
-          <span class="sp"></span><span class="eyebrow">probabilidades devueltas por el modelo</span>
+          <span class="sp"></span><span class="eyebrow" id="distEyebrow">probabilidades devueltas por el modelo</span>
         </div>
         <div class="panel-body"><div class="dist" id="dist"></div></div>
       </section>

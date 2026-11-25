@@ -1,5 +1,9 @@
 """Registro de modelos servidos por la API, con carga diferida.
 
+Los modelos locales (SciBERT y TF-IDF) se cargan desde disco la primera vez que se
+usan. Los modelos de lenguaje corren en Amazon Bedrock (`src/api/llm.py`): no hay
+pesos que cargar y están disponibles si el servidor tiene acceso a Bedrock.
+
 Ruta de los artefactos y modelo por defecto: ver `src/api/config.py`.
 """
 from __future__ import annotations
@@ -16,7 +20,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from models.passages import SentenceEncoder  # noqa: E402
 from models.scif_predict import Predictor  # noqa: E402
-from src.api import config  # noqa: E402
+from src.api import config, llm  # noqa: E402
 
 MODELS_DIR = config.MODELS_DIR
 ENCODER_DIRNAME = "minilm-l6-v2"
@@ -41,6 +45,7 @@ REGISTRY: dict[str, dict[str, Any]] = {
         "reads_passages": True,
         "version": "v4-config-b",
         "dirname": "scif-scibert-chunks",
+        "backend": "local",
         "recommended": True,
     },
     "tfidf-logreg": {
@@ -51,18 +56,41 @@ REGISTRY: dict[str, dict[str, Any]] = {
         "reads_passages": False,
         "version": "v4-tfidf",
         "dirname": "scif-v4-tfidf-logreg",
+        "backend": "local",
+        "recommended": False,
+    },
+    "nova-pro": {
+        "id": "nova-pro",
+        "name": "Nova Pro",
+        "kind": "Modelo de lenguaje comercial · Amazon Bedrock",
+        "reads": "Contexto, sección, y título y abstract del artículo citado",
+        "reads_passages": False,
+        "version": "bedrock-e4",
+        "backend": "bedrock",
+        "recommended": False,
+    },
+    "ministral-3-8b": {
+        "id": "ministral-3-8b",
+        "name": "Ministral 3 8B",
+        "kind": "Modelo de lenguaje de pesos abiertos · 8 B parámetros · Amazon Bedrock",
+        "reads": "Contexto, sección, y título y abstract del artículo citado",
+        "reads_passages": False,
+        "version": "bedrock-e4",
+        "backend": "bedrock",
         "recommended": False,
     },
 }
 
 DEFAULT_MODEL = config.DEFAULT_MODEL
-if DEFAULT_MODEL not in REGISTRY:
+if DEFAULT_MODEL not in REGISTRY or REGISTRY[DEFAULT_MODEL]["backend"] != "local":
     raise config.ConfigError(
-        f"SCIF_DEFAULT_MODEL={DEFAULT_MODEL!r} no existe. Opciones: {', '.join(REGISTRY)}."
+        f"SCIF_DEFAULT_MODEL={DEFAULT_MODEL!r} no es un modelo local. "
+        f"Opciones: {', '.join(m for m, meta in REGISTRY.items() if meta['backend'] == 'local')}."
     )
 
 _cache: dict[str, Predictor] = {}
-_locks: dict[str, threading.Lock] = {mid: threading.Lock() for mid in REGISTRY}
+_locks: dict[str, threading.Lock] = {mid: threading.Lock() for mid, m in REGISTRY.items()
+                                     if m["backend"] == "local"}
 #: serializa la inferencia con torch (clasificador, MiniLM y embeddings de la
 #: recuperación) para que los hilos no compitan por los núcleos
 _infer_lock = threading.Lock()
@@ -77,20 +105,28 @@ except Exception:
     pass
 
 
+def is_llm(model_id: str) -> bool:
+    return REGISTRY[model_id]["backend"] == "bedrock"
+
+
 def model_dir(model_id: str) -> Path:
-    if model_id not in REGISTRY:
+    if model_id not in REGISTRY or is_llm(model_id):
         raise ModelNotFound(model_id)
     return MODELS_DIR / REGISTRY[model_id]["dirname"]
 
 
 def is_available(model_id: str) -> bool:
-    """Hay pesos en disco para este modelo."""
+    """Hay pesos en disco para este modelo o, si corre en Bedrock, acceso a Bedrock."""
+    if is_llm(model_id):
+        return llm.available()
     d = model_dir(model_id)
     return (d / "model.pkl").exists() or (d / "config.json").exists()
 
 
 def missing_weights_message(model_id: str) -> str:
     """Qué falta y cómo obtenerlo. Lo usan el catálogo, el tablero y los errores 503."""
+    if is_llm(model_id):
+        return llm.unavailable_reason()
     return (f"Faltan los pesos de {REGISTRY[model_id]['name']} en "
             f"models/{REGISTRY[model_id]['dirname']}. "
             "Para descargarlos, sigue la sección «Modelos» del README.")
@@ -98,7 +134,7 @@ def missing_weights_message(model_id: str) -> str:
 
 def get_predictor(model_id: str) -> Predictor:
     """Carga (una sola vez) y devuelve el predictor del modelo pedido."""
-    if model_id not in REGISTRY:
+    if model_id not in REGISTRY or is_llm(model_id):
         raise ModelNotFound(model_id)
     if model_id in _cache:
         return _cache[model_id]
@@ -140,14 +176,22 @@ def predict(citation_context: str, rhetorical_section: str | None, model_id: str
     return result
 
 
+def is_loaded(model_id: str) -> bool:
+    """En memoria y listo. Un modelo de Bedrock no se carga: está listo si está disponible."""
+    return is_available(model_id) if is_llm(model_id) else model_id in _cache
+
+
 def catalog() -> list[dict[str, Any]]:
     """Metadatos de los modelos para poblar el selector del tablero."""
     out = []
     for mid, meta in REGISTRY.items():
         entry = {k: v for k, v in meta.items() if k != "dirname"}
         entry["available"] = is_available(mid)
-        entry["loaded"] = mid in _cache
+        entry["loaded"] = is_loaded(mid)
         entry["unavailable_reason"] = None if entry["available"] else missing_weights_message(mid)
+        if is_llm(mid):
+            entry["cost_per_query_usd"] = llm.MODELS[mid]["cost_per_query_usd"]
+            entry["typical_latency_ms"] = llm.MODELS[mid]["typical_latency_ms"]
         out.append(entry)
     return out
 

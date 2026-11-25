@@ -89,7 +89,8 @@ def test_catalog_explains_what_each_model_reads(client):
     models = {m["id"]: m for m in client.get("/models").json()["models"]}
     assert models["scibert"]["reads_passages"] is True
     assert models[BASELINE]["reads_passages"] is False
-    assert all(m["reads"] and m["version"].startswith("v4") for m in models.values())
+    assert all(m["reads"] for m in models.values())
+    assert all(m["version"].startswith("v4") for m in models.values() if m["backend"] == "local")
 
 
 def test_catalog_does_not_publish_metrics(client):

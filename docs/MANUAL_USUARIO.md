@@ -56,6 +56,7 @@ o su URL. Con él:
 
 - SciBERT lee las **3 oraciones del abstract** más parecidas a la cita, como en su
   entrenamiento.
+- Nova Pro y Ministral 3 8B leen el **título y el abstract completos**.
 - El tablero busca después los **3 pasajes del artículo completo** más parecidos a
   la cita.
 
@@ -69,9 +70,18 @@ palabras.
 |---|---|---|
 | **SciBERT** (recomendado) | El contexto, la sección y las 3 oraciones clave del abstract | Siempre que esté disponible: es el modelo más preciso |
 | **TF-IDF + Regresión Logística** | El contexto y la sección | Como línea base para comparar |
+| **Nova Pro** | El contexto, la sección y el título y el abstract del artículo citado | Para comparar con un modelo de lenguaje comercial, sin ajuste fino |
+| **Ministral 3 8B** | Lo mismo que Nova Pro | Para comparar con un modelo de lenguaje de pesos abiertos |
+
+Nova Pro y Ministral 3 8B corren en Amazon Bedrock y cada consulta tiene un costo,
+que el selector muestra junto a su latencia típica. Por eso admiten 5 consultas
+por minuto y un gasto máximo diario para todo el sitio. En la evaluación con las
+2.241 citas de prueba aciertan menos que SciBERT (F1 macro de 0,347 y 0,295 frente
+a 0,532).
 
 Si los pesos de SciBERT no están instalados en el servidor, la opción aparece
-deshabilitada con el motivo y un enlace a las instrucciones para descargarlos.
+deshabilitada con el motivo y un enlace a las instrucciones para descargarlos. Lo
+mismo ocurre con los modelos de lenguaje si el servidor no tiene acceso a Bedrock.
 
 ### 5. Clasificar
 
@@ -87,19 +97,26 @@ consulta un artículo hay que descargar y leer su PDF.
 
 La función con mayor probabilidad, su definición y la **confianza** (la
 probabilidad de esa función, entre 0 y 1). La etiqueta debajo indica con qué se
-clasificó: *con las oraciones clave del abstract* o *solo con el contexto y la
-sección*.
+clasificó: *con las oraciones clave del abstract*, *con el título y el abstract
+del artículo citado* (modelos de lenguaje) o *solo con el contexto y la sección*.
+
+Los modelos de lenguaje no dan probabilidades: dan un **puntaje** de 0 a 1 a cada
+función. El tablero muestra el puntaje de la función elegida en lugar de la
+confianza.
 
 ![Función predicha](tablero/03_funcion_predicha.png)
 
 Si las dos funciones más probables están a menos de 0,10 de diferencia, el
-tablero marca el caso como **ambiguo**: conviene revisar las dos.
+tablero marca el caso como **ambiguo**: conviene revisar las dos. Con los modelos
+de lenguaje se comparan sus dos puntajes mayores, y un empate también es ambiguo.
 
 ### Lo que leyó el modelo
 
 El contexto, la sección y las 3 oraciones clave del abstract, con su parecido a la
 cita (de 0 a 1). **Entrada exacta enviada al modelo** muestra el texto tal como lo
-recibió SciBERT.
+recibió SciBERT. Con un modelo de lenguaje, el panel muestra el título y el
+abstract que leyó, y el mensaje que recibió después de las instrucciones del
+prompt.
 
 ![Lo que leyó el modelo](tablero/04_lo_que_leyo.png)
 
@@ -111,7 +128,8 @@ clasifica solo con el contexto y la sección:
 ### Distribución sobre las 9 funciones
 
 La probabilidad que el modelo asigna a cada función. Sirve para ver si hubo una
-segunda opción cercana.
+segunda opción cercana. Con los modelos de lenguaje son sus puntajes normalizados
+para que sumen 1.
 
 ![Distribución](tablero/05_distribucion.png)
 
@@ -135,7 +153,9 @@ resaltados y numerados.
 ### Ejecución
 
 El modelo usado y el tiempo de cada etapa de la consulta: el artículo citado, las
-oraciones clave, la clasificación, el total y los pasajes.
+oraciones clave, la clasificación, el total y los pasajes. Con los modelos de
+lenguaje muestra además el costo de la consulta y lo gastado en el día frente al
+tope.
 
 ![Ejecución](tablero/08_ejecucion.png)
 
@@ -152,6 +172,9 @@ predicción anterior y explica qué pasó.
 | *… no es un identificador de arXiv válido* | Formato incorrecto | Usar `1903.10676` o la URL completa |
 | *No se pudieron buscar los pasajes* | No se pudo descargar o leer el PDF | Pegar el texto del artículo en su lugar |
 | *Demasiadas peticiones* (429) | Se superó el límite de 30 consultas por minuto | Esperar un minuto |
+| *Los modelos de lenguaje admiten 5 consultas por minuto* (429) | Límite propio de Nova Pro y Ministral 3 8B | Esperar los segundos que indica o usar SciBERT |
+| *Se alcanzó el tope diario…* (429) | Se gastó el presupuesto del día en los modelos de lenguaje | Usar SciBERT o TF-IDF; el cupo se renueva a las 00:00 UTC |
+| *Bedrock no pudo responder* o *no respondió con la lista de 9 puntajes* (502) | Falla del servicio externo o respuesta en otro formato | Reintentar o usar otro modelo |
 
 Si falla el artículo citado, **la clasificación sigue siendo válida**: el modelo
 clasifica sin él y el panel lo indica.

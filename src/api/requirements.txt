@@ -26,3 +26,7 @@ torch==2.14.0
 transformers==5.16.1
 tokenizers==0.23.2
 safetensors==0.8.0
+
+# Nova Pro y Ministral 3 8B en Amazon Bedrock (src/api/llm.py). Las credenciales
+# salen del entorno: en EC2, el rol de la instancia.
+boto3==1.44.9

@@ -6,7 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.api import config, key_sentences, model_loader, retrieval
+from src.api import config, key_sentences, llm, model_loader, retrieval
 from src.api.labels import CANONICAL_LABELS, DISPLAY_NAMES, SECTION_OPTIONS, display_name
 from src.api.limits import RateLimiter
 from src.api.schemas import (
@@ -23,6 +23,8 @@ STARTED = time.monotonic()
 #: rutas que cuentan para el límite de peticiones (las que hacen trabajo pesado)
 LIMITED_PATHS = {"/predict", "/retrieve"}
 limiter = RateLimiter(config.RATE_LIMIT_PER_MIN)
+#: límite adicional para los modelos de lenguaje, que tienen costo por consulta
+llm_limiter = RateLimiter(config.LLM_RATE_LIMIT_PER_MIN)
 
 
 @asynccontextmanager
@@ -38,8 +40,10 @@ app = FastAPI(
         "local de los pasajes más relevantes del artículo citado.\n\n"
         "`POST /predict` clasifica una cita. Con SciBERT, si se indica el artículo "
         "citado (`arxiv_id` o `cited_text`), el modelo lee además 3 oraciones clave de "
-        "su abstract. `POST /retrieve` devuelve los pasajes del artículo citado más "
-        "parecidos al contexto. `GET /health` informa el estado del servicio."
+        "su abstract. Con Nova Pro o Ministral 3 8B (Amazon Bedrock), el modelo lee el "
+        "título y el abstract completos; estas consultas tienen un tope diario de gasto "
+        "y de consultas por minuto. `POST /retrieve` devuelve los pasajes del artículo "
+        "citado más parecidos al contexto. `GET /health` informa el estado del servicio."
     ),
     version=API_VERSION,
     root_path=config.ROOT_PATH,
@@ -59,8 +63,7 @@ async def controlled_use(request: Request, call_next):
                 content={"detail": f"La petición supera el máximo de {config.MAX_BODY_KB} KB."},
             )
         if request.url.path in LIMITED_PATHS:
-            ip = request.client.host if request.client else "desconocida"
-            wait = limiter.hit(ip)
+            wait = limiter.hit(client_ip(request))
             if wait:
                 return JSONResponse(
                     status_code=429,
@@ -70,6 +73,10 @@ async def controlled_use(request: Request, call_next):
                         f"Intenta de nuevo en {wait} s.")},
                 )
     return await call_next(request)
+
+
+def client_ip(request: Request) -> str:
+    return request.client.host if request.client else "desconocida"
 
 
 # CORS se registra después para que envuelva también las respuestas 413 y 429.
@@ -109,7 +116,7 @@ def health():
     """Estado del servicio: qué modelos están en disco y cargados, y la
     configuración efectiva. Responde 200 aunque falte algo (status=degraded)."""
     models = {
-        mid: {"available": model_loader.is_available(mid), "loaded": mid in model_loader._cache}
+        mid: {"available": model_loader.is_available(mid), "loaded": model_loader.is_loaded(mid)}
         for mid in model_loader.REGISTRY
     }
     default = model_loader.DEFAULT_MODEL
@@ -127,6 +134,7 @@ def health():
             "loaded": model_loader.encoder_loaded(),
         },
         retrieval_available=retrieval.retrieval_available(),
+        llm_budget=llm.budget.status(),
         config=config.summary(),
     )
 
@@ -149,10 +157,11 @@ def list_models():
 # ── clasificación ────────────────────────────────────────────────────────────
 
 @app.post("/predict", response_model=PredictResponse)
-def predict_citation(request: PredictRequest):
+def predict_citation(request: PredictRequest, http_request: Request):
     """Clasifica la función de una cita. El artículo citado es opcional: si se
-    indica y el modelo lo lee (SciBERT), se usan 3 oraciones clave de su abstract.
-    Si no se puede obtener, se clasifica sin ellas y `key_sentences.detail` lo explica."""
+    indica y el modelo lo lee, SciBERT usa 3 oraciones clave de su abstract y los
+    modelos de lenguaje su título y abstract completos. Si no se puede obtener, se
+    clasifica sin él y `key_sentences.detail` lo explica."""
     context = (request.citation_context or "").strip()
     if not context:
         raise HTTPException(status_code=400, detail="El campo citation_context no puede estar vacío.")
@@ -166,6 +175,8 @@ def predict_citation(request: PredictRequest):
         raise HTTPException(status_code=503, detail=model_loader.missing_weights_message(request.model))
     section = (request.rhetorical_section or "").strip() or None
     meta = model_loader.REGISTRY[request.model]
+    if model_loader.is_llm(request.model):
+        return _predict_llm(request, http_request, context, section, meta)
 
     started = time.perf_counter()
     try:
@@ -208,6 +219,59 @@ def predict_citation(request: PredictRequest):
             "inference": res["latency_ms"],
             "total": total_ms,
         },
+        status="success",
+    )
+
+
+def _predict_llm(request: PredictRequest, http_request: Request, context: str,
+                 section: str | None, meta: dict) -> PredictResponse:
+    """Clasificación con un modelo de lenguaje en Bedrock (ver `src/api/llm.py`)."""
+    wait = llm_limiter.hit(client_ip(http_request))
+    if wait:
+        raise HTTPException(
+            status_code=429, headers={"Retry-After": str(wait)},
+            detail=(f"Los modelos de lenguaje admiten {llm_limiter.per_minute} consultas por minuto. "
+                    f"Intenta de nuevo en {wait} s o usa SciBERT, que no tiene este límite."))
+    started = time.perf_counter()
+    ks = key_sentences.cited_abstract(request.arxiv_id, request.cited_text)
+    try:
+        res = llm.classify(request.model, context, section, ks.title, ks.abstract)
+    except llm.LLMUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except llm.BudgetExceeded as exc:
+        raise HTTPException(status_code=429, headers={"Retry-After": str(exc.retry_after_s)}, detail=str(exc))
+    except llm.InvalidAnswer as exc:
+        raise HTTPException(status_code=502, detail=f"{exc} Respuesta recibida: {exc.raw[:300]!r}")
+    except llm.BedrockError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    total_ms = round((time.perf_counter() - started) * 1000, 1)
+
+    return PredictResponse(
+        predicted_label=res["predicted_label"],
+        predicted_label_display=display_name(res["predicted_label"]),
+        confidence=res["confidence"],
+        probabilities=res["probabilities"],
+        ambiguous=res["ambiguous"],
+        model_id=request.model,
+        model_version=meta["version"],
+        rhetorical_section=section,
+        passages_used=False,
+        key_sentences={
+            "status": ks.status,
+            "source": ks.source,
+            "detail": ks.detail,
+            "cited_paper": {"id": ks.paper_id, "title": ks.title} if (ks.paper_id or ks.title) else None,
+            "sentences": [],
+            "abstract": ks.abstract,
+        },
+        input_text=res["model_input"],
+        latency_ms={
+            "cited_paper": ks.fetch_ms,
+            "key_sentences": 0.0,
+            "inference": res["latency_ms"],
+            "total": total_ms,
+        },
+        llm=res["llm"],
         status="success",
     )
 

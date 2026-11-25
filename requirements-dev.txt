@@ -13,3 +13,5 @@ numpy==2.5.3
 requests==2.34.2
 certifi==2026.7.22
 pdfplumber==0.11.10
+# Modelos de lenguaje en Bedrock: las pruebas usan un cliente simulado, sin llamadas reales
+boto3==1.44.9

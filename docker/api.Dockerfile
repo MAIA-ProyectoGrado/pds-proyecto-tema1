@@ -27,13 +27,15 @@ RUN python -m pip install --upgrade pip \
                 -r /tmp/requirements.txt \
  && rm -rf /root/.cache
 
-# Código: el cargador de referencia y el servicio
+# Código: el cargador de referencia, el servicio y los ejemplos resueltos del
+# prompt E4 de los modelos de lenguaje
 COPY models/__init__.py models/scif_predict.py models/passages.py ./models/
 COPY src/__init__.py ./src/
 COPY src/api ./src/api
+COPY docs/evaluacion_llm/ejemplos_resueltos.json ./docs/evaluacion_llm/
 
-# Usuario sin privilegios
-RUN useradd --create-home --uid 10001 scif && chown -R scif:scif /app
+# Usuario sin privilegios. /state guarda el gasto diario en Bedrock (volumen scif-state).
+RUN useradd --create-home --uid 10001 scif && mkdir -p /state && chown -R scif:scif /app /state
 USER scif
 
 EXPOSE 8000

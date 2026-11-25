@@ -167,6 +167,9 @@ textarea.field:focus, select.field:focus, input.field:focus{outline:2px solid va
   border:1px solid var(--rhet);color:var(--rhet);
 }
 .model .reads{font-size:11.5px;color:var(--ink-3);line-height:1.4;margin-top:2px}
+.model .cost{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-4);margin-top:2px}
+.ks-abstract{font-size:13px;line-height:1.5;color:var(--ink-2);max-height:9.5em;overflow:auto;
+  margin:2px 0 0;padding-right:4px}
 .model .missing{
   margin-top:6px;font-size:11.5px;line-height:1.45;color:var(--ink-2);
   border-left:2px solid var(--warn);padding-left:8px;

@@ -16,8 +16,11 @@
 # despliegue público siempre sirve el modelo recomendado.
 #
 # Variables opcionales:
-#   SCIF_PORT=8080    puerto público del tablero
-#   SKIP_DVC=1        no ejecutar dvc pull (pesos copiados a mano en models/)
+#   SCIF_PORT=8080            puerto público del tablero
+#   SKIP_DVC=1                no ejecutar dvc pull (pesos copiados a mano en models/)
+#   SCIF_LLM_ENABLED=true     ofrecer Nova Pro y Ministral 3 8B (Amazon Bedrock); el rol
+#                             necesita el permiso de infra/enable_bedrock.sh. false los oculta.
+#   Los demás parámetros (tope diario, consultas por minuto…) se leen de .env.
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,6 +28,7 @@ cd "$REPO_DIR"
 DVC_VENV="${HOME}/.venv-dvc"
 DVC_VERSION="3.67.1"
 PORT="${SCIF_PORT:-8080}"
+LLM="${SCIF_LLM_ENABLED:-true}"
 WEIGHTS=(models/scif-scibert-chunks models/minilm-l6-v2)
 
 echo ">> Proyecto: $REPO_DIR"
@@ -62,7 +66,7 @@ echo ">> Pesos listos: ${WEIGHTS[*]}"
 
 # ── 3. Construir y levantar ─────────────────────────────────────────────────
 echo ">> Construyendo y levantando los servicios (la primera vez tarda varios minutos)..."
-SCIF_PORT="$PORT" $DOCKER compose up -d --build
+SCIF_PORT="$PORT" SCIF_LLM_ENABLED="$LLM" $DOCKER compose up -d --build
 
 echo ">> Esperando a que la API quede sana..."
 estado="unknown"
@@ -74,6 +78,16 @@ done
 if [ "$estado" != "healthy" ]; then
   echo "!! La API no quedó sana. Revisa: $DOCKER compose logs api" >&2
   exit 1
+fi
+
+# ── 4. Acceso a Bedrock desde el contenedor (llamada gratuita a STS) ────────
+if [ "$LLM" = "true" ]; then
+  if $DOCKER exec scif-api python -c "import boto3; boto3.client('sts').get_caller_identity()" >/dev/null 2>&1; then
+    echo ">> El contenedor de la API tiene las credenciales del rol: Nova Pro y Ministral 3 8B quedan activos."
+  else
+    echo "!! El contenedor no obtuvo credenciales del rol. Desde el equipo local, ejecuta" >&2
+    echo "!! infra/enable_bedrock.sh (límite de saltos de IMDSv2 y permiso de Bedrock)." >&2
+  fi
 fi
 
 TOKEN="$(curl -s -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' || true)"

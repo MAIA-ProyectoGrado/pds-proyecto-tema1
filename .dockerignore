@@ -18,8 +18,11 @@ data/
 dataset/
 *.dvc
 
-# Material que no necesita el runtime
-docs/
+# Material que no necesita el runtime. De docs/ solo entran los ejemplos del prompt E4.
+docs/*
+!docs/evaluacion_llm/
+docs/evaluacion_llm/*
+!docs/evaluacion_llm/ejemplos_resueltos.json
 notebooks/
 infra/
 scripts/

@@ -2,6 +2,7 @@
 
 const API = (window.SCIF_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 const README_MODELS_URL = "https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1#modelos";
+const README_LLM_URL = "https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1#modelos-de-lenguaje";
 
 /* ── Esquema de anotación del proyecto (no es salida del modelo) ── */
 const DEFINITIONS = {
@@ -44,6 +45,14 @@ const SECTION_NAMES = {
   Otra: "Other", Desconocida: "Unknown",
 };
 const secName = (s) => SECTION_NAMES[s] || s;
+
+/* ── Qué leyó un modelo de lenguaje del artículo citado (campo key_sentences.source) ── */
+const LLM_SOURCES = {
+  "arxiv-abstract": "Título y abstract en arXiv",
+  "arxiv-title": "Título en arXiv (sin abstract)",
+  "text-abstract": "Abstract del texto pegado",
+  "text": "Inicio del texto pegado",
+};
 
 /* ── De dónde salieron las oraciones clave (campo key_sentences.source) ── */
 const KEY_SOURCES = {
@@ -89,6 +98,10 @@ function fmtMs(v) {
 }
 const readmeLink = () =>
   `<a href="${README_MODELS_URL}" target="_blank" rel="noopener">Ver cómo descargarlos</a>`;
+const llmReadmeLink = () =>
+  `<a href="${README_LLM_URL}" target="_blank" rel="noopener">Ver cómo activarlos</a>`;
+const linkFor = (m) => (m && m.backend === "bedrock" ? llmReadmeLink() : readmeLink());
+const fmtUsd = (v, digits) => `USD ${v.toFixed(digits)}`;
 
 function showBanner(html) {
   const b = $("banner");
@@ -190,7 +203,10 @@ function renderModels() {
   $("models").innerHTML = META.models.map((m) => {
     const badge = m.recommended ? '<span class="badge">Recomendado</span>' : "";
     const missing = m.available ? "" :
-      `<span class="missing"><b>No disponible en este servidor.</b> ${escapeHtml(m.unavailable_reason)} ${readmeLink()}</span>`;
+      `<span class="missing"><b>No disponible en este servidor.</b> ${escapeHtml(m.unavailable_reason)} ${linkFor(m)}</span>`;
+    const cost = m.backend === "bedrock" && m.cost_per_query_usd != null
+      ? `<span class="cost">≈ ${fmtUsd(m.cost_per_query_usd, 5)} por consulta · ${fmtMs(m.typical_latency_ms)} típicos</span>`
+      : "";
     return `
       <label class="model">
         <input type="radio" name="model" value="${escapeHtml(m.id)}"
@@ -199,6 +215,7 @@ function renderModels() {
           <span class="kind">${escapeHtml(m.kind)}</span>
           <span class="name">${escapeHtml(m.name)}${badge}</span>
           <span class="reads">Lee: ${escapeHtml(m.reads)}</span>
+          ${cost}
           ${missing}
         </span>
       </label>`;
@@ -353,7 +370,7 @@ async function classify() {
         showBanner(`<b>La API no responde (${r.status}).</b> No se muestra ninguna predicción. ` +
                    `Revisa que el servicio esté en marcha y vuelve a intentarlo.`);
       } else {
-        const extra = r.status === 503 ? ` ${readmeLink()}` : "";
+        const extra = r.status === 503 ? ` ${linkFor(modelInfo(selected.value))}` : "";
         showBanner(`<b>La API rechazó la petición (${r.status}).</b> ${escapeHtml(body.detail || "")}${extra}`);
       }
       return;
@@ -418,11 +435,27 @@ function render(res, sent, retrievalState) {
   $("vDef").textContent = DEFINITIONS[res.predicted_label] || "";
   $("mChip").textContent = `${modelName(res.model_id)} · ${res.model_version}`;
 
+  // Los modelos de lenguaje dan un puntaje por función; el tablero lo muestra normalizado
+  const isLlm = Boolean(res.llm);
+  $("vEyebrow").textContent = isLlm ? "clase de mayor puntaje" : "clase de mayor probabilidad";
+  $("gLbl").textContent = isLlm ? "PUNTAJE" : "CONFIANZA";
+  $("distEyebrow").textContent = isLlm
+    ? "puntajes del modelo, normalizados a suma 1" : "probabilidades devueltas por el modelo";
+  $("readEyebrow").textContent = isLlm ? `prompt del enfoque ${res.llm.approach}` : "entrada del clasificador";
+  $("ioSummary").textContent = isLlm
+    ? `Mensaje enviado al modelo (va después de las instrucciones del enfoque ${res.llm.approach}: ${res.llm.approach_name})`
+    : "Entrada exacta enviada al modelo";
+
   const ks = res.key_sentences;
   const tag = $("readTag");
   const basis = res.rhetorical_section ? "el contexto y la sección" : "el contexto";
   if (res.passages_used) {
     tag.textContent = "Clasificado con las oraciones clave del abstract";
+    tag.className = "readtag used";
+  } else if (ks.status === "abstract_used") {
+    tag.textContent = ks.source === "arxiv-title"
+      ? "Clasificado con el título del artículo citado"
+      : "Clasificado con el título y el abstract del artículo citado";
     tag.className = "readtag used";
   } else if (ks.status === "not_read_by_model") {
     tag.textContent = `Clasificado con ${basis}: este modelo no lee el artículo citado`;
@@ -437,8 +470,9 @@ function render(res, sent, retrievalState) {
   arc.setAttribute("stroke-dashoffset", (352 * (1 - res.confidence)).toFixed(1));
   $("gTxt").textContent = res.confidence.toFixed(2);
 
-  // Aviso de ambigüedad: lo marca el propio predictor (margen menor que SCIF_AMBIGUITY_THRESHOLD)
-  const entries = Object.entries(res.probabilities).sort((a, b) => b[1] - a[1]);
+  // Aviso de ambigüedad: lo marca el propio predictor (margen menor que SCIF_AMBIGUITY_THRESHOLD).
+  // En los modelos de lenguaje el margen se mide sobre sus puntajes, sin normalizar.
+  const entries = Object.entries(isLlm ? res.llm.scores : res.probabilities).sort((a, b) => b[1] - a[1]);
   const al = $("alert");
   if (res.ambiguous && entries.length > 1) {
     const d = (entries[0][1] - entries[1][1]).toFixed(2);
@@ -486,6 +520,15 @@ function renderRead(res, sent) {
         </li>`).join("")}
       </ol>
       ${ks.detail ? `<p class="ks-note">${escapeHtml(ks.detail)}</p>` : ""}`;
+  } else if (ks.status === "abstract_used") {
+    const cited = ks.cited_paper || {};
+    const ref = cited.id ? `arXiv:${escapeHtml(cited.id)}` : "";
+    paper = `
+      <p class="ks-src">${escapeHtml(LLM_SOURCES[ks.source] || "")}
+        ${ref ? `· <span class="ks-id">${ref}</span>` : ""}</p>
+      ${cited.title ? `<span class="ks-title">${escapeHtml(cited.title)}</span>` : ""}
+      ${ks.abstract ? `<p class="ks-abstract">${escapeHtml(ks.abstract)}</p>` : ""}
+      ${ks.detail ? `<p class="ks-note">${escapeHtml(ks.detail)}</p>` : ""}`;
   } else if (ks.status === "failed") {
     paper = `<p class="ks-note warn">${escapeHtml(ks.detail)}</p>`;
   } else if (ks.status === "not_provided") {
@@ -517,17 +560,26 @@ function highlightInput(s) {
 
 function renderTelemetry(res, retrievalState) {
   const ks = res.key_sentences;
-  const readsPaper = ks.status === "used" || ks.status === "failed";
+  const readsPaper = ["used", "abstract_used", "failed"].includes(ks.status);
   const lat = res.latency_ms;
   const cell = (label, value, id) =>
     `<div class="tc"${id ? ` id="${id}"` : ""}><span class="l">${label}</span><span class="v">${value}</span></div>`;
-  $("tele").innerHTML =
-    cell("Modelo", `<span style="font-size:12px">${escapeHtml(modelName(res.model_id))} · ${escapeHtml(res.model_version)}</span>`) +
-    cell("Artículo citado", readsPaper ? fmtMs(lat.cited_paper) : "no aplica") +
+  const model = cell("Modelo", `<span style="font-size:12px">${escapeHtml(modelName(res.model_id))} · ${escapeHtml(res.model_version)}</span>`);
+  const paper = cell("Artículo citado", readsPaper ? fmtMs(lat.cited_paper) : "no aplica");
+  const tail = cell("Total", fmtMs(lat.total)) + cell("Pasajes del artículo", escapeHtml(retrievalState), "teleRetr");
+  if (res.llm) {
+    const l = res.llm;
+    $("tele").innerHTML = model + paper +
+      cell("Clasificación (Bedrock)", fmtMs(lat.inference)) +
+      cell("Costo de la consulta", fmtUsd(l.cost_usd, 5)) +
+      cell("Gasto de hoy", `${fmtUsd(l.spent_today_usd, 3)} <span style="font-size:11px">de ${l.daily_budget_usd}</span>`) +
+      tail;
+    return;
+  }
+  $("tele").innerHTML = model + paper +
     cell("Oraciones clave", ks.status === "used" ? fmtMs(lat.key_sentences) : "no aplica") +
     cell("Clasificación", fmtMs(lat.inference)) +
-    cell("Total", fmtMs(lat.total)) +
-    cell("Pasajes del artículo", escapeHtml(retrievalState), "teleRetr");
+    tail;
 }
 
 function setRetrievalTelemetry(text) {

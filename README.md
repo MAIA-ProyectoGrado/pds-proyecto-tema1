@@ -12,6 +12,7 @@ en qué pasajes del artículo citado se sustenta la cita.
 | Documentación de la API | http://3.141.245.118:8080/api/docs |
 | Manual de usuario | [`docs/MANUAL_USUARIO.md`](docs/MANUAL_USUARIO.md) |
 | Modelos y descarga | [Sección «Modelos»](#modelos) |
+| Modelos de lenguaje (Bedrock) | [Sección «Modelos de lenguaje»](#modelos-de-lenguaje) |
 
 ## Contenido
 
@@ -20,6 +21,7 @@ en qué pasajes del artículo citado se sustenta la cita.
 - [Arquitectura](#arquitectura)
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Modelos](#modelos)
+- [Modelos de lenguaje](#modelos-de-lenguaje)
 - [Ejecutar con Docker](#ejecutar-con-docker)
 - [Despliegue en AWS](#despliegue-en-aws)
 - [Configuración](#configuración)
@@ -55,10 +57,16 @@ que se entrenó y se eligió el modelo. Las dos coinciden en el 73,9 % de las ci
 |---|--:|--:|--:|--:|
 | SciBERT configuración B (recomendado) | 0,532 | 0,572 | 0,667 | 0,688 |
 | TF-IDF + regresión logística (línea base) | 0,469 | 0,509 | 0,523 | 0,547 |
+| Nova Pro, comercial, en Amazon Bedrock | 0,347 | 0,457 | 0,326 | 0,361 |
+| Ministral 3 8B, pesos abiertos, en Amazon Bedrock | 0,295 | 0,420 | 0,297 | 0,334 |
 
-El tablero web permite clasificar una cita, ver lo que leyó el modelo, la
-probabilidad de cada función y, aparte, los pasajes del artículo citado completo
-más parecidos a la cita. El detalle de las métricas está en
+Nova Pro y Ministral 3 8B son modelos de lenguaje sin ajuste fino, consultados con
+el prompt y los ejemplos de la evaluación (ver [«Modelos de lenguaje»](#modelos-de-lenguaje)).
+Sus cifras valen para esas condiciones y para estas dos etiquetas de referencia.
+
+El tablero web permite clasificar una cita con cualquiera de los cuatro modelos,
+ver lo que leyó el modelo, la probabilidad de cada función y, aparte, los pasajes
+del artículo citado completo más parecidos a la cita. El detalle de las métricas está en
 [`docs/modelos_v4/`](docs/modelos_v4/) y la evolución de los modelos en
 [`docs/HISTORIAL_MODELOS.md`](docs/HISTORIAL_MODELOS.md).
 
@@ -74,6 +82,7 @@ flowchart LR
       V["Carpeta models/<br/>archivos de pesos, solo lectura"]
     end
     S["Bucket S3 privado<br/>remoto de DVC"]
+    BR["Amazon Bedrock<br/>Nova Pro · Ministral 3 8B"]
   end
   X["arXiv<br/>abstract y PDF"]
 
@@ -81,6 +90,7 @@ flowchart LR
   N -->|"/api/ hacia :8000 (red interna)"| A
   V -->|"carga al arrancar"| A
   A -->|"metadatos y PDF"| X
+  A -->|"Converse con rol IAM, solo si se eligen"| BR
   S -.->|"dvc pull con rol IAM, al desplegar"| V
 ```
 
@@ -90,7 +100,8 @@ flowchart LR
   responde desde ahí; la carpeta se monta en modo solo lectura y no forma parte
   de la imagen.
 - La instancia descarga los pesos con un rol IAM de solo lectura: en la máquina
-  no hay llaves de AWS.
+  no hay llaves de AWS. El mismo rol permite consultar en Bedrock solo Nova Pro
+  y Ministral 3 8B.
 
 ### Flujo de una consulta
 
@@ -134,6 +145,7 @@ sequenceDiagram
 | SciBERT B, completo | Lee el contexto, la sección y las 3 oraciones, y asigna la función | Es la predicción |
 | SciBERT B, solo el codificador | Compara el contexto con cada fragmento del PDF para mostrar los pasajes | No: es una explicación para el usuario |
 | TF-IDF | Alternativa liviana que se elige en el tablero. Clasifica solo con el contexto y la sección, sin arXiv ni MiniLM. Los pasajes se muestran igual si se indicó el artículo | Es la predicción, si se elige |
+| Nova Pro o Ministral 3 8B | Modelos de lenguaje en Bedrock que se eligen en el tablero. Leen el contexto, la sección y el título y el abstract completos del artículo citado, sin MiniLM. Los pasajes se muestran igual | Es la predicción, si se elige |
 
 Los datos del artículo se piden primero a la API de arXiv. Si la API rechaza la
 consulta (por ejemplo, con el error 429 por límite de uso) o no responde en 5 s,
@@ -216,6 +228,58 @@ SciBERT como no disponible e indica qué falta.
 El formato de entrada del modelo y la selección de las oraciones clave están
 documentados en [`models/README.md`](models/README.md).
 
+## Modelos de lenguaje
+
+Para comparar el clasificador ajustado con modelos que no se entrenaron en la
+tarea, el tablero ofrece dos modelos de lenguaje que corren en Amazon Bedrock. No
+se descargan: la API los consulta por la red y paga por tokens.
+
+| Modelo | Tipo | F1 macro (revisión humana) | Costo por 1.000 citas | Latencia mediana |
+|---|---|--:|--:|--:|
+| Nova Pro (`us.amazon.nova-pro-v1:0`) | Comercial | 0,347 | USD 2,49 | 624 ms |
+| Ministral 3 8B (`mistral.ministral-3-8b-instruct`) | Pesos abiertos, 8 B parámetros | 0,295 | USD 0,45 | 365 ms |
+
+Son los mejores de cada tipo en la evaluación del conjunto de prueba con 7 modelos
+de lenguaje y 4 enfoques de prompt ([`scripts/evaluate_llm.py`](scripts/evaluate_llm.py),
+resultados en [`docs/evaluacion_llm/`](docs/evaluacion_llm/)): Nova Pro tuvo el
+mayor F1 macro de los 7 y Ministral 3 8B fue el mejor de pesos abiertos de hasta
+8 B parámetros. El costo y la latencia son los medidos en esa evaluación; la
+latencia es solo la de Bedrock.
+
+Cómo se consultan, igual que en la evaluación:
+
+- Prompt de [`src/api/prompts_llm.py`](src/api/prompts_llm.py) con el enfoque E4
+  (definición y criterios de las 9 funciones, y ejemplos resueltos), temperatura 0
+  y como máximo 80 tokens de respuesta.
+- Entrada: el contexto, la sección y el título y el abstract del artículo citado,
+  tomados de arXiv o del texto pegado. No usan las oraciones clave ni MiniLM.
+- El modelo responde un puntaje entre 0 y 1 para cada función. La API toma el
+  mayor como predicción y como confianza, y marca el caso como ambiguo si hay
+  empate o si los dos puntajes mayores difieren en menos de 0,10. El tablero
+  muestra los puntajes normalizados a suma 1 para compararlos con los otros
+  modelos.
+
+Uso controlado, porque cada consulta tiene costo:
+
+- **Tope diario:** USD 5 por día (UTC) entre los dos modelos. Se suma el costo real
+  de cada respuesta, calculado con los tokens que informa Bedrock. Al llegar al
+  tope, la API responde `429` hasta las 00:00 UTC; SciBERT y TF-IDF siguen
+  disponibles. El acumulado se guarda en el volumen `scif-state`, así que un
+  reinicio no lo borra.
+- **Consultas por minuto:** 5 por IP, además del límite general de 30.
+- **Sin llaves:** en la instancia, la API usa el rol IAM de la instancia, que solo
+  puede invocar estos dos modelos. Ninguna llave se escribe en el repositorio ni
+  en el servidor.
+
+En una instalación propia los modelos de lenguaje quedan desactivados
+(`SCIF_LLM_ENABLED=false`) y el tablero los muestra como no disponibles. Para
+activarlos se necesita una cuenta de AWS con acceso a esos dos modelos en Bedrock:
+
+- **En EC2:** desde el equipo local, `./infra/enable_bedrock.sh` agrega el permiso al
+  rol de la instancia. `infra/deploy_ec2.sh` los activa por defecto.
+- **Sin Docker, en un equipo propio:** con la AWS CLI conectada (`aws login`),
+  `SCIF_LLM_ENABLED=true uvicorn src.api.main:app --port 8000`.
+
 ## Ejecutar con Docker
 
 Requisitos: Docker con Docker Compose y unos 4 GB de RAM.
@@ -257,15 +321,16 @@ cd pds-proyecto-tema1 && bash infra/deploy_ec2.sh
 ```
 
 `launch_inference_ec2.sh` crea el rol IAM, la llave SSH, el grupo de seguridad,
-la instancia y la IP elástica. `deploy_ec2.sh` instala Docker y DVC, descarga los
-pesos y levanta los servicios. El detalle, el costo y cómo borrar los recursos
+la instancia y la IP elástica, y le da al rol el permiso de Bedrock
+(`enable_bedrock.sh`). `deploy_ec2.sh` instala Docker y DVC, descarga los pesos y
+levanta los servicios con los modelos de lenguaje activos. El detalle, el costo y cómo borrar los recursos
 están en [`infra/README.md`](infra/README.md).
 
 ## Configuración
 
 La aplicación se configura con variables de entorno. Para cambiarlas, copia
 [`.env.example`](.env.example) como `.env` junto a `docker-compose.yml`. Ese
-archivo documenta las 18 variables con su valor por defecto. Las principales:
+archivo documenta las 24 variables con su valor por defecto. Las principales:
 
 | Variable | Por defecto | Para qué |
 |---|---|---|
@@ -276,13 +341,16 @@ archivo documenta las 18 variables con su valor por defecto. Las principales:
 | `SCIF_RATE_LIMIT_PER_MIN` | `30` | Peticiones por minuto y por IP a `/predict` y `/retrieve` |
 | `SCIF_MAX_CONTEXT_CHARS` | `3000` | Largo máximo del contexto de cita |
 | `SCIF_MAX_PDF_MB` / `SCIF_MAX_PDF_PAGES` | `25` / `40` | Límites del PDF del artículo citado |
+| `SCIF_LLM_ENABLED` | `false` | Ofrecer Nova Pro y Ministral 3 8B (requiere acceso a Bedrock) |
+| `SCIF_LLM_DAILY_BUDGET_USD` | `5` | Gasto máximo por día en los modelos de lenguaje |
+| `SCIF_LLM_RATE_LIMIT_PER_MIN` | `5` | Consultas por minuto y por IP a los modelos de lenguaje |
 
 Un valor inválido detiene el arranque de la API con un mensaje que nombra la
 variable. La configuración activa se puede consultar en `GET /api/health`.
 
 La aplicación no tiene usuarios ni contraseñas. Las únicas credenciales son las
-de AWS para DVC y el despliegue, y se configuran con la AWS CLI, fuera del
-repositorio.
+de AWS para DVC, el despliegue y Bedrock. En el equipo local se configuran con la
+AWS CLI, y en la instancia las da su rol IAM; nunca se escriben en el repositorio.
 
 ## API
 
@@ -334,8 +402,27 @@ Respuesta (resumida):
 ```
 
 Campos de la petición: `citation_context` (obligatorio), `rhetorical_section`,
-`model` (`scibert` o `tfidf-logreg`) y el artículo citado como `arxiv_id` (id o
-URL) o `cited_text` (texto pegado).
+`model` (`scibert`, `tfidf-logreg`, `nova-pro` o `ministral-3-8b`) y el artículo
+citado como `arxiv_id` (id o URL) o `cited_text` (texto pegado).
+
+Con `"model": "nova-pro"` o `"ministral-3-8b"`, la respuesta tiene la misma forma.
+`key_sentences.status` es `abstract_used` y trae el título y el abstract que leyó
+el modelo, y se agrega el bloque `llm`:
+
+```json
+"llm": {
+  "provider": "Amazon Bedrock",
+  "bedrock_model_id": "us.amazon.nova-pro-v1:0",
+  "approach": "E4",
+  "scores": {"Background": 0.2, "Gap": 0.0, "Basis": 0.7, "...": "..."},
+  "raw_response": "[0.2, 0.0, 0.7, 0.1, 0.6, 0.0, 0.0, 0.0, 0.0]",
+  "input_tokens": 3100,
+  "output_tokens": 45,
+  "cost_usd": 0.002624,
+  "spent_today_usd": 0.0026,
+  "daily_budget_usd": 5.0
+}
+```
 
 ### Ejemplo: pasajes del artículo completo
 
@@ -355,8 +442,9 @@ del documento y la latencia de cada etapa.
 |---|---|
 | `413` | La petición supera 1 MB |
 | `422` | Faltan campos o no son válidos; el mensaje dice cuál |
-| `429` | Se superó el límite de peticiones por minuto |
-| `503` | Faltan los pesos del modelo pedido; el mensaje explica cómo obtenerlos |
+| `429` | Se superó el límite de peticiones por minuto o, con los modelos de lenguaje, su límite por minuto o el tope diario |
+| `502` | Bedrock no respondió, o el modelo de lenguaje no devolvió la lista de 9 puntajes |
+| `503` | Faltan los pesos del modelo pedido, o los modelos de lenguaje están desactivados; el mensaje explica qué hacer |
 
 ## Tamaño, hardware y tiempos
 
@@ -386,7 +474,10 @@ procesos se ajusta con `SCIF_WORKERS`.
 cuantizar: la clasificación completa responde por debajo de 1 s. La lectura del
 artículo completo, que es lo más lento, va en una petición aparte, para no
 retrasar la clasificación. Si faltan los pesos de SciBERT, la aplicación sigue
-funcionando con el TF-IDF, que ocupa 4,7 MB y responde en 1 ms.
+funcionando con el TF-IDF, que ocupa 4,7 MB y responde en 1 ms. Los modelos de
+lenguaje no se cargan en la instancia: se consultan como servicio en Bedrock, con
+tope de gasto, así que no exigen GPU ni memoria adicional. En la evaluación,
+Bedrock respondió en una mediana de 624 ms con Nova Pro y 365 ms con Ministral 3 8B.
 
 ## Datos y entrenamiento
 
@@ -394,13 +485,16 @@ El dataset tiene 14.937 citas en 9 clases, tomadas de SciCite, SciTail, Semantic
 Scholar y ACL-ARC, y particionadas por artículo citante sin fugas entre
 particiones: 10.416 de entrenamiento, 2.280 de validación y 2.241 de prueba. Un
 integrante del equipo revisó a mano las 2.241 citas de prueba: su etiqueta está en
-la columna `human_label`, con su grado de certeza (`certeza_evaluacion`), junto a
-la etiqueta automática (`label`). Las particiones están versionadas con DVC en
+la columna `human_label`, junto a la etiqueta automática (`label`) y a su certeza
+(`certeza_evaluacion`: `ALTA_CERTEZA` si el puntaje de Llama para esa etiqueta es
+de al menos 0,70, `DUDA` si no). Dos integrantes anotaron el test por separado
+siguiendo la [guía de anotación](docs/anotacion/GUIA_ANOTACION.md); el acuerdo
+entre ellos es kappa de Cohen 0,608 ([detalle](docs/anotacion/acuerdo_humano.md)). Las particiones están versionadas con DVC en
 `dataset/` (`dvc pull dataset.dvc`).
 
 | Notebook | Qué hace |
 |---|---|
-| [`Obtener_dataset.ipynb`](notebooks/Obtener_dataset.ipynb) | Construye el dataset final: ingesta de las fuentes, etiquetado con Llama 3.1 8B, balanceo, partición sin fugas y selección de las 3 oraciones clave con MiniLM |
+| [`Obtener_dataset.ipynb`](notebooks/Obtener_dataset.ipynb) | Construye el dataset final: ingesta de las fuentes, etiquetado con Llama 3.2 3B y rescate por puntajes, balanceo, partición sin fugas y selección de las 3 oraciones clave con MiniLM |
 | [`Entrenamiento_clasificadores_scibert_mlflow.ipynb`](notebooks/Entrenamiento_clasificadores_scibert_mlflow.ipynb) | Entrena y compara 5 configuraciones (SciBERT A y B, SPECTER, encoder congelado y pérdida sin ponderar) con seguimiento en MLflow, en una GPU L4 de Colab |
 | [`procesamiento.ipynb`](notebooks/procesamiento.ipynb) | Versión anterior del corpus (entrega 2), conservada como referencia |
 
@@ -415,6 +509,9 @@ Scripts de la versión final:
 | `scripts/download_encoder.py` | Descarga MiniLM para uso sin conexión |
 | `scripts/evaluate_v4.py` | Evalúa SciBERT en validación y prueba y escribe `docs/modelos_v4/` |
 | `scripts/evaluate_test_humano.py` | Compara SciBERT y TF-IDF contra las dos etiquetas del test, por certeza y con y sin SciTail (`docs/modelos_v4/test_referencias_metricas.json`) |
+| `scripts/calcular_kappa.py` | Calcula el acuerdo entre los dos anotadores del test (kappa de Cohen global y por función) |
+| `scripts/extraer_corridas_notebook.py` | Lee las salidas del notebook de entrenamiento y genera las curvas de aprendizaje de las 5 corridas, la tabla de F1 por clase (validación y test) y las matrices de confusión del test (`docs/modelos_v4/`) |
+| `scripts/evaluate_jueces.py` | Esquema de jueces del pre-etiquetado: tres modelos abiertos en Bedrock clasifican las 14.937 citas con el prompt del pre-etiquetado; calcula el acuerdo entre jueces y el voto de mayoría (`docs/jueces/`). Dependencias en `requirements-llm.txt` |
 | `scripts/train_tfidf_v4.py` | Entrena la línea base TF-IDF |
 
 Los demás scripts de `scripts/` (`train.py`, `eval_v2.py`, `extract_arxiv_data.py`
@@ -439,10 +536,12 @@ pytest
 
 `requirements-dev.txt` no incluye PyTorch: así corre el flujo de GitHub Actions
 ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) en cada push y
-pull request a `main`, con 70 pruebas que pasan y 10 omitidas, las que necesitan
+pull request a `main`. Sin los pesos se omiten las 9 pruebas que necesitan
 SciBERT o MiniLM. Con el entorno de la API (`src/api/requirements.txt`) y los
-pesos descargados corren las 80. Si están los pesos pero falta PyTorch, una
-prueba falla e indica qué instalar.
+pesos descargados corren las 172. Si están los pesos pero falta PyTorch, una
+prueba falla e indica qué instalar. Las pruebas de los modelos de lenguaje
+([`tests/test_llm.py`](tests/test_llm.py)) usan un cliente de Bedrock simulado:
+no hacen llamadas reales ni tienen costo.
 
 ## Documentación adicional
 

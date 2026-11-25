@@ -4,6 +4,7 @@ venv/
 .venv/
 .venv-train/
 .venv-api/
+.venv-llm/
 
 # MLflow local / infra
 mlruns/
@@ -22,6 +23,9 @@ __pycache__/
 # Variables de entorno y credenciales
 .env
 *.pem
+
+# Gasto diario de los modelos de lenguaje (src/api/llm.py, sin Docker)
+var/
 
 # Logs
 *.log

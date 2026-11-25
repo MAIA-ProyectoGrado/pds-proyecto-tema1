@@ -9,7 +9,11 @@
 #   2. Par de llaves SSH `scif-key`; la llave privada queda en infra/scif-key.pem.
 #   3. Grupo de seguridad `scif-sg`: puerto 22 solo para la IP actual y 8080 abierto.
 #   4. Instancia Ubuntu 24.04 con disco gp3 cifrado, IMDSv2 obligatorio y el rol anterior.
+#      El límite de saltos de IMDSv2 es 2 para que el contenedor de la API lea las
+#      credenciales del rol.
 #   5. IP elástica asociada a la instancia, para que el enlace no cambie.
+#   6. Permiso del rol para consultar Nova Pro y Ministral 3 8B en Bedrock
+#      (infra/enable_bedrock.sh).
 #
 # Después, en la instancia, se copia el repositorio y se ejecuta infra/deploy_ec2.sh.
 #
@@ -91,7 +95,7 @@ echo ">> Lanzando $INSTANCE_TYPE con Ubuntu 24.04 ($AMI_ID)..."
 IID="$(aws ec2 run-instances --image-id "$AMI_ID" --instance-type "$INSTANCE_TYPE" \
   --key-name "$KEY_NAME" --security-group-ids "$SG_ID" --iam-instance-profile "Name=$ROLE" \
   --block-device-mappings "DeviceName=/dev/sda1,Ebs={VolumeSize=$VOLUME_GB,VolumeType=gp3,DeleteOnTermination=true,Encrypted=true}" \
-  --metadata-options HttpTokens=required,HttpEndpoint=enabled \
+  --metadata-options HttpTokens=required,HttpEndpoint=enabled,HttpPutResponseHopLimit=2 \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$NAME_TAG},{Key=project,Value=scif}]" \
                        "ResourceType=volume,Tags=[{Key=project,Value=scif}]" \
   --count 1 --query 'Instances[0].InstanceId' --output text)"
@@ -112,6 +116,9 @@ PUBLIC_IP=$PUB_IP
 KEY_PEM=$KEY_PEM
 SSH_USER=ubuntu
 EOF
+
+# ── 6. Acceso a Bedrock ─────────────────────────────────────────────────────
+REGION="$REGION" bash infra/enable_bedrock.sh
 
 echo "==================================================================="
 echo " Instancia : $IID ($INSTANCE_TYPE)"

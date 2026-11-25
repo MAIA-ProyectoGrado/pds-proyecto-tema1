@@ -46,7 +46,8 @@ class CitedPaper(BaseModel):
 
 
 class KeySentencesInfo(BaseModel):
-    #: used | not_provided | not_read_by_model | failed
+    #: used | abstract_used | not_provided | not_read_by_model | failed.
+    #: abstract_used: un modelo de lenguaje leyó el título y el abstract completos
     status: str
     #: arxiv-abstract | arxiv-title | text-abstract | text
     source: Optional[str]
@@ -54,6 +55,8 @@ class KeySentencesInfo(BaseModel):
     detail: Optional[str]
     cited_paper: Optional[CitedPaper]
     sentences: List[KeySentence]
+    #: texto del artículo citado que leyó el modelo de lenguaje (null en los demás)
+    abstract: Optional[str] = None
 
 
 class PredictLatency(BaseModel):
@@ -61,6 +64,25 @@ class PredictLatency(BaseModel):
     key_sentences: float   # selección de las oraciones clave con MiniLM
     inference: float       # clasificador
     total: float
+
+
+class LLMInfo(BaseModel):
+    """Detalle de la consulta a un modelo de lenguaje en Amazon Bedrock."""
+    provider: str
+    bedrock_model_id: str
+    #: enfoque del prompt (E4: few-shot con criterios)
+    approach: str
+    approach_name: str
+    #: puntaje entre 0 y 1 que el modelo dio a cada función, sin normalizar
+    scores: Dict[str, float]
+    #: dos o más funciones empataron en el puntaje mayor
+    tie: bool
+    raw_response: str
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    spent_today_usd: float
+    daily_budget_usd: float
 
 
 class PredictResponse(BaseModel):
@@ -80,6 +102,9 @@ class PredictResponse(BaseModel):
     #: SciBERT es el par "contexto [SEP] Section: ... | Cited passages: ..."
     input_text: str
     latency_ms: PredictLatency
+    #: solo en los modelos de lenguaje. En ellos `confidence` es el puntaje mayor y
+    #: `probabilities` son los puntajes normalizados a suma 1
+    llm: Optional[LLMInfo] = None
     status: str
 
 
@@ -98,6 +123,11 @@ class ModelInfo(BaseModel):
     recommended: bool
     #: qué falta y cómo obtenerlo, si los pesos no están en disco (null si está disponible)
     unavailable_reason: Optional[str] = None
+    #: local (pesos en el servidor) | bedrock (Amazon Bedrock)
+    backend: str = "local"
+    #: modelos de Bedrock: costo medio y latencia mediana por consulta medidos en el test
+    cost_per_query_usd: Optional[float] = None
+    typical_latency_ms: Optional[float] = None
 
 
 class ModelsResponse(BaseModel):
@@ -126,6 +156,8 @@ class HealthResponse(BaseModel):
     models: Dict[str, ComponentStatus]
     key_sentences_encoder: ComponentStatus
     retrieval_available: bool
+    #: gasto del día (UTC) en los modelos de lenguaje frente al tope diario
+    llm_budget: Dict[str, object]
     #: parámetros efectivos (variables SCIF_*)
     config: Dict[str, object]
 

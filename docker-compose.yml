@@ -13,6 +13,11 @@
 #
 # Parámetros: se leen de un archivo .env junto a este (ver .env.example). Una
 # variable vacía o sin definir toma el valor por defecto de src/api/config.py.
+#
+# Nova Pro y Ministral 3 8B (SCIF_LLM_ENABLED=true) se consultan en Amazon Bedrock
+# con las credenciales del rol de la instancia EC2, que el contenedor lee del
+# servicio de metadatos: no se pasa ninguna llave. El gasto del día se guarda en
+# el volumen scif-state para que el tope diario sobreviva a los reinicios.
 
 services:
   api:
@@ -43,8 +48,15 @@ services:
       # Sin CORS: el navegador solo habla con nginx. La lista queda por si se
       # expone el puerto 8000 directamente en algún entorno.
       SCIF_ALLOWED_ORIGINS: ${SCIF_ALLOWED_ORIGINS:-}
+      SCIF_LLM_ENABLED: ${SCIF_LLM_ENABLED:-}
+      SCIF_BEDROCK_REGION: ${SCIF_BEDROCK_REGION:-}
+      SCIF_LLM_DAILY_BUDGET_USD: ${SCIF_LLM_DAILY_BUDGET_USD:-}
+      SCIF_LLM_RATE_LIMIT_PER_MIN: ${SCIF_LLM_RATE_LIMIT_PER_MIN:-}
+      SCIF_LLM_TIMEOUT: ${SCIF_LLM_TIMEOUT:-}
+      SCIF_LLM_SPEND_FILE: /state/llm_gasto.json
     volumes:
       - ./models:/models:ro
+      - scif-state:/state
     expose:
       - "8000"
     restart: unless-stopped
@@ -67,3 +79,6 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  scif-state:

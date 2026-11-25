@@ -1,5 +1,6 @@
 """Oraciones clave del artículo citado: la parte de la entrada de SciBERT
-configuración B que viene del documento.
+configuración B que viene del documento. Para los modelos de lenguaje, el título y
+el abstract completos, que es lo que leyeron en la evaluación.
 
 Se construyen como en el entrenamiento (`models/passages.py`): las 3 oraciones del
 abstract del artículo citado más parecidas al contexto según MiniLM. El abstract
@@ -31,6 +32,8 @@ USED = "used"                          # el modelo leyó las oraciones clave
 NOT_PROVIDED = "not_provided"          # no se indicó artículo citado
 NOT_READ_BY_MODEL = "not_read_by_model"  # el modelo elegido no lee el artículo
 FAILED = "failed"                      # se indicó, pero no se pudo usar
+ABSTRACT_USED = "abstract_used"        # el modelo de lenguaje leyó título y abstract
+LLM_TEXT_WORDS = 250                   # texto pegado sin abstract reconocible: primeras palabras
 
 
 @dataclass
@@ -43,6 +46,8 @@ class KeySentences:
     sentences: list[Passage] = field(default_factory=list)
     fetch_ms: float = 0.0
     encode_ms: float = 0.0
+    #: texto del artículo citado que lee el modelo de lenguaje
+    abstract: str | None = None
 
     @property
     def texts(self) -> list[str]:
@@ -116,6 +121,50 @@ def build(citation_context: str, *, reads_passages: bool,
                   f"primeras {MAX_CANDIDATES} oraciones.")
     return KeySentences(USED, source=source, detail=detail, paper_id=paper_id, title=title,
                         sentences=sentences, fetch_ms=fetch_ms, encode_ms=encode_ms)
+
+
+def cited_abstract(arxiv_id: str | None = None, cited_text: str | None = None) -> KeySentences:
+    """Título y abstract del artículo citado para los modelos de lenguaje. Como en
+    `build`, la clasificación nunca falla por el artículo: sin él, el prompt dice
+    «not available» en esos campos, igual que en la evaluación."""
+    has_id = bool(arxiv_id and arxiv_id.strip())
+    has_text = bool(cited_text and cited_text.strip())
+    if not has_id and not has_text:
+        return KeySentences(NOT_PROVIDED,
+                            detail="No se indicó el artículo citado: el modelo clasificó sin él.")
+    t = time.perf_counter()
+    if has_id:
+        paper_id = None
+        try:
+            paper_id = retrieval.parse_arxiv_id(arxiv_id)
+            meta = retrieval.get_arxiv_metadata(paper_id)
+        except retrieval.InvalidArxivId:
+            return KeySentences(FAILED, detail=f"'{arxiv_id.strip()}' no es un identificador de arXiv válido. "
+                                               "El modelo clasificó sin el artículo citado.")
+        except retrieval.PaperNotFound:
+            return KeySentences(FAILED, paper_id=paper_id, fetch_ms=_ms(t),
+                                detail=f"arXiv no tiene ningún artículo con id '{paper_id}'. "
+                                       "El modelo clasificó sin el artículo citado.")
+        except retrieval.DownloadError as exc:
+            return KeySentences(FAILED, paper_id=paper_id, fetch_ms=_ms(t),
+                                detail=f"{exc} El modelo clasificó sin el artículo citado.")
+        title, abstract = meta.get("title") or None, meta.get("abstract") or None
+        if not title and not abstract:
+            return KeySentences(FAILED, paper_id=paper_id, fetch_ms=_ms(t),
+                                detail="arXiv no devolvió abstract ni título. El modelo clasificó sin el artículo citado.")
+        detail = None if abstract else "arXiv no tiene el abstract de este artículo; el modelo leyó su título."
+        return KeySentences(ABSTRACT_USED, source="arxiv-abstract" if abstract else "arxiv-title",
+                            detail=detail, paper_id=paper_id, title=title, abstract=abstract, fetch_ms=_ms(t))
+    abstract = retrieval.abstract_of(cited_text)
+    if abstract:
+        return KeySentences(ABSTRACT_USED, source="text-abstract", abstract=abstract, fetch_ms=_ms(t))
+    words = cited_text.split()
+    detail = None
+    if len(words) > LLM_TEXT_WORDS:
+        detail = (f"No se reconoció un abstract en el texto pegado; el modelo leyó sus primeras "
+                  f"{LLM_TEXT_WORDS} palabras.")
+    return KeySentences(ABSTRACT_USED, source="text", detail=detail,
+                        abstract=" ".join(words[:LLM_TEXT_WORDS]), fetch_ms=_ms(t))
 
 
 def _ms(t: float) -> float:
