@@ -4,6 +4,7 @@ venv/
 .venv/
 .venv-train/
 .venv-api/
+.venv-llm/
 
 # MLflow local / infra
 mlruns/
@@ -23,6 +24,9 @@ __pycache__/
 .env
 *.pem
 
+# Gasto diario de los modelos de lenguaje (src/api/llm.py, sin Docker)
+var/
+
 # Logs
 *.log
 nohup.out
@@ -32,9 +36,9 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
-!data/processed/dataset_manifest.json
 /dataset
 
-# encoder ajustado v3 (grande): se versiona con DVC, no con git
-models/scif-scibert/
-models/scif-*-v3/
+# Modelos grandes: se versionan con DVC, no con git (el TF-IDF sí va en git)
+models/scif-scibert-chunks/
+models/minilm-l6-v2/
+models/archivo/scif-v3-scibert-1ep/

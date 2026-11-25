@@ -1,0 +1,8 @@
+modelo,servicio,llamadas,gasto_total_usd,costo_por_1000_citas_usd,latencia_media_ms,latencia_mediana_ms,latencia_p95_ms,tasa_error_formato,tasa_empates,estabilidad_misma_prediccion,estabilidad_formato_valido
+gemma-3-4b,bedrock,3726,0.3597,0.1213,518.0,402.3,1214.3,0.0164,0.1436,1.0,1.0
+ministral-3-8b,bedrock,3726,1.3197,0.4469,449.7,365.0,654.0,0.0054,0.1766,0.9,1.0
+nova-pro,bedrock,3726,7.4399,2.489,683.3,624.1,1086.9,0.0,0.1363,0.8,1.0
+nova-2-lite,bedrock,3726,12.9366,3.3781,7179.7,6398.3,14029.0,0.0013,0.0526,0.68,1.0
+gpt-6-luna,openai,3726,0.4593,0.1138,2377.7,2135.0,3932.9,0.0,0.018,0.8,1.0
+gpt-6.2-sol,openai,3726,16.3855,5.0257,1737.2,1689.0,2067.9,0.0,0.003,0.96,1.0
+gpt-6.2-astra,openai,445,9.0494,20.3358,2342.6,2211.4,3249.7,0.0,0.0,,

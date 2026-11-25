@@ -1,21 +1,32 @@
 # Servicio de inferencia (se instala en un venv aparte: .venv-api)
-# Requiere Python <= 3.13: torch todavía no publica ruedas para 3.14.
+# Requiere Python 3.12: es la versión de la imagen de Docker y la del CI.
+#
+# Versiones fijas: son las mismas con las que se convirtieron, guardaron y
+# evaluaron los modelos de models/ (ver docs/modelos_v4/). Cambiar alguna exige
+# repetir la evaluación con scripts/evaluate_v4.py.
 fastapi==0.121.2
 uvicorn==0.34.0
-pydantic==2.10.6
+pydantic==2.13.5
 
-# Línea base scif-v1-tfidf-logreg (model.pkl serializado con cloudpickle).
+# TF-IDF v4 (model.pkl serializado con cloudpickle).
 # La versión de scikit-learn debe coincidir con la del entrenamiento.
 scikit-learn==1.7.2
-cloudpickle>=3.0
-numpy>=1.26
+cloudpickle==3.1.2
+numpy==2.5.3
 
-# Recuperación local de pasajes (POST /retrieve): descarga de arXiv y lectura de PDF.
-requests>=2.31
-certifi>=2024.2
-pdfplumber>=0.11
+# Artículo citado: metadatos y abstract de arXiv, y lectura del PDF (POST /retrieve).
+requests==2.34.2
+certifi==2026.7.22
+pdfplumber==0.11.10
 
-# Solo necesarios para scif-scibert; la API funciona sin ellos con la línea base.
-# La recuperación de pasajes sí los requiere (usa el encoder de SciBERT).
-torch>=2.2
-transformers>=4.40
+# SciBERT configuración B, codificador MiniLM de las oraciones clave y
+# recuperación de pasajes. En Docker, torch se instala desde el índice CPU
+# de PyTorch (2.14.0+cpu), que cumple este mismo pin.
+torch==2.14.0
+transformers==5.16.1
+tokenizers==0.23.2
+safetensors==0.8.0
+
+# Nova Pro y Ministral 3 8B en Amazon Bedrock (src/api/llm.py). Las credenciales
+# salen del entorno: en EC2, el rol de la instancia.
+boto3==1.44.9

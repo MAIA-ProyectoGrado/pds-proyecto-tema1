@@ -1,4 +1,4 @@
-# Contexto de build mínimo: sin esto se copian 420 MB de pesos y el venv en cada build.
+# Contexto de build mínimo: sin esto se copian más de 500 MB de pesos y el venv en cada build.
 .git
 .dvc
 .venv*
@@ -8,15 +8,21 @@ __pycache__
 *.pyc
 .pytest_cache
 
-# Pesos y datos: se montan como volumen o se traen con DVC, no van en la imagen
-models/scif-scibert/
-models/scif-*-v3/
+# Pesos y datos: se montan como volumen o se traen con DVC, no van en la imagen.
+# De models/ solo entra el código que importa la API.
+models/*
+!models/__init__.py
+!models/scif_predict.py
+!models/passages.py
 data/
 dataset/
 *.dvc
 
-# Material que no necesita el runtime
-docs/
+# Material que no necesita el runtime. De docs/ solo entran los ejemplos del prompt E4.
+docs/*
+!docs/evaluacion_llm/
+docs/evaluacion_llm/*
+!docs/evaluacion_llm/ejemplos_resueltos.json
 notebooks/
 infra/
 scripts/

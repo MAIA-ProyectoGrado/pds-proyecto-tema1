@@ -10,6 +10,14 @@
 # Los pesos se montan desde ./models (de solo lectura). Si SciBERT no está,
 # la API arranca igual y sirve la línea base; la recuperación de pasajes queda
 # deshabilitada y el tablero lo indica.
+#
+# Parámetros: se leen de un archivo .env junto a este (ver .env.example). Una
+# variable vacía o sin definir toma el valor por defecto de src/api/config.py.
+#
+# Nova Pro y Ministral 3 8B (SCIF_LLM_ENABLED=true) se consultan en Amazon Bedrock
+# con las credenciales del rol de la instancia EC2, que el contenedor lee del
+# servicio de metadatos: no se pasa ninguna llave. El gasto del día se guarda en
+# el volumen scif-state para que el tope diario sobreviva a los reinicios.
 
 services:
   api:
@@ -20,16 +28,40 @@ services:
     container_name: scif-api
     environment:
       SCIF_MODELS_DIR: /models
+      # nginx publica la API bajo /api/: así /api/docs encuentra su esquema
+      SCIF_ROOT_PATH: /api
+      SCIF_WORKERS: ${SCIF_WORKERS:-1}
+      SCIF_DEFAULT_MODEL: ${SCIF_DEFAULT_MODEL:-}
+      SCIF_WARMUP: ${SCIF_WARMUP:-}
+      SCIF_TORCH_THREADS: ${SCIF_TORCH_THREADS:-}
+      SCIF_AMBIGUITY_THRESHOLD: ${SCIF_AMBIGUITY_THRESHOLD:-}
+      SCIF_TOP_K: ${SCIF_TOP_K:-}
+      SCIF_CHUNK_WORDS: ${SCIF_CHUNK_WORDS:-}
+      SCIF_DOC_CACHE_SIZE: ${SCIF_DOC_CACHE_SIZE:-}
+      SCIF_HTTP_TIMEOUT: ${SCIF_HTTP_TIMEOUT:-}
+      SCIF_MAX_PDF_MB: ${SCIF_MAX_PDF_MB:-}
+      SCIF_MAX_PDF_PAGES: ${SCIF_MAX_PDF_PAGES:-}
+      SCIF_MAX_CONTEXT_CHARS: ${SCIF_MAX_CONTEXT_CHARS:-}
+      SCIF_MAX_CITED_TEXT_CHARS: ${SCIF_MAX_CITED_TEXT_CHARS:-}
+      SCIF_MAX_BODY_KB: ${SCIF_MAX_BODY_KB:-}
+      SCIF_RATE_LIMIT_PER_MIN: ${SCIF_RATE_LIMIT_PER_MIN:-}
       # Sin CORS: el navegador solo habla con nginx. La lista queda por si se
       # expone el puerto 8000 directamente en algún entorno.
-      SCIF_ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+      SCIF_ALLOWED_ORIGINS: ${SCIF_ALLOWED_ORIGINS:-}
+      SCIF_LLM_ENABLED: ${SCIF_LLM_ENABLED:-}
+      SCIF_BEDROCK_REGION: ${SCIF_BEDROCK_REGION:-}
+      SCIF_LLM_DAILY_BUDGET_USD: ${SCIF_LLM_DAILY_BUDGET_USD:-}
+      SCIF_LLM_RATE_LIMIT_PER_MIN: ${SCIF_LLM_RATE_LIMIT_PER_MIN:-}
+      SCIF_LLM_TIMEOUT: ${SCIF_LLM_TIMEOUT:-}
+      SCIF_LLM_SPEND_FILE: /state/llm_gasto.json
     volumes:
       - ./models:/models:ro
+      - scif-state:/state
     expose:
       - "8000"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/', timeout=4).status==200 else 1)"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status==200 else 1)"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -47,3 +79,6 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  scif-state:

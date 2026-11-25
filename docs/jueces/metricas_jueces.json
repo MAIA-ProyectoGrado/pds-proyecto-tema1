@@ -1,0 +1,191 @@
+{
+  "descripcion": "Esquema de jueces del pre-etiquetado sobre las 14.937 citas, antes de la división.",
+  "fecha_utc": "2026-11-23T04:55:17+00:00",
+  "jueces": {
+    "ministral-3-8b": {
+      "model_id": "mistral.ministral-3-8b-instruct",
+      "familia": "Mistral"
+    },
+    "gemma-3-4b": {
+      "model_id": "google.gemma-3-4b-it",
+      "familia": "Google"
+    },
+    "qwen3-32b": {
+      "model_id": "qwen.qwen3-32b-v1:0",
+      "familia": "Alibaba (Qwen)"
+    }
+  },
+  "parametros": {
+    "temperatura": 0.0,
+    "max_tokens": 30,
+    "region": "us-east-2",
+    "prompt": "docs/jueces/prompt_preetiquetado.txt"
+  },
+  "citas": 14937,
+  "por_juez": {
+    "ministral-3-8b": {
+      "formato": {
+        "json": 14935,
+        "invalido": 2
+      },
+      "formato_valido_pct": 99.99,
+      "distribucion": {
+        "Background": 5618,
+        "Application": 2970,
+        "Comparison": 2462,
+        "Evidence": 1929,
+        "Basis": 678,
+        "Further_Reading": 439,
+        "Modification_Improvement": 390,
+        "Gap": 286,
+        "Identification_of_the_Originator": 163
+      },
+      "tokens_entrada": 11596671,
+      "tokens_salida": 246357,
+      "costo_usd": 1.776,
+      "latencia_mediana_ms": 140,
+      "acuerdo_con_label": {
+        "n": 14932,
+        "exactitud": 0.3874,
+        "f1_macro": 0.3228,
+        "kappa_cohen": 0.2989
+      }
+    },
+    "gemma-3-4b": {
+      "formato": {
+        "json": 14937
+      },
+      "formato_valido_pct": 100.0,
+      "distribucion": {
+        "Background": 5373,
+        "Basis": 4175,
+        "Evidence": 1698,
+        "Application": 1367,
+        "Comparison": 827,
+        "Gap": 655,
+        "Identification_of_the_Originator": 520,
+        "Modification_Improvement": 183,
+        "Further_Reading": 139
+      },
+      "tokens_entrada": 11702992,
+      "tokens_salida": 288270,
+      "costo_usd": 0.491,
+      "latencia_mediana_ms": 160,
+      "acuerdo_con_label": {
+        "n": 14932,
+        "exactitud": 0.3505,
+        "f1_macro": 0.3475,
+        "kappa_cohen": 0.2537
+      }
+    },
+    "qwen3-32b": {
+      "formato": {
+        "json": 14934,
+        "invalido": 3
+      },
+      "formato_valido_pct": 99.98,
+      "distribucion": {
+        "Background": 3923,
+        "Evidence": 3666,
+        "Application": 2141,
+        "Identification_of_the_Originator": 1641,
+        "Basis": 1562,
+        "Comparison": 1007,
+        "Further_Reading": 600,
+        "Modification_Improvement": 233,
+        "Gap": 161
+      },
+      "tokens_entrada": 11630398,
+      "tokens_salida": 231939,
+      "costo_usd": 1.884,
+      "latencia_mediana_ms": 146,
+      "acuerdo_con_label": {
+        "n": 14932,
+        "exactitud": 0.3738,
+        "f1_macro": 0.3258,
+        "kappa_cohen": 0.2851
+      }
+    }
+  },
+  "acuerdo_entre_jueces": {
+    "n": 14932,
+    "fleiss_3_jueces": 0.4522,
+    "fleiss_3_jueces_y_label": 0.3594,
+    "unanimes_pct": 40.23,
+    "con_mayoria_pct": 86.79,
+    "por_pares": {
+      "ministral-3-8b|gemma-3-4b": 0.4414,
+      "ministral-3-8b|qwen3-32b": 0.5141,
+      "gemma-3-4b|qwen3-32b": 0.4234
+    }
+  },
+  "cambios_si_se_usara_la_mayoria": {
+    "n_con_mayoria": 12961,
+    "cambiarian_pct": 58.57,
+    "por_clase_de_label": {
+      "Application": 37.1,
+      "Background": 13.67,
+      "Basis": 95.21,
+      "Comparison": 61.58,
+      "Evidence": 18.72,
+      "Further_Reading": 78.35,
+      "Gap": 89.9,
+      "Identification_of_the_Originator": 87.74,
+      "Modification_Improvement": 76.53
+    },
+    "por_fuente": {
+      "Semantic_Scholar_Paginated_Offset": 74.29,
+      "Semantic_Scholar_S2_Direct": 80.34,
+      "Semantic_Scholar_Seminal_500": 50.62,
+      "Semantic_Scholar_Targeted_Deficit": 71.97,
+      "Semantic_Scholar_Ultra_Targeted": 21.65,
+      "acl_arc": 49.77,
+      "scicite": 44.38,
+      "scitail": 62.24
+    }
+  },
+  "test_contra_revision_humana": {
+    "label (Llama con rescate)": {
+      "n": 2241,
+      "exactitud": 0.739,
+      "f1_macro": 0.7193,
+      "kappa_cohen": 0.7016
+    },
+    "ministral-3-8b": {
+      "n": 2241,
+      "exactitud": 0.4583,
+      "f1_macro": 0.3221,
+      "kappa_cohen": 0.3347
+    },
+    "gemma-3-4b": {
+      "n": 2241,
+      "exactitud": 0.3735,
+      "f1_macro": 0.2897,
+      "kappa_cohen": 0.2329
+    },
+    "qwen3-32b": {
+      "n": 2241,
+      "exactitud": 0.3905,
+      "f1_macro": 0.3013,
+      "kappa_cohen": 0.2768
+    },
+    "mayoria_de_jueces": {
+      "n": 1928,
+      "exactitud": 0.4694,
+      "f1_macro": 0.3404,
+      "kappa_cohen": 0.3447
+    },
+    "solo_unanimes": {
+      "n": 907,
+      "exactitud": 0.6064,
+      "f1_macro": 0.4118,
+      "kappa_cohen": 0.4912
+    },
+    "mayoria_coincide_con_label": {
+      "n": 783,
+      "exactitud": 0.8544,
+      "f1_macro": 0.7308,
+      "kappa_cohen": 0.8115
+    }
+  }
+}

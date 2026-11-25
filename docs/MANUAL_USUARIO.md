@@ -2,197 +2,226 @@
 
 ## Para qué sirve
 
-Al leer un artículo científico uno se topa con referencias como *«… as shown by Devlin
-et al. [4]»* y surgen dos preguntas: **¿para qué está citando esto?** y **¿qué parte
-exactamente del trabajo citado lo respalda?**
+Al leer un artículo científico aparecen citas como *«We extend SciBERT [4] with an
+additional classification head…»*. El tablero responde dos preguntas sobre ellas:
 
-Este tablero responde ambas:
+1. **¿Para qué se cita ese trabajo?** Clasifica la cita en una de 9 funciones
+   retóricas.
+2. **¿En qué parte del artículo citado está lo que se cita?** Muestra los pasajes
+   del artículo completo más parecidos a la cita.
 
-1. **Clasifica la función retórica** de la cita entre nueve categorías.
-2. **Recupera los tres pasajes** del artículo citado más cercanos a esa mención.
+Está pensado para quien revisa literatura científica. Funciona **solo con textos
+en inglés**, el idioma con el que se entrenó el modelo.
 
-Está pensado para investigadores y asistentes de revisión de literatura. Funciona
-**solo con textos en inglés**, que es el idioma del corpus con el que se entrenaron los
-modelos.
-
-Se abre en `http://localhost:8080` (o la IP del servidor donde esté desplegado).
-
----
+Se abre en http://3.141.245.118:8080, o en `http://localhost:8080` si se ejecuta
+en el propio equipo (ver el [README](../README.md)).
 
 ## La pantalla
 
-La interfaz tiene dos zonas: a la izquierda se define qué analizar, a la derecha
-aparecen los resultados.
+A la izquierda se escribe la cita y se eligen las opciones; a la derecha aparecen
+las instrucciones y los resultados. El recuadro **Cómo usar el tablero** resume los
+pasos y se puede plegar. **Las 9 funciones de cita** despliega la definición de
+cada categoría.
 
 ![Pantalla inicial](tablero/01_inicio.png)
 
+Arriba a la derecha:
 
-Arriba a la derecha, unas etiquetas indican el estado: **API conectada** (verde) o **API
-no disponible** (rojo). También se puede alternar entre tema **claro** y **oscuro**.
-
----
+- **Claro / Oscuro** cambia el tema de color.
+- **API conectada** indica que el servicio responde. Si dice *servicio parcial*,
+  falta algún componente y un aviso explica cuál.
+- **pasajes del artículo** indica si está disponible la búsqueda en el artículo
+  completo.
+- **documentación de la API** abre la documentación interactiva del servicio.
 
 ## Cómo usarlo
 
-### Paso 1 · Contexto de cita
+### 1. Contexto de cita
 
-Escribe o pega la oración en inglés que contiene la mención bibliográfica. Una o dos
-oraciones bastan; es el fragmento que rodea al marcador de cita.
+Pega una o dos oraciones en inglés que contengan la cita. Los botones
+**Ejemplo A**, **B** y **C** cargan casos listos para probar. Debajo del campo se
+cuentan las palabras y se indica si se detectó un marcador de cita, como `[4]` o
+`(Devlin et al., 2019)`.
 
-> *We extend SciBERT [4] with an additional classification head and fine-tune it on our
-> corpus to improve accuracy.*
+### 2. Sección del artículo
 
-Debajo del campo verás el número de palabras y si se detectó un marcador (`[4]`,
-`(2019)`, `et al.`).
+Elige la sección del artículo donde aparece la cita: Introduction, Methods,
+Results y otras. El modelo la lee junto con el contexto. Si no la sabes, elige
+**Otra / no sé** y el modelo clasifica sin sección.
 
-Hay tres botones —**Ejemplo A**, **B** y **C**— que rellenan todos los campos con casos
-listos para probar.
+### 3. Artículo citado (recomendado)
 
-### Paso 2 · Sección retórica
+Escribe el identificador de arXiv del artículo citado (por ejemplo, `1903.10676`)
+o su URL. Con él:
 
-Elige en qué sección del artículo aparece la cita: *Abstract*, *Introduction*,
-*Related Work*, *Method*, *Experiments*, *Results*, *Discussion*, *Conclusion* u *Other*.
+- SciBERT lee las **3 oraciones del abstract** más parecidas a la cita, como en su
+  entrenamiento.
+- Nova Pro y Ministral 3 8B leen el **título y el abstract completos**.
+- El tablero busca después los **3 pasajes del artículo completo** más parecidos a
+  la cita.
 
-**No es un dato decorativo.** El modelo la recibe como parte de la entrada y cambia la
-predicción: la misma frase en *Introduction* y en *Discussion* puede clasificarse
-distinto, igual que ocurre al leer.
+Si el artículo no está en arXiv, usa **Pegar el texto en su lugar** y pega su
+abstract o su texto completo. Para buscar pasajes se necesitan al menos 50
+palabras.
 
-### Paso 3 · Clasificador
+### 4. Clasificador
 
-Dos modelos disponibles:
+| Opción | Qué lee | Cuándo usarla |
+|---|---|---|
+| **SciBERT** (recomendado) | El contexto, la sección y las 3 oraciones clave del abstract | Siempre que esté disponible: es el modelo más preciso |
+| **TF-IDF + Regresión Logística** | El contexto y la sección | Como línea base para comparar |
+| **Nova Pro** | El contexto, la sección y el título y el abstract del artículo citado | Para comparar con un modelo de lenguaje comercial, sin ajuste fino |
+| **Ministral 3 8B** | Lo mismo que Nova Pro | Para comparar con un modelo de lenguaje de pesos abiertos |
 
-- **SciBERT fine-tuned** (marcado *Recomendado*): encoder especializado en texto
-  científico. Es el que mejor desempeño obtuvo.
-- **TF-IDF + Regresión Logística**: línea base. Responde más rápido pero acierta menos.
-  Útil para comparar.
+![Selector de clasificador](tablero/12_selector_modelos.png)
 
-### Paso 4 · Documento citado *(opcional)*
+Nova Pro y Ministral 3 8B corren en Amazon Bedrock y cada consulta tiene un costo,
+que el selector muestra junto a su latencia típica. Por eso admiten 5 consultas
+por minuto y un gasto máximo diario para todo el sitio. En la evaluación con las
+2.241 citas de prueba aciertan menos que SciBERT (F1 macro de 0,347 y 0,295 frente
+a 0,532).
 
-Aquí se indica **qué artículo se está citando**, para poder recuperar sus pasajes. Dos
-formas:
+Si los pesos de SciBERT no están instalados en el servidor, la opción aparece
+deshabilitada con el motivo y un enlace a las instrucciones para descargarlos. Lo
+mismo ocurre con los modelos de lenguaje si el servidor no tiene acceso a Bedrock.
 
-- **Identificador o URL de arXiv**: `1903.10676`, `arXiv:1903.10676v2` o
-  `https://arxiv.org/abs/1903.10676`.
-- **Pegar el texto**: pulsa *«Pegar el texto en su lugar»* y pega el artículo completo.
-  Útil si no está en arXiv.
+### 5. Clasificar
 
-> **Si dejas este campo vacío solo se clasifica la función de la cita.** No es un error:
-> el tablero simplemente omite los paneles de pasajes.
-
-El sistema no adivina qué artículo corresponde a `[4]`: resolver esa referencia exige la
-bibliografía del artículo que cita, que el sistema no tiene. Ese dato lo aporta quien lo
-usa, igual que al bajar a la lista de referencias del PDF.
-
-### Paso 5 · Clasificar
-
-Pulsa **Clasificar** (o `Ctrl/Cmd + Enter` desde el campo de texto).
-
-La clasificación aparece casi de inmediato. La recuperación de pasajes tarda más —hay
-que descargar el PDF y procesarlo— y muestra su propio indicador de progreso. **La
-primera consulta sobre un artículo puede tardar entre 5 y 15 segundos; las siguientes
-sobre el mismo artículo son inmediatas** porque queda en caché.
-
----
+Pulsa **Clasificar**. La función aparece en menos de un segundo. Si indicaste el
+artículo citado, los pasajes llegan unos segundos después: la primera vez que se
+consulta un artículo hay que descargar y leer su PDF.
 
 ## Cómo leer los resultados
 
+![Resultado completo](tablero/02_resultado.png)
+
 ### Función de cita predicha
+
+La función con mayor probabilidad, su definición y la **confianza** (la
+probabilidad de esa función, entre 0 y 1). La etiqueta debajo indica con qué se
+clasificó: *con las oraciones clave del abstract*, *con el título y el abstract
+del artículo citado* (modelos de lenguaje) o *solo con el contexto y la sección*.
+
+Los modelos de lenguaje no dan probabilidades: dan un **puntaje** de 0 a 1 a cada
+función. El tablero muestra el puntaje de la función elegida en lugar de la
+confianza.
 
 ![Función predicha](tablero/03_funcion_predicha.png)
 
+Si las dos funciones más probables están a menos de 0,10 de diferencia, el
+tablero marca el caso como **ambiguo**: conviene revisar las dos. Con los modelos
+de lenguaje se comparan sus dos puntajes mayores, y un empate también es ambiguo.
 
-La categoría asignada, su definición y un indicador de **confianza** entre 0 y 1.
+### Lo que leyó el modelo
 
-Si las dos categorías más probables quedan muy cerca (diferencia menor a 0,10), aparece
-un **aviso de ambigüedad** y el caso se marca como candidato a revisión humana. Es una
-señal útil: significa que el modelo no está seguro, no que se haya equivocado.
+El contexto, la sección y las 3 oraciones clave del abstract, con su parecido a la
+cita (de 0 a 1). **Entrada exacta enviada al modelo** muestra el texto tal como lo
+recibió SciBERT. Con un modelo de lenguaje, el panel muestra el título y el
+abstract que leyó, y el mensaje que recibió después de las instrucciones del
+prompt.
 
-### Las nueve categorías
+![Lo que leyó el modelo](tablero/04_lo_que_leyo.png)
 
-| Categoría | Cuándo aplica |
-|---|---|
-| **Background** | Aporta contexto general o antecedentes del campo |
-| **Gap** | Señala un vacío de investigación que justifica el trabajo |
-| **Basis** | Es el punto de partida intelectual o metodológico |
-| **Comparison** | Contrasta métodos, datos o resultados |
-| **Application** | Usa un método o herramienta del citado sin modificarlo |
-| **Modification / Improvement** | Adapta, extiende o mejora un método del citado |
-| **Evidence** | Respalda empíricamente una afirmación o decisión |
-| **Identification of the Originator** | Reconoce la fuente original de una idea |
-| **Further Reading** | Remite a literatura adicional |
+Si no indicaste el artículo citado, o no se pudo leer, el panel lo dice y el modelo
+clasifica solo con el contexto y la sección:
 
-### Distribución sobre las nueve funciones
+![Sin artículo citado](tablero/09_sin_articulo.png)
 
-![Distribución](tablero/04_distribucion.png)
+### Distribución sobre las 9 funciones
 
+La probabilidad que el modelo asigna a cada función. Sirve para ver si hubo una
+segunda opción cercana. Con los modelos de lenguaje son sus puntajes normalizados
+para que sumen 1.
 
-Las probabilidades de **todas** las categorías, no solo la ganadora. Permite ver cuándo
-la decisión fue reñida y entre qué clases.
+![Distribución](tablero/05_distribucion.png)
 
-### Entrada efectiva enviada al modelo
+### Dónde se sustenta en el artículo completo
 
-Muestra el texto exacto que recibió el clasificador, incluido el separador `[SEC]` y la
-sección normalizada. Sirve para comprobar que se analizó lo que se pretendía.
+Los 3 fragmentos del artículo citado, de hasta 300 palabras, más parecidos a la
+cita, con su sección y su similitud. Es una ayuda para ubicar la idea citada: los
+fragmentos más parecidos no garantizan que la cita se apoye justo ahí. Este paso
+**no cambia la predicción**.
 
-### Top-3 pasajes del artículo citado
+Los pasajes son los mismos con cualquier clasificador: dependen solo de la cita y
+del artículo citado.
 
-![Pasajes recuperados](tablero/05_pasajes.png)
+![Pasajes del artículo](tablero/06_pasajes.png)
 
+### Mapa del artículo citado
 
-Primero la ficha del artículo —identificador, título, autores, año, número de palabras y
-de fragmentos—. Después los tres pasajes, cada uno con:
+Cada barra es un fragmento del artículo, en orden, agrupado por secciones. La
+altura es su similitud con la cita. Los 3 fragmentos mostrados arriba aparecen
+resaltados y numerados.
 
-- su **posición** (*fragmento 5 de 12*),
-- la **sección** de la que proviene,
-- la **similitud coseno** con el contexto de cita (más alto, más relacionado).
+![Mapa del artículo](tablero/07_mapa.png)
 
-### Mapa del documento citado
+### Ejecución
 
-![Mapa del documento](tablero/06_mapa_documento.png)
+El modelo usado y el tiempo de cada etapa de la consulta: el artículo citado, las
+oraciones clave, la clasificación, el total y los pasajes. Con los modelos de
+lenguaje muestra además el costo de la consulta y lo gastado en el día frente al
+tope.
 
+![Ejecución](tablero/08_ejecucion.png)
 
-Una barra por cada fragmento del artículo, ordenadas como aparecen en el texto. Las
-bandas de fondo separan las secciones y las barras oscuras marcan los tres elegidos.
+### Con un modelo de lenguaje
 
-De un vistazo muestra **dónde se concentra la evidencia**: si las barras altas están en
-*Methods*, la cita apunta a cómo se hizo algo; si están en *Results*, a lo que se
-encontró.
+Con Nova Pro o Ministral 3 8B los paneles cambian así:
 
----
+- **Función de cita predicha** muestra el **puntaje** de la función elegida, no una
+  probabilidad, y la etiqueta *Clasificado con el título y el abstract del artículo
+  citado*.
+
+  ![Función predicha con Nova Pro](tablero/13_llm_funcion.png)
+
+- **Lo que leyó el modelo** muestra el título y el abstract del artículo citado. Al
+  desplegar **Mensaje enviado al modelo** se ve el texto que recibió después de las
+  instrucciones del prompt.
+
+  ![Lo que leyó Nova Pro](tablero/14_llm_lo_que_leyo.png)
+
+- **Ejecución** agrega el costo de la consulta y lo gastado en el día frente al tope.
+
+  ![Ejecución con Nova Pro](tablero/15_llm_ejecucion.png)
 
 ## Si algo sale mal
 
-El tablero **nunca inventa un resultado**. Ante cualquier fallo retira la predicción
-anterior y explica qué pasó, en lugar de dejar en pantalla un dato que podría leerse
-como respuesta a lo que se acaba de escribir.
+El tablero no deja en pantalla resultados viejos: ante un fallo retira la
+predicción anterior y explica qué pasó.
 
 | Mensaje | Qué significa | Qué hacer |
 |---|---|---|
-| *No se pudo contactar la API* | El servicio no responde | Avisar a quien administra el despliegue |
-| *Falta el contexto de cita* | El campo está vacío | Escribir el texto a analizar |
-| *arXiv no tiene ningún artículo con id…* | Identificador inexistente | Revisarlo en arxiv.org |
+| *Falta el contexto de cita* | El campo está vacío | Escribir la cita |
+| *La API no responde* | El servicio está caído o reiniciándose | Esperar un momento y reintentar; si sigue, avisar a quien administra el despliegue |
+| *arXiv no tiene ningún artículo con id…* | El identificador no existe | Revisarlo en arxiv.org |
 | *… no es un identificador de arXiv válido* | Formato incorrecto | Usar `1903.10676` o la URL completa |
-| *No se pudo descargar el PDF* | El artículo no tiene PDF, o el servidor no llega a arXiv | Usar la opción de pegar el texto |
+| *No se pudieron buscar los pasajes* | No se pudo descargar o leer el PDF | Pegar el texto del artículo en su lugar |
+| *Demasiadas peticiones* (429) | Se superó el límite de 30 consultas por minuto | Esperar un minuto |
+| *Los modelos de lenguaje admiten 5 consultas por minuto* (429) | Límite propio de Nova Pro y Ministral 3 8B | Esperar los segundos que indica o usar SciBERT |
+| *Se alcanzó el tope diario…* (429) | Se gastó el presupuesto del día en los modelos de lenguaje | Usar SciBERT o TF-IDF; el cupo se renueva a las 00:00 UTC |
+| *Bedrock no pudo responder* o *no respondió con la lista de 9 puntajes* (502) | Falla del servicio externo o respuesta en otro formato | Reintentar o usar otro modelo |
 
-Cuando falla la recuperación, **la clasificación sigue siendo válida**: el aviso lo dice
-explícitamente y el resultado permanece en pantalla.
+Si falla el artículo citado, **la clasificación sigue siendo válida**: el modelo
+clasifica sin él y el panel lo indica.
 
-![Error de recuperación](tablero/09_error_recuperacion.png)
+![Artículo inexistente](tablero/10_articulo_inexistente.png)
 
-
----
+![Error en los pasajes](tablero/11_pasajes_error.png)
 
 ## Qué esperar del sistema
 
-- **El modelo se equivoca.** Su F1-macro sobre el conjunto de prueba está en torno a
-  0,64: aproximadamente **una de cada tres predicciones es incorrecta**. Es una ayuda
-  para revisar literatura, no un veredicto. El aviso de ambigüedad y la distribución
-  completa existen precisamente para juzgar cuánto fiarse de cada resultado.
+- **El modelo se equivoca.** En las 2.241 citas de prueba, frente a la revisión
+  humana, acierta el 57 % (F1 macro de 0,532): más de una de cada tres
+  predicciones es incorrecta. Frente a la etiqueta automática con la que se
+  entrenó, acierta el 69 % (F1 macro de 0,667). Es una ayuda para revisar
+  literatura, no un veredicto; la distribución y el aviso de ambigüedad sirven
+  para juzgar cuánto confiar en cada resultado.
+- **Las funciones más difíciles**, frente a la revisión humana, son
+  *Identification of the Originator* (F1 de 0,14), *Modification / Improvement*
+  (0,40) y *Further Reading* (0,49). Las más fiables son *Evidence* (0,79) y
+  *Basis* (0,66).
 - **Solo funciona en inglés.**
-- **La extracción de PDF no es perfecta.** En tablas, fórmulas y textos a dos columnas
-  los fragmentos pueden salir con palabras entremezcladas. El contenido sigue siendo
-  legible y la similitud, útil.
-- **Se requiere conexión a internet** para recuperar artículos de arXiv.
-- Se ha observado una confusión sistemática: cuando el texto dice *«see X»* o *«we refer
-  the reader to X»* y X es un autor conocido, el modelo tiende a responder
-  *Identification of the Originator* en lugar de *Further Reading*.
+- **La lectura del PDF no es perfecta.** En tablas, fórmulas y notas al pie los
+  fragmentos pueden traer texto mezclado.
+- **Necesita conexión a arXiv** para leer el artículo citado. Sin ella, clasifica
+  con el contexto y la sección.

@@ -1,0 +1,18 @@
+{
+  "modelo": "TF-IDF + regresión logística (v4)",
+  "entrada": "contexto [SEC] sección normalizada (sin pasajes)",
+  "hiperparametros": {
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "max_features": 50000,
+    "sublinear_tf": true,
+    "C": 1.0,
+    "class_weight": "balanced",
+    "max_iter": 3000
+  },
+  "sklearn": "1.7.2",
+  "fecha_utc": "2026-11-22T03:16:15+00:00"
+}

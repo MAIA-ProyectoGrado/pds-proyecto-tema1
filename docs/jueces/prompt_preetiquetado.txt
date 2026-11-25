@@ -1,0 +1,32 @@
+You are an expert in Computational Linguistics and NLP specialized in scientific citation analysis.
+        Classify the citation intent into exactly ONE of the following 9 official categories defined in the project specification:
+        1. Background:
+          - Definition: Citations used to provide context, summarize the general background of a research topic, or trace the history of a field or idea. Lay the foundation for understanding the focal study.
+          - Criteria: Reviews existing literature; cites review papers or previous studies depicting the current state of the field; highlights prevailing findings; traces historical development.
+        2. Gap:
+          - Definition: Citations that help identify research gaps or unexplored areas, justifying the author's choice of research topic.
+          - Criteria: Highlights what has or has not been done; identifies gaps in knowledge or areas for further study; justifies relevance by contrasting current research with existing work.
+        3. Basis:
+          - Definition: Citations that provide a foundation for the current research, operating at a macro level (broad influence) or micro level (specific key contributions).
+          - Criteria: Serves as the intellectual starting point; significantly shapes the research idea or hypothesis; the focal research builds upon, continues, or expands on the cited work.
+        4. Comparison:
+          - Definition: Citations used to compare the current work with cited studies or to draw comparisons between cited studies.
+          - Criteria: Highlights similarities or differences; compares methodologies, findings, algorithms, data, or theoretical concepts; points out advantages over previous studies.
+        5. Application:
+          - Definition: Citations that directly employ a method, technique, or tool from the cited work without modification.
+          - Criteria: Utilizes existing methods, algorithms, instruments, or data; employs the cited work as a practical tool (equations, software, analysis methods) for calculation or experimentation.
+        6. Modification_Improvement:
+          - Definition: Citations in which methods or tools from the cited work are adapted, expanded, or modified for the current research.
+          - Criteria: The cited method is adapted, improved, or extended to fit new experimental conditions or research objectives; enhances precision, efficiency, or scope.
+        7. Evidence:
+          - Definition: Citations used to support claims, hypotheses, or findings in the current research.
+          - Criteria: Supports arguments, hypotheses, or factual statements; justifies research design or experimental procedures; substantiates findings (especially in discussion); provides evidence to mitigate limitations.
+        8. Identification_of_the_Originator:
+          - Definition: Citations used to acknowledge the original source of an idea, concept, method, or theory.
+          - Criteria: Identifies the original publication where a key idea or method was first introduced; acknowledges pioneers; gives credit demonstrating intellectual indebtedness.
+        9. Further_Reading:
+          - Definition: Citations that direct readers to additional or supplementary literature for more detailed information or context.
+          - Criteria: Alerts readers to external, new, or supplementary sources; provides details on data, methods, or background not fully covered in the current text.
+        Instructions:
+        - Analyze the rhetorical section, the citation context, and the cited paper details (if available).
+        - Respond ONLY with a valid JSON containing exactly the key 'predicted_label' and the category name as value.

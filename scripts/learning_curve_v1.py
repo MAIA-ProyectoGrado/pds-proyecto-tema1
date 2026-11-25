@@ -8,11 +8,11 @@ Responde dos preguntas:
      `citing_paper_id` (respeta el aislamiento por documento).
 
 Genera:
-  docs/modelos_entrega2/v1_learning_curve.png
-  docs/modelos_entrega2/v1_cv.json
+  docs/historial/modelos_entrega2/v1_learning_curve.png
+  docs/historial/modelos_entrega2/v1_cv.json
 
 Uso:
-    python scripts/learning_curve_v1.py --data_dir dataset --out docs/modelos_entrega2
+    python scripts/learning_curve_v1.py --data_dir dataset --out docs/historial/modelos_entrega2
 """
 import argparse
 import json
@@ -52,7 +52,7 @@ def pipe():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_dir", default="dataset")
-    ap.add_argument("--out", default="docs/modelos_entrega2")
+    ap.add_argument("--out", default="docs/historial/modelos_entrega2")
     args = ap.parse_args()
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
     tr, va = load(Path(args.data_dir))

@@ -13,11 +13,11 @@ a la pregunta de negocio y a responder el feedback de la Entrega 1:
      exploracion de variables"                      -> Seccion 4 (Top-3 chunks)
 
 Uso:
-    python scripts/eda_entrega2.py --data_dir data/raw --out_dir docs/eda_entrega2
+    python scripts/eda_entrega2.py --data_dir data/raw --out_dir docs/historial/eda_entrega2
 
 Genera:
-    docs/eda_entrega2/*.png           figuras
-    docs/eda_entrega2/eda_stats.json  metricas para citar en el reporte
+    docs/historial/eda_entrega2/*.png           figuras
+    docs/historial/eda_entrega2/eda_stats.json  metricas para citar en el reporte
 """
 import argparse
 import json
@@ -75,7 +75,7 @@ def json_default(o):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_dir", default="data/raw")
-    ap.add_argument("--out_dir", default="docs/eda_entrega2")
+    ap.add_argument("--out_dir", default="docs/historial/eda_entrega2")
     args = ap.parse_args()
 
     data_dir = Path(args.data_dir)
