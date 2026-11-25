@@ -17,6 +17,8 @@ en qué pasajes del artículo citado se sustenta la cita.
 ## Contenido
 
 - [Problema](#problema)
+- [Pregunta de negocio](#pregunta-de-negocio)
+- [Alcance](#alcance)
 - [Solución](#solución)
 - [Arquitectura](#arquitectura)
 - [Estructura del repositorio](#estructura-del-repositorio)
@@ -38,6 +40,21 @@ Identificar la función de una cita (para qué la usa el autor) apoya la revisi�
 de literatura y el análisis de impacto, pero es difícil de automatizar: los
 contextos de cita son breves y ambiguos, y la información que aclara la función
 suele estar en el artículo citado, no en la frase que lo cita.
+
+## Pregunta de negocio
+
+¿Es posible, a partir de artículos científicos en inglés, recuperar
+automáticamente los fragmentos más relevantes de un artículo citado y clasificar
+el propósito de cada cita (función de cita) para apoyar tareas como la revisión
+de literatura y el análisis de impacto bibliométrico?
+
+## Alcance
+
+Construcción de un dataset de intención de cita con 9 clases (contextos de cita
+reales, partición sin fuga entre artículos citantes), entrenamiento y comparación
+de clasificadores (línea base léxica, embeddings congelados, ajuste fino de
+SciBERT y SPECTER), comparación con modelos de lenguaje consultados por API y
+despliegue del mejor modelo como servicio.
 
 ## Solución
 
@@ -498,6 +515,12 @@ entre ellos es kappa de Cohen 0,608 ([detalle](docs/anotacion/acuerdo_humano.md)
 | [`Entrenamiento_clasificadores_scibert_mlflow.ipynb`](notebooks/Entrenamiento_clasificadores_scibert_mlflow.ipynb) | Entrena y compara 5 configuraciones (SciBERT A y B, SPECTER, encoder congelado y pérdida sin ponderar) con seguimiento en MLflow, en una GPU L4 de Colab |
 | [`procesamiento.ipynb`](notebooks/procesamiento.ipynb) | Versión anterior del corpus (entrega 2), conservada como referencia |
 
+El ajuste fino corrió en Google Colab con una GPU NVIDIA L4: secuencias de hasta
+512 tokens, lote de 16, 4 épocas y AdamW con tasa de aprendizaje 2e-5, decaimiento
+de pesos 0,01 y calentamiento lineal del 10 %. Cada época tomó de 7 a 7,5 min, unos
+29 min por corrida. El control con el encoder congelado entrenó solo la capa de
+clasificación (3 épocas, tasa 1e-4) en unos 8 min.
+
 Los notebooks corren en Google Colab y leen las llaves de Hugging Face y Semantic
 Scholar desde los secretos de Colab.
 
@@ -525,6 +548,13 @@ pip install -r src/api/requirements.txt
 
 uvicorn src.api.main:app --port 8000      # API
 python src/dashboard/serve.py             # tablero en http://127.0.0.1:8080 (otra terminal)
+```
+
+En Windows (Git Bash), el entorno se crea y se activa así:
+
+```bash
+python -m venv .venv-api
+source .venv-api/Scripts/activate
 ```
 
 ## Pruebas
