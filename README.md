@@ -15,6 +15,14 @@ en qué pasajes del artículo citado se sustenta la cita.
 | Descarga del dataset completo (15 MB comprimido) | [dataset.zip](https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/dataset.zip) · muestra y columnas en [`datos/`](datos/) |
 | Modelos de lenguaje (Bedrock) | [Sección «Modelos de lenguaje»](#modelos-de-lenguaje) |
 
+## Integrantes
+
+- Henry Forigua Martinez
+- David Indaburu Silva
+- Juan David Marin Buitrago
+- Alvaro Andres Ruiz Florez
+- Estefania Sanchez Contreras
+
 ## Inicio rápido
 
 Para usarla, abre http://3.141.245.118:8080, pulsa **Ejemplo B** y luego
@@ -28,6 +36,7 @@ docker compose up -d --build   # tablero en http://localhost:8080
 
 ## Contenido
 
+- [Integrantes](#integrantes)
 - [Inicio rápido](#inicio-rápido)
 - [Problema](#problema)
 - [Pregunta de negocio](#pregunta-de-negocio)
