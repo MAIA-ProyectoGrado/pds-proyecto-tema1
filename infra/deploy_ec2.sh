@@ -9,8 +9,11 @@
 #   1. Instala Docker y DVC si faltan (paquetes de Ubuntu y PyPI).
 #   2. Descarga los pesos de SciBERT y MiniLM con `dvc pull`. Las credenciales
 #      salen del rol IAM de la instancia: en la máquina no hay llaves de AWS.
-#   3. Construye las imágenes en la propia instancia (x86_64), levanta los
-#      servicios y espera a que la API quede sana.
+#   3. Guarda en .env si los modelos de lenguaje quedan activos, construye las
+#      imágenes en la propia instancia (x86_64), levanta los servicios y espera a
+#      que la API quede sana.
+#   4. Comprueba que el contenedor de la API obtenga las credenciales del rol para
+#      consultar Bedrock.
 #
 # Si los pesos no quedan en disco, el script se detiene con un error: el
 # despliegue público siempre sirve el modelo recomendado.
@@ -20,6 +23,8 @@
 #   SKIP_DVC=1                no ejecutar dvc pull (pesos copiados a mano en models/)
 #   SCIF_LLM_ENABLED=true     ofrecer Nova Pro y Ministral 3 8B (Amazon Bedrock); el rol
 #                             necesita el permiso de infra/enable_bedrock.sh. false los oculta.
+#                             El valor queda en .env, así que un `docker compose up`
+#                             posterior lo conserva.
 #   Los demás parámetros (tope diario, consultas por minuto…) se leen de .env.
 set -euo pipefail
 
@@ -65,6 +70,16 @@ done
 echo ">> Pesos listos: ${WEIGHTS[*]}"
 
 # ── 3. Construir y levantar ─────────────────────────────────────────────────
+case "$LLM" in
+  true|false) ;;
+  *) echo "!! SCIF_LLM_ENABLED debe ser true o false (recibido: $LLM)." >&2; exit 1 ;;
+esac
+# .env conserva el resto de los parámetros; solo se reemplaza esta línea.
+touch .env
+{ grep -v '^SCIF_LLM_ENABLED=' .env || true; echo "SCIF_LLM_ENABLED=$LLM"; } > .env.tmp
+mv .env.tmp .env
+echo ">> Modelos de lenguaje: SCIF_LLM_ENABLED=$LLM (guardado en .env)"
+
 echo ">> Construyendo y levantando los servicios (la primera vez tarda varios minutos)..."
 SCIF_PORT="$PORT" SCIF_LLM_ENABLED="$LLM" $DOCKER compose up -d --build
 

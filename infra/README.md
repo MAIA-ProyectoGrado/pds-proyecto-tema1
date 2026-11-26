@@ -35,7 +35,9 @@ Variables opcionales de `launch_inference_ec2.sh`: `REGION`, `INSTANCE_TYPE`
 (por defecto `c7i-flex.large`) y `VOLUME_GB` (por defecto 30). De
 `deploy_ec2.sh`: `SCIF_PORT`, `SKIP_DVC=1`, para cuando los pesos se copiaron a
 mano en `models/`, y `SCIF_LLM_ENABLED=false`, para desplegar sin los modelos de
-lenguaje.
+lenguaje. `deploy_ec2.sh` guarda ese valor en el `.env` de la instancia, así que un
+`docker compose up` hecho a mano después conserva los modelos de lenguaje como se
+desplegaron.
 
 ## Instancia
 
