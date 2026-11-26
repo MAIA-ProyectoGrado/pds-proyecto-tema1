@@ -15,8 +15,20 @@ en qué pasajes del artículo citado se sustenta la cita.
 | Descarga del dataset completo (15 MB comprimido) | [dataset.zip](https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/dataset.zip) · muestra y columnas en [`datos/`](datos/) |
 | Modelos de lenguaje (Bedrock) | [Sección «Modelos de lenguaje»](#modelos-de-lenguaje) |
 
+## Inicio rápido
+
+Para usarla, abre http://3.141.245.118:8080, pulsa **Ejemplo B** y luego
+**Clasificar**. Para levantarla en tu equipo, con Docker:
+
+```bash
+git clone https://github.com/MAIA-ProyectoGrado/pds-proyecto-tema1.git && cd pds-proyecto-tema1
+curl -O https://scif-dvc-e645d210.s3.us-east-2.amazonaws.com/descargas/modelos.zip && unzip modelos.zip   # opcional: sin ellos sirve el TF-IDF
+docker compose up -d --build   # tablero en http://localhost:8080
+```
+
 ## Contenido
 
+- [Inicio rápido](#inicio-rápido)
 - [Problema](#problema)
 - [Pregunta de negocio](#pregunta-de-negocio)
 - [Alcance](#alcance)
@@ -389,7 +401,8 @@ están en [`infra/README.md`](infra/README.md).
 
 La aplicación se configura con variables de entorno. Para cambiarlas, copia
 [`.env.example`](.env.example) como `.env` junto a `docker-compose.yml`. Ese
-archivo documenta las 24 variables con su valor por defecto. Las principales:
+archivo documenta, con su valor por defecto, las 24 variables de la API, el puerto
+público (`SCIF_PORT`) y el servidor de MLflow del entrenamiento. Las principales:
 
 | Variable | Por defecto | Para qué |
 |---|---|---|
@@ -502,10 +515,12 @@ del documento y la latencia de cada etapa.
 
 | Código | Cuándo |
 |---|---|
+| `400` | El contexto de cita está vacío, o `/retrieve` no recibió el artículo citado |
+| `404` | arXiv no tiene ningún artículo con ese id |
 | `413` | La petición supera 1 MB |
 | `422` | Faltan campos o no son válidos; el mensaje dice cuál |
 | `429` | Se superó el límite de peticiones por minuto o, con los modelos de lenguaje, su límite por minuto o el tope diario |
-| `502` | Bedrock no respondió, o el modelo de lenguaje no devolvió la lista de 9 puntajes |
+| `502` | No se pudo descargar el PDF de arXiv, Bedrock no respondió, o el modelo de lenguaje no devolvió la lista de 9 puntajes |
 | `503` | Faltan los pesos del modelo pedido, o los modelos de lenguaje están desactivados; el mensaje explica qué hacer |
 
 ## Tamaño, hardware y tiempos
