@@ -131,6 +131,33 @@ La aplicación es abierta: no pide usuario ni contraseña. El paso a paso con
 capturas está en el [manual de usuario](docs/MANUAL_USUARIO.md), y el uso de la
 API con ejemplos de entrada y salida, en la sección [«API»](#api).
 
+### Ejemplo en el tablero
+
+**Entrada** (es el botón **Ejemplo B**):
+
+| Campo | Valor |
+|---|---|
+| Contexto de cita | We extend SciBERT [4] with an additional classification head and fine-tune it on our corpus to improve accuracy. |
+| Sección del artículo | Methods |
+| Artículo citado | 1903.10676 (arXiv) |
+| Clasificador | SciBERT |
+
+**Respuesta en pantalla:**
+
+- **Función de cita predicha:** Modification / Improvement, con confianza 0,98, y su
+  definición: «Adapta, extiende o mejora un método del trabajo citado». Sin aviso de
+  ambigüedad.
+- **Distribución sobre las 9 funciones:** la segunda opción, Application, queda en 0,01.
+- **Lo que leyó el modelo:** el título del artículo citado (*SciBERT: A Pretrained
+  Language Model for Scientific Text*) y las 3 oraciones de su abstract más parecidas a
+  la cita, con su parecido (0,65, 0,63 y 0,49).
+- **Dónde se sustenta en el artículo completo:** unos segundos después, los 3 fragmentos
+  del PDF (3.562 palabras, 12 fragmentos) más parecidos a la cita, los tres de la
+  sección de experimentos, con similitud de 0,73, 0,72 y 0,66.
+- **Ejecución:** el tiempo de cada etapa; la clasificación toma menos de medio segundo.
+
+![Resultado del Ejemplo B en el tablero](docs/tablero/02_resultado.png)
+
 ## Arquitectura
 
 ```mermaid
